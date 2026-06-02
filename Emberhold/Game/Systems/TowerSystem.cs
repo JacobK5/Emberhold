@@ -30,6 +30,8 @@ public static class TowerSystem
                 rateMult *= 0.85f;
             }
 
+            if (s.VolatilePact) rateMult *= 0.85f; // anti-synergy: fort-wide fire-rate boost
+
             float range = t.Range + rangeBonus + t.SynRangeBonus;
             int chains = t.ChainCount + t.SynExtraChains;
 

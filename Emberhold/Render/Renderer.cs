@@ -769,6 +769,7 @@ public static class Renderer
                 "Keystone" => Palette.Hex("e0a85a"),
                 "Field" => Palette.Hex("8fbf7f"),
                 "Rune" => Palette.Hex("c79be0"),
+                "Anti" => Palette.Hex("e0795a"),
                 _ => Palette.Hex("9fb6c9"),
             };
             Raylib.DrawText($"+ {def.Name}", 18, y, 15, c);

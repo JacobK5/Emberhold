@@ -104,6 +104,7 @@ public sealed class GameState
     public bool Wildfire;               // Wildfire keystone (chains ignite)
     public bool Minefield;              // Minefield rune (3+ Trap: bigger, deadlier traps)
     public bool BoomTown;               // Boom Town rune (3+ Economy: richer mines)
+    public bool VolatilePact;           // Anti-synergy (Cannon + Storm Spire: those -dmg, all towers +rate)
     public readonly HashSet<string> ActiveSynergies = new();
 
     // Keep

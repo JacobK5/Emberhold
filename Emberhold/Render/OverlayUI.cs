@@ -82,16 +82,16 @@ public static class OverlayUI
         DrawCentered("active synergies are highlighted   -   (C) to close", 16, 80, Palette.PathEdge);
 
         int x = w / 2 - 430;
-        int y = 102;
+        int y = 96;
         string lastType = "";
         foreach (var def in SynergyEngine.Catalog)
         {
             if (def.Type != lastType)
             {
                 lastType = def.Type;
-                y += 8;
+                y += 6;
                 Raylib.DrawText(def.Type.ToUpper() + " SYNERGIES", x, y, 19, Palette.Hero);
-                y += 23;
+                y += 22;
             }
 
             bool active = s.ActiveSynergies.Contains(def.Id);
@@ -100,7 +100,7 @@ public static class OverlayUI
             Raylib.DrawText(def.Requires, x + 230, y, 16, active ? Palette.Hero : Palette.PathEdge);
             Raylib.DrawText(def.Effect, x + 520, y, 16, active ? Palette.Hero : Palette.PathEdge);
             if (active) Raylib.DrawText("ACTIVE", x - 60, y, 16, Palette.Hex("8fbf7f"));
-            y += 21;
+            y += 20;
         }
     }
 
