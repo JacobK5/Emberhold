@@ -8,6 +8,11 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.15.0 — "Foresight"
+- **Two-wave preview** — the draft now shows the next two waves (exact), so you can plan
+  around incoming bosses/threats.
+- **Kill-streak reward** — reaching the blazing streak tier grants an Overdrive burst.
+
 ### v0.14.1 — "Field Manual" (QoL)
 - **Rich pause screen** — summarizes the run at a glance: trial, hero passives/relics,
   horde tier, active synergies, and next-wave preview.
