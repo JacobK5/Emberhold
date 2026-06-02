@@ -28,10 +28,14 @@ public static class TowerSystem
                 e => !e.Dead && Vector2.Distance(t.Pos, e.Pos) <= range);
             if (target is null) continue;
 
-            // Wildfire keystone: chain towers also ignite their targets.
-            float burnDps = t.BurnDps;
-            float burnDur = t.BurnDuration;
+            // Burn payload: native + Wildfire keystone (chains ignite) + Hellfire field (cannon ignites).
+            float burnDps = MathF.Max(t.BurnDps, t.SynBurnDps);
+            float burnDur = MathF.Max(t.BurnDuration, t.SynBurnDuration);
             if (s.Wildfire && t.ChainCount > 0) { burnDps = MathF.Max(burnDps, 8f); burnDur = MathF.Max(burnDur, 2f); }
+
+            // Slow payload: native + Conduit field (chains slow).
+            float slowFactor = MathF.Min(t.SlowFactor, t.SynSlowFactor);
+            float slowDur = MathF.Max(t.SlowDuration, t.SynSlowDuration);
 
             var aim = CombatSystem.AimAhead(t.Pos, target, t.ProjSpeed);
             CombatSystem.FireProjectile(s, t.Pos, aim,
@@ -42,7 +46,7 @@ public static class TowerSystem
                 life: 1.4f,
                 radius: t.ProjSource is ProjectileSource.Cannon ? 6f : 4f,
                 splash: t.Splash + t.SynSplashBonus,
-                slowFactor: t.SlowFactor, slowDuration: t.SlowDuration,
+                slowFactor: slowFactor, slowDuration: slowDur,
                 burnDps: burnDps, burnDuration: burnDur,
                 chains: chains, chainRange: chains > 0 ? 130f : 0f,
                 pierce: t.Pierce);

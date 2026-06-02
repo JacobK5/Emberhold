@@ -30,6 +30,11 @@ public static class DefenseSystem
                     }
                     if (st.TrapDps > 0f)
                         CombatSystem.DamageEnemy(s, e, st.TrapDps * dt, mitigable: false);
+                    if (st.SynTrapBurnDps > 0f) // Backdraft: the trap sets enemies ablaze
+                    {
+                        e.BurnTimer = MathF.Max(e.BurnTimer, 1.6f);
+                        e.BurnDps = MathF.Max(e.BurnDps, st.SynTrapBurnDps);
+                    }
                 }
             }
             else if (st.Role == StructureRole.Wall && (st.Regen || s.WallsSharePool) && st.Health < st.MaxHealth)

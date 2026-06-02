@@ -33,6 +33,10 @@ public static class SynergyEngine
         new SynergyDef("frostfire", "Frostfire", "Field", "Frost Spire + Flame Jet adjacent", "Slowed+burning enemies shatter"),
         new SynergyDef("spoils", "Spoils", "Field", "Gold Mine near a trap", "Slowed kills drop +gold"),
         new SynergyDef("phalanx", "Phalanx", "Field", "Tower beside a wall", "+12% tower damage"),
+        new SynergyDef("backdraft", "Backdraft", "Field", "Flame Jet covering a slow trap", "The trap sets enemies ablaze"),
+        new SynergyDef("hellfire", "Hellfire", "Field", "Cannon beside a Flame Jet", "Cannon shells ignite on impact"),
+        new SynergyDef("conduit", "Conduit", "Field", "Chain Coil beside a Frost Spire", "Chain bolts slow their targets"),
+        new SynergyDef("snipers_nest", "Sniper's Nest", "Field", "Ballista in a Watchtower aura", "+40% Ballista damage"),
         // Mono-amplifiers
         new SynergyDef("battery", "Battery", "Mono", "3+ towers clustered", "+18% tower damage"),
         new SynergyDef("fortified", "Fortified", "Mono", "3+ walls", "Walls take 35% less damage"),
@@ -104,15 +108,24 @@ public static class SynergyEngine
                 case StructureKind.Ballista:
                     if (built.Exists(w => w.IsWallAlive && Vector2.Distance(t.Pos, w.Pos) <= 78f))
                     { t.SynRangeBonus += 45f; t.SynDamageMult *= 1.25f; s.ActiveSynergies.Add("siege_breaker"); }
+                    // Sniper's Nest: a Ballista sitting in a Watchtower's range aura.
+                    if (built.Exists(a => a.Kind == StructureKind.Watchtower && Vector2.Distance(t.Pos, a.Pos) <= a.AuraRange))
+                    { t.SynDamageMult *= 1.4f; s.ActiveSynergies.Add("snipers_nest"); }
                     break;
                 case StructureKind.Cannon:
                     if (built.Exists(g => g.Role == StructureRole.GroundTrap && g.TrapSlowFactor < 1f
                                           && Vector2.Distance(t.Pos, g.Pos) <= t.Range))
                     { t.SynKillBox = true; t.SynSplashBonus += 26f; s.ActiveSynergies.Add("kill_box"); }
+                    // Hellfire: a Cannon beside a Flame Jet — shells ignite on impact.
+                    if (built.Exists(j => j.Kind == StructureKind.FlameJet && Vector2.Distance(t.Pos, j.Pos) <= 90f))
+                    { t.SynBurnDps = MathF.Max(t.SynBurnDps, 12f); t.SynBurnDuration = MathF.Max(t.SynBurnDuration, 2f); s.ActiveSynergies.Add("hellfire"); }
                     break;
                 case StructureKind.ChainCoil:
                     if (built.Exists(a => a.Kind == StructureKind.WarBanner && Vector2.Distance(t.Pos, a.Pos) <= a.AuraRange))
                     { t.SynExtraChains += 2; s.ActiveSynergies.Add("overcharged_coil"); }
+                    // Conduit: a Chain Coil beside a Frost Spire — bolts apply a slow.
+                    if (built.Exists(f => f.Kind == StructureKind.FrostSpire && Vector2.Distance(t.Pos, f.Pos) <= 90f))
+                    { t.SynSlowFactor = MathF.Min(t.SynSlowFactor, 0.6f); t.SynSlowDuration = MathF.Max(t.SynSlowDuration, 1.2f); s.ActiveSynergies.Add("conduit"); }
                     break;
             }
         }
@@ -133,9 +146,23 @@ public static class SynergyEngine
             { s.SpoilsActive = true; s.ActiveSynergies.Add("spoils"); break; }
         }
 
+        // Backdraft: a Flame Jet covering a slow ground trap — the trap sets enemies ablaze.
+        foreach (var g in built)
+        {
+            if (g.Role != StructureRole.GroundTrap || g.TrapSlowFactor >= 1f) continue;
+            if (built.Exists(j => j.Kind == StructureKind.FlameJet && Vector2.Distance(g.Pos, j.Pos) <= 120f))
+            { g.SynTrapBurnDps = 10f; s.ActiveSynergies.Add("backdraft"); }
+        }
+
         // ---- Mono-amplifiers ----
         if (wallCount >= 3) { s.Fortified = true; s.ActiveSynergies.Add("fortified"); }
         if (auraCount >= 3) { s.AurasGlobal = true; s.ActiveSynergies.Add("network"); }
+
+        // Queue a discovery banner for anything triggering for the first time this run.
+        if (s.Phase == Phase.Combat)
+            foreach (var id in s.ActiveSynergies)
+                if (!s.SeenSynergies.Contains(id))
+                    s.SynergyPopups.Enqueue(id);
 
         s.SeenSynergies.UnionWith(s.ActiveSynergies); // remember discoveries for the run summary
     }
@@ -161,6 +188,11 @@ public static class SynergyEngine
             st.SynSplashBonus = 0f;
             st.SynExtraChains = 0;
             st.SynKillBox = false;
+            st.SynBurnDps = 0f;
+            st.SynBurnDuration = 0f;
+            st.SynSlowFactor = 1f;
+            st.SynSlowDuration = 0f;
+            st.SynTrapBurnDps = 0f;
         }
     }
 }

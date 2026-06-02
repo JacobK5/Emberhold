@@ -90,6 +90,11 @@ public sealed class Structure
     public float SynSplashBonus;
     public int SynExtraChains;
     public bool SynKillBox;   // display flag; effect applied via SynSplashBonus
+    public float SynBurnDps;       // Hellfire: cannon shells ignite
+    public float SynBurnDuration;
+    public float SynSlowFactor = 1f; // Conduit: chain bolts slow
+    public float SynSlowDuration;
+    public float SynTrapBurnDps;   // Backdraft: slow trap also burns
 
     public bool IsWallAlive => Role == StructureRole.Wall && Health > 0f;
 }

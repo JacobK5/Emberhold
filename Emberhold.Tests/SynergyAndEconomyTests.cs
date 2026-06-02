@@ -112,6 +112,65 @@ public class SynergyTests
         Assert.Empty(s.ActiveSynergies);
         Assert.Equal(1f, s.SlowDurationMult);
     }
+
+    // ---- Arsenal batch: new field synergies ----
+
+    [Fact]
+    public void Hellfire_CannonBesideFlameJet_GivesCannonBurn()
+    {
+        var s = State();
+        Add(s, StructureKind.Cannon, new Vector2(0, -80));
+        Add(s, StructureKind.FlameJet, new Vector2(60, -80)); // within 90
+        SynergyEngine.Evaluate(s);
+        Assert.Contains("hellfire", s.ActiveSynergies);
+        Assert.True(s.Structures.First(st => st.Kind == StructureKind.Cannon).SynBurnDps > 0f);
+    }
+
+    [Fact]
+    public void Conduit_ChainCoilBesideFrostSpire_GivesChainSlow()
+    {
+        var s = State();
+        Add(s, StructureKind.ChainCoil, new Vector2(0, -80));
+        Add(s, StructureKind.FrostSpire, new Vector2(60, -80)); // within 90
+        SynergyEngine.Evaluate(s);
+        Assert.Contains("conduit", s.ActiveSynergies);
+        Assert.True(s.Structures.First(st => st.Kind == StructureKind.ChainCoil).SynSlowFactor < 1f);
+    }
+
+    [Fact]
+    public void SnipersNest_BallistaInWatchtowerAura_BuffsDamage()
+    {
+        var s = State();
+        Add(s, StructureKind.Ballista, new Vector2(0, -80));
+        Add(s, StructureKind.Watchtower, new Vector2(80, -80)); // within aura range
+        SynergyEngine.Evaluate(s);
+        Assert.Contains("snipers_nest", s.ActiveSynergies);
+        Assert.True(s.Structures.First(st => st.Kind == StructureKind.Ballista).SynDamageMult > 1f);
+    }
+
+    [Fact]
+    public void Backdraft_FlameJetCoversSlowTrap_TrapBurns()
+    {
+        var s = State();
+        Add(s, StructureKind.TarPit, new Vector2(0, -80));
+        Add(s, StructureKind.FlameJet, new Vector2(90, -80)); // within 120
+        SynergyEngine.Evaluate(s);
+        Assert.Contains("backdraft", s.ActiveSynergies);
+        Assert.True(s.Structures.First(st => st.Kind == StructureKind.TarPit).SynTrapBurnDps > 0f);
+    }
+
+    [Fact]
+    public void Discovery_QueuesEachSynergyPopupOnce()
+    {
+        var s = State();
+        Add(s, StructureKind.Cannon, new Vector2(0, -80));
+        Add(s, StructureKind.FlameJet, new Vector2(60, -80));
+        SynergyEngine.Evaluate(s);
+        int afterFirst = s.SynergyPopups.Count;
+        Assert.True(afterFirst >= 1);
+        SynergyEngine.Evaluate(s); // already discovered — must not re-queue
+        Assert.Equal(afterFirst, s.SynergyPopups.Count);
+    }
 }
 
 public class EconomyTests
