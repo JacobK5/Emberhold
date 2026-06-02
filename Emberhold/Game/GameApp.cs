@@ -26,6 +26,7 @@ public sealed class GameApp
     private float _introTimer = 8f;
     private bool _showCodex;
     private Profile _profile = Persistence.Load();
+    private readonly Random _rng = new();
 
     /// <param name="auto">Auto-resolve draft/placement (smoke).</param>
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
@@ -49,6 +50,7 @@ public sealed class GameApp
         _pointerTarget = null;
         if (_startChapter > 0) _state.Chapter = _startChapter;
         if (_startWave > 0) _state.Wave = _startWave;
+        ApplyRunModifier(); // roll the run's trial before previewing the first wave
         _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave); // seed the wave-1 preview
         if (_seed) _state.Phase = Phase.Combat;
         else _draft.StartRun(_state);
@@ -167,6 +169,30 @@ public sealed class GameApp
             _profile = Persistence.Record(_profile, _state.Wave, _state.Kills);
             _state.BestWave = _profile.BestWave;
         }
+    }
+
+    /// <summary>Roll the run's trial modifier and apply its start-of-run effects.</summary>
+    private void ApplyRunModifier()
+    {
+        var mod = RunModifier.Roll(_rng);
+        _state.Modifier = mod;
+        var hero = _state.Hero;
+
+        if (mod.HeroMaxHpMult != 1f)
+        {
+            hero.MaxHealth *= mod.HeroMaxHpMult;
+            hero.Health = hero.MaxHealth;
+        }
+        if (mod.StartHeroLevel > 1)
+        {
+            int steps = mod.StartHeroLevel - 1;
+            hero.Level = mod.StartHeroLevel;
+            hero.Damage += 1.5f * steps;
+            hero.MaxHealth += 6f * steps;
+            hero.Health = hero.MaxHealth;
+            hero.FireRate = MathF.Max(0.22f, hero.FireRate - 0.012f * steps);
+        }
+        _state.Shop.PriceMult = mod.ShopPriceMult;
     }
 
     /// <summary>Milestone wave cleared: open a card draft (no auto-expansion).</summary>

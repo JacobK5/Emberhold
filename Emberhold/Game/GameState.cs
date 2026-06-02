@@ -48,6 +48,9 @@ public sealed class GameState
     public int Wave = 1;
     public Phase Phase = Phase.Combat;
 
+    // The per-run challenge modifier ("trial"). Set by GameApp at run start.
+    public RunModifier Modifier = RunModifier.None;
+
     public float Elapsed;
     public int Kills;
     public bool Over;

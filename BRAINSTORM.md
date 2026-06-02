@@ -8,6 +8,11 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.6.0 — "Trials"
+- **Challenge modifiers** — each run rolls one of six trials with a clear tradeoff
+  (Gold Rush, Bloodthirst, Iron Horde, Endless Swarm, Glass Cannon, Veteran), shown
+  on the intro and a HUD chip.
+
 ### v0.5.0 — "Warlord"
 - **Chapter boss** — a unique boss every 10th wave: huge HP, summons adds, resists
   slows, telegraphed, with a guaranteed relic/gold reward.

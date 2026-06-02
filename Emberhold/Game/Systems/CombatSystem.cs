@@ -33,7 +33,7 @@ public static class CombatSystem
         // Signature passive (lv5): Ranger shots ricochet to a second target; Warden shots cleave.
         int heroChains = hero.Signature && hero.Kind == HeroKind.Ranger ? 1 : 0;
         float heroSplash = hero.Signature && hero.Kind == HeroKind.Warden ? 34f : 0f;
-        FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult,
+        FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult,
             speed: HeroProjSpeed, color: color, source: ProjectileSource.Hero,
             splash: heroSplash, chains: heroChains, chainRange: heroChains > 0 ? 150f : 0f);
 
@@ -272,7 +272,7 @@ public static class CombatSystem
             float a = baseAngle + i * 0.16f;
             var dir = new Vector2(MathF.Cos(a), MathF.Sin(a));
             FireProjectile(s, hero.Pos, hero.Pos + dir,
-                damage: hero.Damage * hero.VolleyDamage * profile.Damage * s.StreakDamageMult,
+                damage: hero.Damage * hero.VolleyDamage * profile.Damage * s.StreakDamageMult * s.Modifier.HeroDamageMult,
                 speed: 470f, color: Palette.Hex("ffd46f"), source: ProjectileSource.Hero,
                 life: 1.45f, radius: 4f,
                 splash: s.VolleySplash ? 46f : 0f); // Ember Battery keystone
