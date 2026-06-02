@@ -8,6 +8,11 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.4.0 — "Strategist"
+- **Upcoming wave preview** — exact composition of the next wave shown on the
+  between-wave card and the draft screen (e.g. "14 incoming · Siege x2 · Shielded x4").
+- **Gold interest** — capped treasury return (8%, max 30) on banked gold each wave clear.
+
 ### v0.3.0 — "Champions"
 - **Passive level-up abilities** — Lv3 Quick Hands (pickup radius), Lv5 signature
   (Ranger ricochet / Warden cleave), Lv7 Second Wind (regen).

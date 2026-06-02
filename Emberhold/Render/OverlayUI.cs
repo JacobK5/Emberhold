@@ -32,6 +32,11 @@ public static class OverlayUI
         DrawCentered("one Attack  /  one Defend  /  one Support  -  pick one (1 / 2 / 3 or click)", 18, h / 2 - 184, Palette.PathEdge);
         DrawCentered("(C) synergy codex", 16, h / 2 - 160, Palette.PathEdge);
 
+        // Preview the wave you'll face after placing, below the cards (clear of them).
+        string preview = WaveSystem.PreviewLine(s.NextWaveKinds);
+        if (preview.Length > 0)
+            DrawCentered($"Next wave:  {preview}", 17, h / 2 + 170, Palette.Hex("c49a62"));
+
         var owned = s.Structures.Select(st => st.Kind).ToHashSet();
         var rects = DraftCardRects();
         var mouse = Raylib.GetMousePosition();
