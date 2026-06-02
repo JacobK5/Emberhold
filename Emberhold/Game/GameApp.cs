@@ -162,6 +162,7 @@ public sealed class GameApp
         CombatSystem.UpdatePickups(_state);
         EconomySystem.UpdateMines(_state, dt);
         EffectsSystem.Update(_state, dt);
+        UpdateSupplyCache(dt);
         UpdateCamera(dt);
 
         if (_state.KeepHealth <= 0f || _state.Hero.Health <= 0f)
@@ -171,6 +172,23 @@ public sealed class GameApp
             _state.BestWave = _profile.BestWave;
             _state.Profile = _profile;
         }
+    }
+
+    /// <summary>Periodically drop a high-value supply cache out on a lane during a fight.</summary>
+    private void UpdateSupplyCache(float dt)
+    {
+        bool fighting = _state.Spawning is not null || _state.Enemies.Exists(e => !e.Dead);
+        if (!fighting) return;
+        _state.CacheTimer -= dt;
+        if (_state.CacheTimer > 0f) return;
+
+        _state.CacheTimer = _state.Rand(20f, 30f);
+        int side = (int)(_state.Rand() * 4f) & 3;
+        var pos = Vector2.Lerp(Map.Gate(side, _state.Chapter), Map.SpawnPoint(side, _state.Chapter), 0.6f);
+        _state.SpawnCache(pos, 14 + _state.Wave * 2);
+        _state.BannerText = "SUPPLY CACHE";
+        _state.BannerTimer = 2.2f;
+        _state.AddFloater(pos + new Vector2(0, -18), "SUPPLY", Palette.Gold);
     }
 
     /// <summary>Roll the run's trial modifier and apply its start-of-run effects.</summary>

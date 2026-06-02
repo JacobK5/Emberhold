@@ -426,6 +426,16 @@ public static class Renderer
                 Raylib.DrawPoly(p, 4, pulse, (float)Raylib.GetTime() * 40f, Palette.Hex("b78cf0"));
                 Raylib.DrawPolyLines(p, 4, pulse, (float)Raylib.GetTime() * 40f, Palette.Hex("e6d2ff"));
             }
+            else if (d.Kind == DropKind.Cache)
+            {
+                // A glowing supply chest.
+                float halo = 14f + MathF.Sin((float)Raylib.GetTime() * 5f + d.Bob) * 2.5f;
+                Raylib.DrawCircleV(p, halo, new Color((byte)243, (byte)189, (byte)77, (byte)40));
+                Raylib.DrawRectangleRec(new Rectangle(p.X - 11, p.Y - 8, 22, 16), Palette.Hex("7a5a32"));
+                Raylib.DrawRectangleRec(new Rectangle(p.X - 11, p.Y - 8, 22, 5), Palette.Hex("a3793f"));
+                Raylib.DrawRectangleLinesEx(new Rectangle(p.X - 11, p.Y - 8, 22, 16), 1.5f, Palette.Gold);
+                Raylib.DrawCircleV(p + new Vector2(0, -1), 2.2f, Palette.Hex("ffe08a"));
+            }
             else
             {
                 Raylib.DrawCircleV(p, d.Radius, Palette.Hex("d8842d"));
