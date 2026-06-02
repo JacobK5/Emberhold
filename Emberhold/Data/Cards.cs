@@ -44,11 +44,11 @@ public enum Tag
 public enum StructureKind
 {
     // Attack
-    ArcherPost, Cannon, Ballista, ChainCoil, FlameJet, FrostSpire,
+    ArcherPost, Cannon, Ballista, ChainCoil, FlameJet, FrostSpire, StormSpire,
     // Defend
-    Barricade, SpikeTrap, TarPit, Bulwark, MoatLine, Redoubt,
+    Barricade, SpikeTrap, TarPit, Bulwark, MoatLine, Redoubt, Caltrops,
     // Support
-    GoldMine, WarBanner, Forge, EmberShrine, Watchtower, Workshop,
+    GoldMine, WarBanner, Forge, EmberShrine, Watchtower, Workshop, TradingPost,
 }
 
 /// <summary>
@@ -81,6 +81,8 @@ public static class CardDb
             Tag.Burn | Tag.Dot | Tag.ShortRange, 50),
         new CardDef("frost_spire", "Frost Spire", "FROST", Category.Attack, StructureKind.FrostSpire,
             Tag.Slow | Tag.Control | Tag.Elemental, 50),
+        new CardDef("storm_spire", "Storm Spire", "STORM", Category.Attack, StructureKind.StormSpire,
+            Tag.Elemental | Tag.Chain | Tag.LongRange, 55),
 
         // ---- Defend ----
         new CardDef("barricade", "Barricade", "WALL", Category.Defend, StructureKind.Barricade,
@@ -95,6 +97,8 @@ public static class CardDb
             Tag.Trap | Tag.Slow, 60),
         new CardDef("redoubt", "Redoubt", "RDBT", Category.Defend, StructureKind.Redoubt,
             Tag.Wall | Tag.Retaliate, 50),
+        new CardDef("caltrops", "Caltrops", "CALT", Category.Defend, StructureKind.Caltrops,
+            Tag.Ground | Tag.Trap, 30),
 
         // ---- Support ----
         new CardDef("gold_mine", "Gold Mine", "MINE", Category.Support, StructureKind.GoldMine,
@@ -109,6 +113,8 @@ public static class CardDb
             Tag.Aura | Tag.Range, 60),
         new CardDef("workshop", "Workshop", "WRKSP", Category.Support, StructureKind.Workshop,
             Tag.Economy | Tag.Repair, 70),
+        new CardDef("trading_post", "Trading Post", "TRADE", Category.Support, StructureKind.TradingPost,
+            Tag.Economy, 50),
     };
 
     private static readonly Dictionary<string, CardDef> ById =

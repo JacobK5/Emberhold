@@ -159,6 +159,44 @@ public class SynergyTests
         Assert.True(s.Structures.First(st => st.Kind == StructureKind.TarPit).SynTrapBurnDps > 0f);
     }
 
+    // ---- Frontier batch: Rune Words ----
+
+    [Fact]
+    public void Resonance_FromThreeElemental_BuffsElementalTowers()
+    {
+        var s = State();
+        Add(s, StructureKind.ChainCoil, new Vector2(80, -80));
+        Add(s, StructureKind.FrostSpire, new Vector2(-80, -80));
+        Add(s, StructureKind.StormSpire, new Vector2(80, 80));
+        SynergyEngine.Evaluate(s);
+        Assert.Contains("resonance", s.ActiveSynergies);
+        Assert.True(s.Structures.First(st => st.Kind == StructureKind.StormSpire).SynExtraChains >= 1);
+    }
+
+    [Fact]
+    public void Minefield_FromThreeTraps()
+    {
+        var s = State();
+        Add(s, StructureKind.SpikeTrap, new Vector2(0, -90));
+        Add(s, StructureKind.MoatLine, new Vector2(0, 90));
+        Add(s, StructureKind.Caltrops, new Vector2(90, 0));
+        SynergyEngine.Evaluate(s);
+        Assert.True(s.Minefield);
+        Assert.Contains("minefield", s.ActiveSynergies);
+    }
+
+    [Fact]
+    public void BoomTown_FromThreeEconomy()
+    {
+        var s = State();
+        Add(s, StructureKind.GoldMine, new Vector2(80, 80));
+        Add(s, StructureKind.Workshop, new Vector2(-80, 80));
+        Add(s, StructureKind.TradingPost, new Vector2(80, -80));
+        SynergyEngine.Evaluate(s);
+        Assert.True(s.BoomTown);
+        Assert.Contains("boom_town", s.ActiveSynergies);
+    }
+
     [Fact]
     public void Discovery_QueuesEachSynergyPopupOnce()
     {

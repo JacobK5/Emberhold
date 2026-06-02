@@ -261,11 +261,12 @@ public static class Renderer
             {
                 StructureKind.TarPit => new Color(28, 24, 22, 170),
                 StructureKind.MoatLine => new Color(70, 110, 150, 150),
+                StructureKind.Caltrops => new Color(96, 92, 86, 130),
                 _ => new Color(120, 120, 120, 130), // spike
             };
             Raylib.DrawCircleV(st.Pos, st.Radius, fill);
             Raylib.DrawCircleLinesV(st.Pos, st.Radius, new Color(20, 20, 20, 120));
-            if (st.Kind == StructureKind.SpikeTrap)
+            if (st.Kind == StructureKind.SpikeTrap || st.Kind == StructureKind.Caltrops)
                 for (int i = 0; i < 6; i++)
                 {
                     float a = i / 6f * MathUtils.Tau;
@@ -329,6 +330,7 @@ public static class Renderer
             StructureKind.ChainCoil => Palette.Hex("a9d8ff"),
             StructureKind.FlameJet => Palette.Fire,
             StructureKind.FrostSpire => Palette.Hex("bcdcff"),
+            StructureKind.StormSpire => Palette.Hex("9fb8ff"),
             _ => Palette.Hex("b08b59"),
         };
         Raylib.DrawCircleV(t.Pos, t.Radius * 0.5f, top);
@@ -349,6 +351,8 @@ public static class Renderer
         Raylib.DrawRectangleRec(new Rectangle(m.Pos.X - 17, m.Pos.Y - 13, 34, 28), Palette.Hex("5e4e3e"));
         Raylib.DrawCircleV(m.Pos + new Vector2(0, 1), 9f, Palette.Hex("2b302e"));
         Raylib.DrawCircleV(m.Pos + new Vector2(12, -10), 4f, Palette.Gold);
+        if (m.Kind == StructureKind.TradingPost) // a second coin marks the richer mine
+            Raylib.DrawCircleV(m.Pos + new Vector2(-11, -9), 3.5f, Palette.Hex("ffd66b"));
     }
 
     private static void DrawAura(Structure a)
@@ -710,6 +714,7 @@ public static class Renderer
             {
                 "Keystone" => Palette.Hex("e0a85a"),
                 "Field" => Palette.Hex("8fbf7f"),
+                "Rune" => Palette.Hex("c79be0"),
                 _ => Palette.Hex("9fb6c9"),
             };
             Raylib.DrawText($"+ {def.Name}", 18, y, 15, c);

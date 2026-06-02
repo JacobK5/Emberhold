@@ -41,6 +41,10 @@ public static class SynergyEngine
         new SynergyDef("battery", "Battery", "Mono", "3+ towers clustered", "+18% tower damage"),
         new SynergyDef("fortified", "Fortified", "Mono", "3+ walls", "Walls take 35% less damage"),
         new SynergyDef("network", "Network", "Mono", "3+ support", "Auras project fort-wide"),
+        // Rune Words (3+ structures sharing a tag)
+        new SynergyDef("resonance", "Resonance", "Rune", "3+ Elemental structures", "Elemental towers +1 chain, +15% damage"),
+        new SynergyDef("minefield", "Minefield", "Rune", "3+ Trap structures", "Ground traps +40% size & damage"),
+        new SynergyDef("boom_town", "Boom Town", "Rune", "3+ Economy structures", "Mines yield richer gold"),
     };
 
     /// <summary>Keystone pairs (own both built structures) shared by evaluation + draft hints.</summary>
@@ -82,11 +86,16 @@ public static class SynergyEngine
 
         // ---- Field (per structure / adjacency) ----
         int towerCount = 0, wallCount = 0, auraCount = 0;
+        int elemental = 0, trapCount = 0, economy = 0; // Rune Word tag tallies
         foreach (var st in built)
         {
             if (st.Role == StructureRole.Tower) towerCount++;
             else if (st.IsWallAlive) wallCount++;
             else if (st.Role == StructureRole.Aura) auraCount++;
+
+            if (st.Tags.HasFlag(Data.Tag.Elemental)) elemental++;
+            if (st.Tags.HasFlag(Data.Tag.Trap)) trapCount++;
+            if (st.Tags.HasFlag(Data.Tag.Economy)) economy++;
         }
 
         foreach (var t in built)
@@ -102,6 +111,10 @@ public static class SynergyEngine
             // Phalanx: any tower tucked beside an alive wall.
             if (built.Exists(w => w.IsWallAlive && Vector2.Distance(t.Pos, w.Pos) <= 70f))
             { t.SynDamageMult *= 1.12f; s.ActiveSynergies.Add("phalanx"); }
+
+            // Resonance rune: elemental towers gain a chain jump and damage.
+            if (elemental >= 3 && t.Tags.HasFlag(Data.Tag.Elemental))
+            { t.SynExtraChains += 1; t.SynDamageMult *= 1.15f; s.ActiveSynergies.Add("resonance"); }
 
             switch (t.Kind)
             {
@@ -158,6 +171,10 @@ public static class SynergyEngine
         if (wallCount >= 3) { s.Fortified = true; s.ActiveSynergies.Add("fortified"); }
         if (auraCount >= 3) { s.AurasGlobal = true; s.ActiveSynergies.Add("network"); }
 
+        // ---- Rune Words (tag tallies) ----
+        if (trapCount >= 3) { s.Minefield = true; s.ActiveSynergies.Add("minefield"); }
+        if (economy >= 3) { s.BoomTown = true; s.ActiveSynergies.Add("boom_town"); }
+
         // Queue a discovery banner for anything triggering for the first time this run.
         if (s.Phase == Phase.Combat)
             foreach (var id in s.ActiveSynergies)
@@ -179,6 +196,8 @@ public static class SynergyEngine
         s.SpoilsActive = false;
         s.Glacier = false;
         s.Wildfire = false;
+        s.Minefield = false;
+        s.BoomTown = false;
         s.ActiveSynergies.Clear();
 
         foreach (var st in s.Structures)
