@@ -444,6 +444,19 @@ public static class Renderer
                 Raylib.DrawRectangleRec(new Rectangle(e.Pos.X + e.Radius - 4f, e.Pos.Y - e.Radius, 4f, e.Radius * 2f), Palette.Hex("4a3c30"));
                 Raylib.DrawRectangleRec(new Rectangle(e.Pos.X - 5f, e.Pos.Y - 5f, 10f, 10f), Palette.Hex("9a5240"));
             }
+            else if (e.Phantom)
+            {
+                // Assassin: dark sharp core with a faint blink halo.
+                Raylib.DrawCircleV(e.Pos, e.Radius, body);
+                Raylib.DrawCircleLinesV(e.Pos, e.Radius + 2f, new Color((byte)176, (byte)123, (byte)208, (byte)120));
+                Raylib.DrawCircleV(e.Pos, e.Radius * 0.4f, Palette.Hex("3a2647"));
+            }
+            else if (e.StatusImmune)
+            {
+                // Wraith: translucent, ghostly outline.
+                Raylib.DrawCircleV(e.Pos, e.Radius, new Color(body.R, body.G, body.B, (byte)160));
+                Raylib.DrawCircleLinesV(e.Pos, e.Radius + 3f, new Color((byte)150, (byte)210, (byte)200, (byte)130));
+            }
             else
             {
                 Raylib.DrawCircleV(e.Pos, e.Radius, body);
@@ -497,6 +510,8 @@ public static class Renderer
         EnemyKind.Healer => Palette.Hex("5f9e6a"),
         EnemyKind.Siege => Palette.Hex("6f5a48"),
         EnemyKind.Boss => Palette.Hex("9c3b46"),
+        EnemyKind.Assassin => Palette.Hex("8a5aa0"),
+        EnemyKind.Wraith => Palette.Hex("7fb6ad"),
         _ => e.Elite ? Palette.Elite : Palette.Enemy,
     };
 

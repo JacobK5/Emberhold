@@ -24,17 +24,18 @@ public static class DefenseSystem
                 foreach (var e in s.Enemies)
                 {
                     if (e.Dead) continue;
+                    if (e.Phantom) continue; // assassins phase over ground traps
                     if (Vector2.Distance(e.Pos, st.Pos) > radius + e.Radius) continue;
 
-                    if (st.TrapSlowFactor < 1f)
+                    if (st.TrapSlowFactor < 1f && !e.StatusImmune)
                     {
                         float factor = e.Boss ? MathF.Min(1f, st.TrapSlowFactor + 0.3f) : st.TrapSlowFactor; // bosses resist
                         e.SlowFactor = e.SlowTimer <= 0f ? factor : MathF.Min(e.SlowFactor, factor);
                         e.SlowTimer = MathF.Max(e.SlowTimer, 0.35f * s.SlowDurationMult); // CryoForge extends
                     }
-                    if (st.TrapDps > 0f)
+                    if (st.TrapDps > 0f) // direct damage still hits wraiths
                         CombatSystem.DamageEnemy(s, e, st.TrapDps * dpsMult * dt, mitigable: false);
-                    if (st.SynTrapBurnDps > 0f) // Backdraft: the trap sets enemies ablaze
+                    if (st.SynTrapBurnDps > 0f && !e.StatusImmune) // Backdraft: the trap sets enemies ablaze
                     {
                         e.BurnTimer = MathF.Max(e.BurnTimer, 1.6f);
                         e.BurnDps = MathF.Max(e.BurnDps, st.SynTrapBurnDps);

@@ -36,6 +36,9 @@ public sealed class Enemy
     public bool Siege;          // targets and demolishes structures, not just walls
     public bool Boss;           // chapter boss: summons adds, resists slow, big reward
     public float SummonTimer;
+    public bool Phantom;        // assassin: ignores walls/traps, blinks toward the keep
+    public float BlinkTimer;
+    public bool StatusImmune;   // wraith: immune to burn + slow
 }
 
 public enum ProjectileSource { Hero, Tower, Cannon, Ballista, Chain, Flame }

@@ -8,6 +8,12 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.8.0 — "Onslaught"
+- **Assassin enemies** — teleport/blink past walls & traps to the keep; walls alone
+  can't stop them.
+- **Enemy immunities** — Wraiths are immune to burn & slow, rewarding broad damage
+  coverage over single-element stacks.
+
 ### v0.7.0 — "Frontier"
 - **New cards** — Storm Spire (Attack), Caltrops (Defend), Trading Post (Support),
   widening the build/tag space.

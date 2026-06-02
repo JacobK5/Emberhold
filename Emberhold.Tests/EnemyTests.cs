@@ -79,6 +79,38 @@ public class EnemyTests
     }
 
     [Fact]
+    public void Wraith_ImmuneToSlowAndBurn()
+    {
+        var s = new GameState(seedDebug: false);
+        var wraith = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, Radius = 12, StatusImmune = true, Pos = Vector2.Zero };
+        s.Enemies.Add(wraith);
+        s.Projectiles.Add(new Projectile
+        {
+            Id = s.NextId(), Pos = Vector2.Zero, Vel = Vector2.Zero, Damage = 5, Life = 1, Radius = 4,
+            SlowFactor = 0.5f, SlowDuration = 2f, BurnDps = 10, BurnDuration = 2f,
+        });
+        CombatSystem.UpdateProjectiles(s, 0.016f);
+        Assert.Equal(0f, wraith.SlowTimer);
+        Assert.Equal(0f, wraith.BurnTimer);
+    }
+
+    [Fact]
+    public void NormalEnemy_TakesSlowAndBurn()
+    {
+        var s = new GameState(seedDebug: false);
+        var e = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, Radius = 12, Pos = Vector2.Zero };
+        s.Enemies.Add(e);
+        s.Projectiles.Add(new Projectile
+        {
+            Id = s.NextId(), Pos = Vector2.Zero, Vel = Vector2.Zero, Damage = 5, Life = 1, Radius = 4,
+            SlowFactor = 0.5f, SlowDuration = 2f, BurnDps = 10, BurnDuration = 2f,
+        });
+        CombatSystem.UpdateProjectiles(s, 0.016f);
+        Assert.True(e.SlowTimer > 0f);
+        Assert.True(e.BurnTimer > 0f);
+    }
+
+    [Fact]
     public void BossDeath_RampsHorde_AndDropsReward()
     {
         var s = new GameState(seedDebug: false);
