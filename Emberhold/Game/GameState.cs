@@ -67,6 +67,12 @@ public sealed class GameState
     public float StreakTimer;
     public const float StreakWindow = 2.5f;
 
+    // Synergy discovery popups: queued ids shown one at a time as a banner.
+    public readonly Queue<string> SynergyPopups = new();
+    public string? ActivePopup;
+    public float PopupTimer;
+    public const float PopupDuration = 2.8f;
+
     // Global synergy flags, recomputed each combat frame by SynergyEngine.
     public float SlowDurationMult = 1f; // CryoForge keystone
     public bool VolleySplash;           // Ember Battery keystone
@@ -184,6 +190,19 @@ public sealed class GameState
         if (Streak <= 0) return;
         StreakTimer -= dt;
         if (StreakTimer <= 0f) { Streak = 0; StreakTimer = 0f; }
+    }
+
+    /// <summary>Advance the synergy-discovery banner, pulling the next from the queue.</summary>
+    public void UpdatePopups(float dt)
+    {
+        if (ActivePopup is null)
+        {
+            if (SynergyPopups.Count == 0) return;
+            ActivePopup = SynergyPopups.Dequeue();
+            PopupTimer = PopupDuration;
+        }
+        PopupTimer -= dt;
+        if (PopupTimer <= 0f) ActivePopup = null;
     }
 
     // ---- Shared FX helpers ---------------------------------------------
