@@ -28,8 +28,9 @@ public static class CombatSystem
         if (target is null) return;
 
         var aim = AimAhead(hero.Pos, target, HeroProjSpeed);
-        var color = hero.Kind == HeroKind.Warden ? Palette.Hex("b9d9bd") : Palette.Hex("f7df9a");
-        FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult,
+        var color = s.StreakTier > 0 ? Palette.Hex("ff9a4d")
+                  : hero.Kind == HeroKind.Warden ? Palette.Hex("b9d9bd") : Palette.Hex("f7df9a");
+        FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult,
             speed: HeroProjSpeed, color: color, source: ProjectileSource.Hero);
 
         hero.Facing = MathUtils.Normalize(target.Pos - hero.Pos);
@@ -128,6 +129,7 @@ public static class CombatSystem
             else
             {
                 s.Gold += d.Value;
+                s.Live.GoldEarned += d.Value;
                 s.AddParticles(d.Pos, Palette.Gold, 5, 43f);
                 s.AddFloater(d.Pos + new Vector2(0, -8), $"+{d.Value}", Palette.Hex("ffd66b"));
             }
@@ -140,6 +142,7 @@ public static class CombatSystem
         if (enemy.Dead) return;
         if (mitigable && enemy.ShieldPerHit > 0f)
             damage = MathF.Max(1f, damage - enemy.ShieldPerHit); // Shielded resists per-hit
+        s.Live.DamageDealt += (int)MathF.Round(MathF.Min(damage, MathF.Max(0f, enemy.Health)));
         enemy.Health -= damage;
         enemy.HitTimer = 0.12f;
         s.AddParticles(enemy.Pos, enemy.Elite ? Palette.Elite : Palette.Hex("cf6b52"), 3, 34f);
@@ -155,13 +158,24 @@ public static class CombatSystem
 
         enemy.Dead = true;
         s.Kills += 1;
+        s.Live.Kills += 1;
+        bool tierUp = s.RegisterStreakKill();
         GrantHeroXp(s, enemy.Elite ? 4 : enemy.Kind == EnemyKind.Brute ? 2 : 1);
         s.AddParticles(enemy.Pos, enemy.Elite ? Palette.Hex("f2a552") : Palette.Hex("bd5d48"), enemy.Elite ? 18 : 10, 72f);
         int reward = enemy.Reward;
         if (s.SpoilsActive && enemy.SlowTimer > 0f) reward += 1; // Spoils synergy
+        reward += s.StreakBonusGold; // Hot Streak bonus gold
         for (int i = 0; i < reward; i++)
             s.SpawnDrop(enemy.Pos + new Vector2(s.Rand(-9, 9), s.Rand(-9, 9)), 1);
         if (enemy.Elite) s.SpawnEmber(enemy.Pos);
+
+        // Announce a freshly reached streak tier.
+        if (tierUp && s.StreakTier > 0)
+        {
+            s.AddFloater(enemy.Pos + new Vector2(0, -28), $"{GameState.StreakLabel(s.StreakTier)} x{s.Streak}", Palette.Hex("ff9a4d"));
+            s.AddParticles(enemy.Pos, Palette.Fire, 14, 66f);
+            s.KickShake(4f);
+        }
     }
 
     public static void GrantHeroXp(GameState s, int amount)
@@ -194,7 +208,7 @@ public static class CombatSystem
             float a = baseAngle + i * 0.16f;
             var dir = new Vector2(MathF.Cos(a), MathF.Sin(a));
             FireProjectile(s, hero.Pos, hero.Pos + dir,
-                damage: hero.Damage * hero.VolleyDamage * profile.Damage,
+                damage: hero.Damage * hero.VolleyDamage * profile.Damage * s.StreakDamageMult,
                 speed: 470f, color: Palette.Hex("ffd46f"), source: ProjectileSource.Hero,
                 life: 1.45f, radius: 4f,
                 splash: s.VolleySplash ? 46f : 0f); // Ember Battery keystone

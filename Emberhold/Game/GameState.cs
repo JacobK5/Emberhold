@@ -19,6 +19,20 @@ public sealed class Spawning
 }
 
 /// <summary>
+/// Per-wave combat tally. One instance accumulates during the active wave; a
+/// snapshot is shown on the wave-end stat card. Feeds kill-streak rewards too.
+/// </summary>
+public struct WaveSummary
+{
+    public int Wave;
+    public int Kills;
+    public int GoldEarned;
+    public int DamageDealt;
+    public int StructuresLost;
+    public int BestStreak;
+}
+
+/// <summary>
 /// All mutable simulation state for a run. Systems read and mutate this; it owns
 /// helper methods for the shared FX (particles, floaters, drops) but no system
 /// behaviour itself.
@@ -41,6 +55,17 @@ public sealed class GameState
     public float BossBannerTimer;
     public int BestWave = 1;
     public readonly HashSet<string> SeenSynergies = new(); // discovered this run, for the summary
+
+    // Per-wave stats: Live accumulates during the wave; LastSummary holds the most
+    // recently cleared wave for the between-wave stat card.
+    public WaveSummary Live;
+    public WaveSummary? LastSummary;
+
+    // Kill-streak ("Hot Streak"): consecutive kills within StreakWindow keep the
+    // chain alive. Higher tiers buff hero damage and bonus gold per kill.
+    public int Streak;
+    public float StreakTimer;
+    public const float StreakWindow = 2.5f;
 
     // Global synergy flags, recomputed each combat frame by SynergyEngine.
     public float SlowDurationMult = 1f; // CryoForge keystone
@@ -126,6 +151,39 @@ public sealed class GameState
         Add(StructureKind.GoldMine,   new Vector2(-84, 84));   // SW zone
         Add(StructureKind.Barricade,  new Vector2(0, -95));    // blocks the north lane
         Add(StructureKind.TarPit,     new Vector2(0, 95));     // slows the south lane
+    }
+
+    // ---- Kill-streak helpers -------------------------------------------
+
+    /// <summary>0 = no streak, 1 = warm (5+), 2 = hot (10+), 3 = blazing (18+).</summary>
+    public int StreakTier => Streak >= 18 ? 3 : Streak >= 10 ? 2 : Streak >= 5 ? 1 : 0;
+
+    /// <summary>Hero damage multiplier granted by the current streak tier.</summary>
+    public float StreakDamageMult => StreakTier switch { 3 => 1.5f, 2 => 1.3f, 1 => 1.15f, _ => 1f };
+
+    /// <summary>Bonus gold dropped per kill at the current streak tier.</summary>
+    public int StreakBonusGold => StreakTier;
+
+    public static string StreakLabel(int tier) => tier switch
+    {
+        3 => "BLAZING STREAK", 2 => "HOT STREAK", 1 => "ON A STREAK", _ => "",
+    };
+
+    /// <summary>Register a kill toward the streak; returns true when a new tier is reached.</summary>
+    public bool RegisterStreakKill()
+    {
+        int before = StreakTier;
+        Streak += 1;
+        StreakTimer = StreakWindow;
+        if (Streak > Live.BestStreak) Live.BestStreak = Streak;
+        return StreakTier > before;
+    }
+
+    public void UpdateStreak(float dt)
+    {
+        if (Streak <= 0) return;
+        StreakTimer -= dt;
+        if (StreakTimer <= 0f) { Streak = 0; StreakTimer = 0f; }
     }
 
     // ---- Shared FX helpers ---------------------------------------------

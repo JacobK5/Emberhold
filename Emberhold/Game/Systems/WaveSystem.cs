@@ -14,6 +14,7 @@ public static class WaveSystem
     public static void StartWave(GameState s)
     {
         var stats = WaveStats.For(s.Wave);
+        s.Live = new WaveSummary { Wave = s.Wave }; // reset per-wave tally
         s.Spawning = new Spawning
         {
             Remaining = Math.Max(1, (int)MathF.Round(stats.Count * Balance.EnemyCountMult)) + (stats.Elite ? 1 : 0),
@@ -34,6 +35,7 @@ public static class WaveSystem
             {
                 int cleared = s.Wave;
                 s.WaveBonusPending = false;
+                s.LastSummary = s.Live; // snapshot for the wave-end stat card
                 s.Wave += 1;
                 s.UpgradeBreak = cleared % 5 == 0;
                 s.BetweenWaves = s.UpgradeBreak ? 12f : 5f;

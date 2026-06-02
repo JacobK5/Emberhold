@@ -141,6 +141,7 @@ public sealed class GameApp
         }
 
         SynergyEngine.Evaluate(_state);
+        _state.UpdateStreak(dt);
         if (Auto) AutoHeroMove(dt); else UpdateHeroMovement(dt);
         EconomySystem.UpdateBuilding(_state, dt);
         EconomySystem.UpdateUpgrades(_state, dt);
