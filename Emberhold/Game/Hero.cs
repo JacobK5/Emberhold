@@ -56,7 +56,7 @@ public sealed class Hero
     public static string PassiveName(int level, HeroKind kind) => level switch
     {
         3 => "QUICK HANDS",
-        5 => kind == HeroKind.Warden ? "CLEAVE" : "RICOCHET",
+        5 => kind switch { HeroKind.Warden => "CLEAVE", HeroKind.Artificer => "OVERCLOCK", _ => "RICOCHET" },
         7 => "SECOND WIND",
         _ => "",
     };

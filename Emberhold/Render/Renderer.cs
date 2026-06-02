@@ -626,6 +626,14 @@ public static class Renderer
             Raylib.DrawLineEx(Rot(-3, -7), Rot(9, 8), 4f, bladeCol);
             Raylib.DrawCircleV(Rot(9, 8), 2.5f, bladeCol);
         }
+        else if (hero.Kind == HeroKind.Artificer)
+        {
+            // A held gear/tool.
+            var toolCol = new Color((byte)0xb8, (byte)0xc8, (byte)0xc0, al);
+            var gear = Rot(8, 7);
+            Raylib.DrawCircleV(gear, 4f, toolCol);
+            Raylib.DrawCircleV(gear, 1.8f, new Color((byte)0x2b, (byte)0x35, (byte)0x33, al));
+        }
         else
         {
             // Bow arc: centre at JS (9,-2) → Rot(2,9); spans ±92° facing outward.
@@ -644,6 +652,10 @@ public static class Renderer
         // Overdrive ring.
         if (hero.Overdrive > 0f)
             Raylib.DrawCircleLinesV(p, 22f + MathF.Sin(now * 11f) * 3f, new Color(255, 135, 75, 165));
+
+        // Artificer tower-buff radius.
+        if (hero.Kind == HeroKind.Artificer)
+            Raylib.DrawCircleLinesV(p, 165f, new Color(120, 195, 215, 45));
     }
 
     private static void DrawParticles(GameState s)

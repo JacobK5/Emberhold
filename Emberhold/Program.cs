@@ -23,13 +23,16 @@ public static class Program
         if (ParseStringArg(args, "--wave") is string ws && int.TryParse(ws, out int wv)) startWave = wv;
         int startChapter = 0;
         if (ParseStringArg(args, "--chapter") is string cs && int.TryParse(cs, out int cv)) startChapter = cv;
+        int startHero = 0;
+        if (ParseStringArg(args, "--hero") is string hs && int.TryParse(hs, out int hv)) startHero = hv;
         var game = new GameApp(
             auto: Array.IndexOf(args, "--auto") >= 0,
             seed: Array.IndexOf(args, "--seed") >= 0,
             startWave: startWave,
             codex: Array.IndexOf(args, "--codex") >= 0,
             lose: Array.IndexOf(args, "--lose") >= 0,
-            startChapter: startChapter);
+            startChapter: startChapter,
+            startHero: startHero);
 
         int frame = 0;
         while (!Raylib.WindowShouldClose())

@@ -3,7 +3,7 @@ using Emberhold.Render;
 
 namespace Emberhold.Data;
 
-public enum HeroKind { Ranger, Warden }
+public enum HeroKind { Ranger, Warden, Artificer }
 
 /// <summary>
 /// Per-hero multipliers + identity. Ported from config.js HERO_PROFILES.
@@ -27,9 +27,14 @@ public sealed record HeroProfile(
         HeroKind.Warden, "MIRA, WARDEN", "M",
         Damage: 1.48f, Rate: 1.28f, Range: 0.86f, Speed: 0.92f, Cloak: Palette.Hex("765348"));
 
+    public static readonly HeroProfile Artificer = new(
+        HeroKind.Artificer, "TILDA, ARTIFICER", "T",
+        Damage: 0.7f, Rate: 1.15f, Range: 1.05f, Speed: 1f, Cloak: Palette.Hex("4a6b7a"));
+
     public static HeroProfile Get(HeroKind kind) => kind switch
     {
         HeroKind.Warden => Warden,
+        HeroKind.Artificer => Artificer,
         _ => Ranger,
     };
 }

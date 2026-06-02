@@ -49,6 +49,17 @@ public static class DefenseSystem
             }
         }
 
+        // Artificer hero repairs nearby damaged structures while she's active.
+        if (s.Hero.Kind == Emberhold.Data.HeroKind.Artificer)
+        {
+            foreach (var st in s.Structures)
+            {
+                if (st.Role == StructureRole.HeroBuff || st.MaxHealth <= 0f || st.Health >= st.MaxHealth) continue;
+                if (Vector2.Distance(st.Pos, s.Hero.Pos) > 150f) continue;
+                st.Health = MathF.Min(st.MaxHealth, st.Health + 18f * dt);
+            }
+        }
+
         // Remove any demolished structure (breached walls reopen the lane; siege
         // engines can wreck towers/mines/auras too). Tally the loss for the stat card.
         for (int i = s.Structures.Count - 1; i >= 0; i--)
