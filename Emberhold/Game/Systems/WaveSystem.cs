@@ -36,21 +36,29 @@ public static class WaveSystem
                 s.WaveBonusPending = false;
                 s.Wave += 1;
                 s.UpgradeBreak = cleared % 5 == 0;
-                s.BetweenWaves = s.UpgradeBreak ? 10f : 2.8f;
+                s.BetweenWaves = s.UpgradeBreak ? 12f : 5f;
 
                 int bonus = 2 + cleared / 2;
                 for (int i = 0; i < bonus; i++)
                     s.SpawnDrop(new Vector2(s.Rand(-12, 13), 46f + s.Rand(-8, 8)), 1, fromMine: true);
 
-                // Every third cleared wave hands off to a draft + placement beat.
+                // Refresh the shop for the new between-wave window.
+                s.Shop.Refresh(s.Wave);
+                s.Shop.CanOpen = true;
+
+                // Every third cleared wave also hands off to a draft + placement beat.
                 if (cleared % 3 == 0) { s.PendingDraft = true; return; }
             }
 
             if (s.PendingDraft) return; // waiting for the draft to resolve
 
+            // Pause the countdown while the player has the shop open.
+            if (s.Shop.Open) return;
+
             s.BetweenWaves -= dt;
             if (s.BetweenWaves <= 0f)
             {
+                s.Shop.CanOpen = false;
                 s.UpgradeBreak = false;
                 StartWave(s);
             }

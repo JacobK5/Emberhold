@@ -59,6 +59,9 @@ public sealed class GameState
     public float KeepHealth = 260f;
     public float KeepMaxHealth = 260f;
 
+    // Between-wave shop
+    public readonly ShopState Shop = new();
+
     // Wave flow
     public Spawning? Spawning;
     public float BetweenWaves = 4f; // grace before the first wave to establish defenses

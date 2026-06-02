@@ -112,17 +112,31 @@ public sealed class GameApp
     private void UpdateCombat(float dt)
     {
         if (Raylib.IsKeyPressed(KeyboardKey.P) || Raylib.IsKeyPressed(KeyboardKey.Escape))
-            _state.Paused = !_state.Paused;
+        {
+            if (_state.Shop.Open) CloseShop();
+            else _state.Paused = !_state.Paused;
+        }
         if (_state.Paused) return;
 
         _state.BossBannerTimer = MathF.Max(0f, _state.BossBannerTimer - dt);
+
+        // Shop toggle — available during the between-wave countdown.
+        if (Raylib.IsKeyPressed(KeyboardKey.S) && _state.Shop.CanOpen && !_state.PendingDraft)
+        {
+            if (_state.Shop.Open) CloseShop();
+            else _state.Shop.Open = true;
+        }
+
+        // While shop is open only process mouse clicks for purchases.
+        if (_state.Shop.Open) { HandleShopInput(); return; }
+
         HandleAbilityInput();
 
         WaveSystem.Update(_state, dt);
 
         if (_state.PendingDraft)
         {
-            Expand();
+            TriggerDraft();
             return;
         }
 
@@ -148,14 +162,114 @@ public sealed class GameApp
         }
     }
 
-    /// <summary>Milestone reached: grow the fort, reinforce the keep, open a draft.</summary>
-    private void Expand()
+    /// <summary>Milestone wave cleared: open a card draft (no auto-expansion).</summary>
+    private void TriggerDraft()
     {
         _state.PendingDraft = false;
-        _state.Chapter += 1;
-        _state.KeepMaxHealth += 80f;
-        _state.KeepHealth = MathF.Min(_state.KeepMaxHealth, _state.KeepHealth + 80f);
         _draft.StartDraft(_state);
+    }
+
+    // ---- Shop logic -------------------------------------------------------
+
+    private void HandleShopInput()
+    {
+        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        var mouse = Raylib.GetMousePosition();
+        var rects = OverlayUI.ShopItemRects(_state);
+        for (int i = 0; i < rects.Length && i < _state.Shop.Items.Count; i++)
+        {
+            if (!Raylib.CheckCollisionPointRec(mouse, rects[i])) continue;
+            var item = _state.Shop.Items[i];
+            if (item.Purchased) break;
+            TryBuyShopItem(item);
+            break;
+        }
+    }
+
+    private void TryBuyShopItem(ShopItem item)
+    {
+        var shop = _state.Shop;
+        var hero = _state.Hero;
+        int cost;
+
+        switch (item.Kind)
+        {
+            case ShopItemKind.Expansion:
+                cost = shop.ExpansionCost(_state.Chapter);
+                if (_state.Gold < cost) return;
+                _state.Gold -= cost;
+                _state.Chapter += 1;
+                _state.KeepMaxHealth += 80f;
+                _state.KeepHealth = MathF.Min(_state.KeepMaxHealth, _state.KeepHealth + 80f);
+                _state.AddFloater(Vector2.Zero, "FORT EXPANDED", Palette.Hex("efd18a"));
+                _state.KickShake(8f);
+                item.Purchased = true;
+                shop.OnPurchase();
+                return;
+
+            case ShopItemKind.HeroUpgrade:
+                cost = shop.HeroUpgradeCost(item.UpgradeKind);
+                if (_state.Gold < cost) return;
+                _state.Gold -= cost;
+                ApplyHeroUpgrade(hero, item.UpgradeKind);
+                shop.HeroTiers[(int)item.UpgradeKind]++;
+                _state.AddFloater(hero.Pos + new Vector2(0, -30),
+                    ShopState.UpgradeName(item.UpgradeKind), Palette.Hex("bfe0ff"));
+                item.Purchased = true;
+                shop.OnPurchase();
+                return;
+
+            case ShopItemKind.StructureCard:
+                if (item.Card is null) return;
+                cost = shop.CardCost;
+                if (_state.Gold < cost) return;
+                _state.Gold -= cost;
+                // Queue as a pre-funded pad (cost 0 so it builds instantly on placement).
+                var freeDef = new CardDef(
+                    item.Card.Id, item.Card.Name, item.Card.Short,
+                    item.Card.Category, item.Card.Kind, item.Card.Tags, Cost: 0);
+                _draft.ToPlace.Enqueue(freeDef);
+                _state.AddFloater(hero.Pos, item.Card.Name, Palette.Gold);
+                item.Purchased = true;
+                shop.OnPurchase();
+                return;
+        }
+    }
+
+    private static void ApplyHeroUpgrade(Hero hero, HeroUpgradeKind kind)
+    {
+        switch (kind)
+        {
+            case HeroUpgradeKind.Damage:
+                hero.Damage += 7f;
+                hero.DmgUpgrades++;
+                break;
+            case HeroUpgradeKind.FireRate:
+                hero.FireRate = MathF.Max(0.22f, hero.FireRate * 0.82f);
+                hero.FrUpgrades++;
+                break;
+            case HeroUpgradeKind.Range:
+                hero.Range += 30f;
+                hero.RngUpgrades++;
+                break;
+            case HeroUpgradeKind.Health:
+                hero.MaxHealth += 25f;
+                hero.Health = MathF.Min(hero.MaxHealth, hero.Health + 25f);
+                hero.HpUpgrades++;
+                break;
+            case HeroUpgradeKind.Volley:
+                hero.VolleyCooldown = MathF.Max(3.5f, hero.VolleyCooldown - 1.5f);
+                hero.VolleyUpgrades++;
+                break;
+        }
+    }
+
+    private void CloseShop()
+    {
+        _state.Shop.Open = false;
+        // If any structure cards were purchased, start placement immediately.
+        if (_draft.ToPlace.Count > 0)
+            _draft.StartPlacements(_state);
     }
 
     // ---- input / movement / camera -------------------------------------

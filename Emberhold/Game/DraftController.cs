@@ -76,6 +76,14 @@ public sealed class DraftController
         return true;
     }
 
+    /// <summary>Starts placing any cards queued (e.g. from shop purchases).</summary>
+    public void StartPlacements(GameState s)
+    {
+        if (ToPlace.Count == 0) return;
+        Placing = ToPlace.Dequeue();
+        s.Phase = Phase.Placement;
+    }
+
     // ---- smoke-test auto-resolution ------------------------------------
 
     /// <summary>Picks the first offer and places everything at the first legal spot found.</summary>

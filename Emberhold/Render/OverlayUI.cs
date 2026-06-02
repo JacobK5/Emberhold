@@ -137,6 +137,135 @@ public static class OverlayUI
         DrawCentered($"{remaining} to place", 18, 82, Palette.Hero);
     }
 
+    // ---- Shop UI ----------------------------------------------------------
+
+    private const int ShopItemW = 220, ShopItemH = 80, ShopItemGap = 8;
+    private const int ShopPadX = 40, ShopPadY = 90;
+
+    /// <summary>Returns bounding rects for each shop item in screen space.</summary>
+    public static Rectangle[] ShopItemRects(GameState s)
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        var items = s.Shop.Items;
+        int cols = 2;
+        int panelW = cols * ShopItemW + (cols - 1) * ShopItemGap + ShopPadX * 2;
+        int x0 = w / 2 - panelW / 2 + ShopPadX;
+        int y0 = h / 2 - 200 + ShopPadY;
+        var rects = new Rectangle[items.Count];
+        for (int i = 0; i < items.Count; i++)
+        {
+            int col = i % cols;
+            int row = i / cols;
+            rects[i] = new Rectangle(x0 + col * (ShopItemW + ShopItemGap),
+                                     y0 + row * (ShopItemH + ShopItemGap),
+                                     ShopItemW, ShopItemH);
+        }
+        return rects;
+    }
+
+    public static void DrawShop(GameState s)
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        var shop = s.Shop;
+        var hero = s.Hero;
+
+        // Dim background.
+        Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 210));
+
+        // Panel background.
+        int cols = 2;
+        int rows = (shop.Items.Count + cols - 1) / cols;
+        int panelW = cols * ShopItemW + (cols - 1) * ShopItemGap + ShopPadX * 2;
+        int panelH = rows * (ShopItemH + ShopItemGap) + ShopPadY + 60;
+        int px = w / 2 - panelW / 2;
+        int py = h / 2 - 200;
+        Raylib.DrawRectangle(px, py, panelW, panelH, new Color(18, 26, 24, 240));
+        Raylib.DrawRectangleLinesEx(new Rectangle(px, py, panelW, panelH), 2f, Palette.Hex("c49a62"));
+
+        // Header.
+        DrawCentered("FRONTIER SUPPLY", 28, py + 14, Palette.Hex("efd18a"));
+        string goldStr = $"GOLD: {s.Gold}";
+        int gw = Raylib.MeasureText(goldStr, 18);
+        Raylib.DrawText(goldStr, px + panelW - gw - 14, py + 18, 18, Palette.Gold);
+        DrawCentered("S / ESC to close", 14, py + 48, Palette.PathEdge);
+
+        // Items.
+        var mouse = Raylib.GetMousePosition();
+        var rects = ShopItemRects(s);
+        for (int i = 0; i < shop.Items.Count; i++)
+        {
+            var item = shop.Items[i];
+            var r = rects[i];
+            bool hovered = Raylib.CheckCollisionPointRec(mouse, r);
+            int cost = ItemCost(shop, item, s.Chapter);
+            bool canAfford = s.Gold >= cost && !item.Purchased;
+
+            Color border = item.Purchased ? Palette.Hex("484035")
+                           : hovered && canAfford ? Palette.Gold
+                           : Palette.Hex("6a5c45");
+            Color bg = item.Purchased ? new Color(22, 28, 26, 200)
+                       : hovered && canAfford ? new Color(38, 52, 44, 240)
+                       : new Color(28, 38, 34, 230);
+
+            Raylib.DrawRectangleRec(r, bg);
+            Raylib.DrawRectangleLinesEx(r, 1.5f, border);
+
+            if (item.Purchased)
+            {
+                DrawCentered("PURCHASED", 14, (int)(r.Y + r.Height / 2f - 7), Palette.Hex("5a6355"));
+                continue;
+            }
+
+            int tx = (int)r.X + 10, ty = (int)r.Y + 8;
+            switch (item.Kind)
+            {
+                case ShopItemKind.Expansion:
+                    Raylib.DrawText("Expand Fort", tx, ty, 18, Palette.Hex("efd18a"));
+                    Raylib.DrawText($"Grows the fort, +80 keep HP", tx, ty + 24, 13, Palette.PathEdge);
+                    DrawItemCost(r, cost, canAfford);
+                    break;
+                case ShopItemKind.HeroUpgrade:
+                    int tier = shop.HeroTiers[(int)item.UpgradeKind];
+                    Raylib.DrawText(ShopState.UpgradeName(item.UpgradeKind), tx, ty, 18, Palette.Hex("bfe0ff"));
+                    Raylib.DrawText(ShopState.UpgradeDesc(item.UpgradeKind), tx, ty + 24, 13, Palette.PathEdge);
+                    Raylib.DrawText($"Tier {tier + 1}/{ShopState.HeroUpgradeMaxTiers[(int)item.UpgradeKind]}",
+                        tx, ty + 42, 12, Palette.Hex("7aa0c8"));
+                    DrawItemCost(r, cost, canAfford);
+                    break;
+                case ShopItemKind.StructureCard when item.Card is not null:
+                    Raylib.DrawText(item.Card.Name, tx, ty, 18, CategoryColor(item.Card.Category));
+                    Raylib.DrawText($"{item.Card.Category} structure (place + fund)", tx, ty + 24, 13, Palette.PathEdge);
+                    DrawItemCost(r, cost, canAfford);
+                    break;
+            }
+        }
+
+        // Hero upgrade summary strip.
+        int sy = py + panelH + 12;
+        if (sy + 22 < h)
+        {
+            string heroLine = $"Hero: Dmg+{hero.DmgUpgrades*7}  FR×{MathF.Pow(0.82f, hero.FrUpgrades):0.00}"
+                            + $"  Rng+{hero.RngUpgrades*30}  HP+{hero.HpUpgrades*25}"
+                            + $"  Volley {hero.VolleyCooldown:0.0}s";
+            DrawCentered(heroLine, 14, sy, Palette.Hex("8ab0cc"));
+        }
+    }
+
+    private static int ItemCost(ShopState shop, ShopItem item, int chapter) => item.Kind switch
+    {
+        ShopItemKind.Expansion    => shop.ExpansionCost(chapter),
+        ShopItemKind.HeroUpgrade  => shop.HeroUpgradeCost(item.UpgradeKind),
+        _                         => shop.CardCost,
+    };
+
+    private static void DrawItemCost(Rectangle r, int cost, bool canAfford)
+    {
+        string costStr = $"{cost}g";
+        int cw = Raylib.MeasureText(costStr, 15);
+        Raylib.DrawText(costStr, (int)(r.X + r.Width - cw - 10), (int)(r.Y + r.Height - 22), 15,
+            canAfford ? Palette.Gold : Palette.Hex("a05040"));
+    }
+
     private static IEnumerable<string> Describe(CardDef def) => def.Kind switch
     {
         StructureKind.ArcherPost => new[] { "Fast single-target", "fire. Reliable DPS." },
