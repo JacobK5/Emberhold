@@ -686,7 +686,14 @@ public static class Renderer
             DrawCentered($"Reached wave {s.Wave}   -   best wave {s.BestWave}", 24, cy - 22, Palette.Hero);
             DrawCentered($"{s.Kills} raiders defeated   /   {s.Structures.Count} structures standing   /   {s.SeenSynergies.Count} synergies discovered",
                 18, cy + 12, Palette.PathEdge);
-            DrawCentered("press R to begin again", 20, cy + 48, Palette.Gold);
+            if (s.Profile is Profile p)
+            {
+                DrawCentered(
+                    $"Lifetime:  {p.Runs} runs  -  {p.LifetimeKills} kills  -  {p.BossesSlain} bosses slain  -  codex {p.DiscoveredSynergies.Count}/{SynergyEngine.Catalog.Count}",
+                    16, cy + 42, Palette.Hex("c9b074"));
+                DrawCentered("press R to begin again", 20, cy + 74, Palette.Gold);
+            }
+            else DrawCentered("press R to begin again", 20, cy + 48, Palette.Gold);
         }
     }
 

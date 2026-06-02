@@ -8,6 +8,10 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.10.0 — "Legacy"
+- **Meta-progression (light)** — the profile tracks lifetime runs, kills, bosses slain,
+  and an all-time **codex completion** count, shown on the game-over recap.
+
 ### v0.9.0 — "Quartermaster"
 - **Gold-for-time** — the Rally Horn (F) spends gold to slow the whole wave for a few
   seconds, an emergency clutch tool on a cooldown.
