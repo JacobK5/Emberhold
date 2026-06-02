@@ -61,7 +61,7 @@ public sealed class Projectile
     public HashSet<int>? HitIds;
 }
 
-public enum DropKind { Gold, Ember }
+public enum DropKind { Gold, Ember, Relic }
 
 public sealed class Drop
 {

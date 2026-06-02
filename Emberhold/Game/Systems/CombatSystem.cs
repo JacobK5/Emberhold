@@ -30,8 +30,12 @@ public static class CombatSystem
         var aim = AimAhead(hero.Pos, target, HeroProjSpeed);
         var color = s.StreakTier > 0 ? Palette.Hex("ff9a4d")
                   : hero.Kind == HeroKind.Warden ? Palette.Hex("b9d9bd") : Palette.Hex("f7df9a");
+        // Signature passive (lv5): Ranger shots ricochet to a second target; Warden shots cleave.
+        int heroChains = hero.Signature && hero.Kind == HeroKind.Ranger ? 1 : 0;
+        float heroSplash = hero.Signature && hero.Kind == HeroKind.Warden ? 34f : 0f;
         FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult,
-            speed: HeroProjSpeed, color: color, source: ProjectileSource.Hero);
+            speed: HeroProjSpeed, color: color, source: ProjectileSource.Hero,
+            splash: heroSplash, chains: heroChains, chainRange: heroChains > 0 ? 150f : 0f);
 
         hero.Facing = MathUtils.Normalize(target.Pos - hero.Pos);
         hero.ShotTimer = (hero.FireRate / Balance.HeroFireSpeedMult) * profile.Rate * (hero.Overdrive > 0f ? 0.58f : 1f);
@@ -117,7 +121,8 @@ public static class CombatSystem
         foreach (var d in s.Drops)
         {
             if (d.Collected) continue;
-            if (Vector2.Distance(hero.Pos, d.Pos) >= 24f) continue;
+            float reach = d.Kind == DropKind.Gold ? hero.PickupRadius : 24f;
+            if (Vector2.Distance(hero.Pos, d.Pos) >= reach) continue;
 
             d.Collected = true;
             if (d.Kind == DropKind.Ember)
@@ -125,6 +130,10 @@ public static class CombatSystem
                 hero.Overdrive = 10f;
                 s.AddParticles(d.Pos, Palette.Hex("ff8b52"), 16, 75f);
                 s.AddFloater(d.Pos + new Vector2(0, -8), "OVERDRIVE", Palette.Hex("ffb064"));
+            }
+            else if (d.Kind == DropKind.Relic)
+            {
+                CollectRelic(s, d.Pos);
             }
             else
             {
@@ -134,6 +143,31 @@ public static class CombatSystem
                 s.AddFloater(d.Pos + new Vector2(0, -8), $"+{d.Value}", Palette.Hex("ffd66b"));
             }
         }
+    }
+
+    /// <summary>Grant a random not-yet-owned relic and apply its permanent run bonus.</summary>
+    private static void CollectRelic(GameState s, Vector2 at)
+    {
+        var hero = s.Hero;
+        var pool = new List<RelicKind>();
+        foreach (RelicKind k in Enum.GetValues<RelicKind>())
+            if (!hero.Relics.Contains(k)) pool.Add(k);
+        if (pool.Count == 0) { s.Gold += 25; s.AddFloater(at + new Vector2(0, -8), "+25", Palette.Gold); return; }
+
+        var relic = pool[(int)(s.Rand() * pool.Count) % pool.Count];
+        hero.Relics.Add(relic);
+
+        string name;
+        switch (relic)
+        {
+            case RelicKind.EmberRing:   hero.Damage *= 1.12f; name = "EMBER RING  +12% dmg"; break;
+            case RelicKind.SwiftBoots:  hero.Speed *= 1.14f; name = "SWIFT BOOTS  +14% speed"; break;
+            case RelicKind.WardenCloak: hero.MaxHealth += 30f; hero.Health += 30f; name = "WARDEN'S CLOAK  +30 HP"; break;
+            default:                    hero.Range += 36f; name = "HAWK EYE  +36 range"; break;
+        }
+        s.AddParticles(at, Palette.Hex("c9a3ff"), 18, 80f);
+        s.AddFloater(at + new Vector2(0, -10), name, Palette.Hex("d9b6ff"));
+        s.KickShake(4f);
     }
 
     /// <param name="mitigable">Direct hits are reduced by enemy shields; DoT/traps pass true=false to bypass.</param>
@@ -167,7 +201,13 @@ public static class CombatSystem
         reward += s.StreakBonusGold; // Hot Streak bonus gold
         for (int i = 0; i < reward; i++)
             s.SpawnDrop(enemy.Pos + new Vector2(s.Rand(-9, 9), s.Rand(-9, 9)), 1);
-        if (enemy.Elite) s.SpawnEmber(enemy.Pos);
+        if (enemy.Elite)
+        {
+            s.SpawnEmber(enemy.Pos);
+            // Elites also yield equipment until the hero has collected the full set.
+            if (s.Hero.Relics.Count < Enum.GetValues<RelicKind>().Length)
+                s.SpawnRelic(enemy.Pos + new Vector2(s.Rand(-14, 14), s.Rand(-14, 14)));
+        }
 
         // Announce a freshly reached streak tier.
         if (tierUp && s.StreakTier > 0)
@@ -192,6 +232,14 @@ public static class CombatSystem
             hero.Health = MathF.Min(hero.MaxHealth, hero.Health + 12f);
             hero.FireRate = MathF.Max(0.22f, hero.FireRate - 0.012f);
             s.AddParticles(hero.Pos, Palette.Hex("ffd36c"), 18, 75f);
+
+            // Announce a passive ability unlocked at this level.
+            string passive = Hero.PassiveName(hero.Level, hero.Kind);
+            if (passive.Length > 0)
+            {
+                s.AddFloater(hero.Pos + new Vector2(0, -34), $"{passive} UNLOCKED", Palette.Hex("b9e0ff"));
+                s.AddParticles(hero.Pos, Palette.Hex("bfe0ff"), 16, 70f);
+            }
         }
     }
 

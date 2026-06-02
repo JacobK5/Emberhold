@@ -337,7 +337,8 @@ public sealed class GameApp
             target = MathUtils.Nearest(hero.Pos, _state.Structures, st => st.Pos, st => st.Upgradable)?.Pos;
         if (target is null)
         {
-            var drop = MathUtils.Nearest(hero.Pos, _state.Drops, d => d.Pos, d => d.Kind == DropKind.Gold && !d.Collected);
+            // Grab any uncollected loot — relics/embers included so smoke runs exercise them.
+            var drop = MathUtils.Nearest(hero.Pos, _state.Drops, d => d.Pos, d => !d.Collected);
             target = drop?.Pos;
         }
 
@@ -367,13 +368,17 @@ public sealed class GameApp
         hero.AbilityCooldown = MathF.Max(0, hero.AbilityCooldown - dt);
         hero.DashCooldown = MathF.Max(0, hero.DashCooldown - dt);
         hero.Overdrive = MathF.Max(0, hero.Overdrive - dt);
+
+        // Second Wind passive (lv7): slow health regen.
+        if (hero.SecondWind && hero.Health > 0f && hero.Health < hero.MaxHealth)
+            hero.Health = MathF.Min(hero.MaxHealth, hero.Health + 4.5f * dt);
     }
 
     public string Report()
         => $"wave={_state.Wave} fort={_state.Chapter} keep={_state.KeepHealth:0}/{_state.KeepMaxHealth:0} "
          + $"gold={_state.Gold} structures={_state.Structures.Count} pads={_state.Pads.Count} "
          + $"kills={_state.Kills} synergies={_state.SeenSynergies.Count} over={_state.Over} heroLv={_state.Hero.Level} "
-         + $"enemies={_state.Enemies.Count}";
+         + $"enemies={_state.Enemies.Count} relics={_state.Hero.Relics.Count}";
 
     private void UpdateCamera(float dt)
     {

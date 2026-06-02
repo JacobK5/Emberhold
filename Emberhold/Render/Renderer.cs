@@ -379,6 +379,14 @@ public static class Renderer
             {
                 Raylib.DrawRectanglePro(new Rectangle(p.X, p.Y, 14, 14), new Vector2(7, 7), 45f, Palette.Hex("e76f42"));
             }
+            else if (d.Kind == DropKind.Relic)
+            {
+                // A glinting violet gem, with a pulsing halo so it stands out as loot.
+                float pulse = 8f + MathF.Sin((float)Raylib.GetTime() * 4f + d.Bob) * 2f;
+                Raylib.DrawCircleLinesV(p, pulse + 4f, new Color((byte)201, (byte)163, (byte)255, (byte)120));
+                Raylib.DrawPoly(p, 4, pulse, (float)Raylib.GetTime() * 40f, Palette.Hex("b78cf0"));
+                Raylib.DrawPolyLines(p, 4, pulse, (float)Raylib.GetTime() * 40f, Palette.Hex("e6d2ff"));
+            }
             else
             {
                 Raylib.DrawCircleV(p, d.Radius, Palette.Hex("d8842d"));
@@ -595,6 +603,7 @@ public static class Renderer
         DrawBar(sw - 220, 18, 200, 14, s.KeepHealth / s.KeepMaxHealth, Palette.Hex("b9cc78"), "KEEP");
         DrawBar(sw - 220, 40, 200, 14, s.Hero.Health / s.Hero.MaxHealth, Palette.Hex("d6b46c"),
             $"{s.Hero.Profile.Initial} LV{s.Hero.Level}");
+        DrawHeroLoadout(s);
 
         Raylib.DrawText($"{Raylib.GetFPS()} FPS", 16, Raylib.GetScreenHeight() - 28, 18, Palette.PathEdge);
 
@@ -609,6 +618,42 @@ public static class Renderer
             DrawCentered($"{s.Kills} raiders defeated   /   {s.Structures.Count} structures standing   /   {s.SeenSynergies.Count} synergies discovered",
                 18, cy + 12, Palette.PathEdge);
             DrawCentered("press R to begin again", 20, cy + 48, Palette.Gold);
+        }
+    }
+
+    /// <summary>Hero passives + collected relics, under the hero bar (top-right).</summary>
+    private static void DrawHeroLoadout(GameState s)
+    {
+        var hero = s.Hero;
+        int sw = Raylib.GetScreenWidth();
+        int x = sw - 220, y = 58;
+
+        var passives = new List<string>();
+        if (hero.QuickHands) passives.Add("QH");
+        if (hero.Signature) passives.Add(hero.Kind == HeroKind.Warden ? "CLV" : "RIC");
+        if (hero.SecondWind) passives.Add("SW");
+        if (passives.Count > 0)
+        {
+            Raylib.DrawText("PASSIVES " + string.Join(" ", passives), x, y, 12, Palette.Hex("9fd0ff"));
+            y += 16;
+        }
+
+        if (hero.Relics.Count == 0) return;
+        int cx = x;
+        foreach (RelicKind r in Enum.GetValues<RelicKind>())
+        {
+            if (!hero.Relics.Contains(r)) continue;
+            var (col, letter) = r switch
+            {
+                RelicKind.EmberRing  => (Palette.Hex("e0994f"), "R"),
+                RelicKind.SwiftBoots => (Palette.Hex("8fbf7f"), "B"),
+                RelicKind.WardenCloak => (Palette.Hex("7fa9d6"), "C"),
+                _ => (Palette.Hex("e2c452"), "E"),
+            };
+            Raylib.DrawRectangle(cx, y, 18, 18, new Color(col.R, col.G, col.B, (byte)210));
+            Raylib.DrawRectangleLines(cx, y, 18, 18, Palette.Ink);
+            Raylib.DrawText(letter, cx + 6, y + 3, 13, Palette.Ink);
+            cx += 22;
         }
     }
 
