@@ -241,6 +241,12 @@ public static class CombatSystem
             s.AddFloater(enemy.Pos + new Vector2(0, -28), $"{GameState.StreakLabel(s.StreakTier)} x{s.Streak}", Palette.Hex("ff9a4d"));
             s.AddParticles(enemy.Pos, Palette.Fire, 14, 66f);
             s.KickShake(4f);
+            // Reaching the blazing tier rewards an Overdrive burst.
+            if (s.StreakTier >= 3)
+            {
+                s.Hero.Overdrive = MathF.Max(s.Hero.Overdrive, 6f);
+                s.AddFloater(s.Hero.Pos + new Vector2(0, -34), "OVERDRIVE!", Palette.Hex("ffb064"));
+            }
         }
     }
 

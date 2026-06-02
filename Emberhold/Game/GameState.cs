@@ -116,7 +116,8 @@ public sealed class GameState
 
     // Wave flow
     public Spawning? Spawning;
-    public List<Data.EnemyKind>? NextWaveKinds; // precomputed composition of the upcoming wave (for the preview)
+    public List<Data.EnemyKind>? NextWaveKinds;  // precomputed composition of the upcoming wave (for the preview)
+    public List<Data.EnemyKind>? NextWaveKinds2; // and the wave after that (two-wave foresight)
     public float BetweenWaves = 4f; // grace before the first wave to establish defenses
     public bool WaveBonusPending;
     public bool UpgradeBreak;

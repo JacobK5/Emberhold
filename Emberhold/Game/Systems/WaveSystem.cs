@@ -112,7 +112,9 @@ public static class WaveSystem
 
                 s.LastSummary = s.Live; // snapshot for the wave-end stat card
                 s.Wave += 1;
-                s.NextWaveKinds = BuildComposition(s, s.Wave); // preview the upcoming wave
+                // Carry the previously-previewed wave forward so foresight stays exact.
+                s.NextWaveKinds = s.NextWaveKinds2 ?? BuildComposition(s, s.Wave);
+                s.NextWaveKinds2 = BuildComposition(s, s.Wave + 1);
                 s.UpgradeBreak = cleared % 5 == 0;
                 s.BetweenWaves = s.UpgradeBreak ? 12f : 5f;
 
