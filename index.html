@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#171c22" />
+    <meta name="description" content="Emberhold is an original browser action-defense game about defending and expanding a frontier fort." />
+    <title>Emberhold</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <section class="topbar" aria-label="Game status">
+        <div class="brand">
+          <span class="brand-mark">E</span>
+          <div>
+            <h1>EMBERHOLD</h1>
+            <p>Frontier under siege</p>
+          </div>
+        </div>
+        <div class="resource-strip">
+          <div class="resource">
+            <span class="resource-icon coin-icon"></span>
+            <span><b id="gold">0</b><small> GOLD</small></span>
+          </div>
+          <div class="resource">
+            <span class="resource-icon wave-icon"></span>
+            <span><b id="wave">1</b><small id="wave-detail"> WAVE</small></span>
+          </div>
+          <div class="resource">
+            <span class="resource-icon fort-icon"></span>
+            <span><b id="stage">1</b><small> FORT</small></span>
+          </div>
+          <div class="best-run">
+            BEST WAVE <b id="best-wave">1</b>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button id="pause-button" type="button" aria-label="Pause game">PAUSE</button>
+          <button id="sound-button" type="button" aria-label="Toggle sound">SOUND: OFF</button>
+        </div>
+      </section>
+
+      <section class="play-area">
+        <canvas id="game-canvas" tabindex="0" aria-label="Emberhold game canvas"></canvas>
+        <div id="intro" class="intro-card">
+          <span class="eyebrow">FORT COMMAND</span>
+          <h2>Hold the frontier.</h2>
+          <p>Move to collect gold. Stand on glowing pads to build your defenses.</p>
+          <div class="controls">
+            <span><b>WASD / CLICK</b> MOVE</span>
+            <span><b>SHIFT</b> DASH</span>
+            <span><b>SPACE</b> VOLLEY</span>
+          </div>
+        </div>
+        <div class="mission-card">
+          <span class="eyebrow">NEXT ORDER</span>
+          <b id="mission-title">DEFEAT RAIDERS</b>
+          <small id="mission-detail">Collect dropped gold outside the walls.</small>
+          <small id="boon-summary" class="boon-summary">NO FRONTIER BOONS YET</small>
+        </div>
+        <button id="dash-button" class="dash-control" type="button" aria-label="Dash forward">
+          <b>DASH</b>
+          <small id="dash-status">READY</small>
+        </button>
+        <div id="toast" class="toast" aria-live="polite"></div>
+        <div id="boss-banner" class="boss-banner">ELITE RAID INCOMING</div>
+        <div id="game-over" class="game-over" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
+          <span class="eyebrow">THE KEEP HAS FALLEN</span>
+          <h2 id="game-over-title">Rebuild. Return stronger.</h2>
+          <p id="game-over-stats"></p>
+          <button id="restart-button" type="button">BEGIN AGAIN</button>
+        </div>
+        <div id="boon-draft" class="boon-draft" role="dialog" aria-modal="true" aria-labelledby="boon-title">
+          <span class="eyebrow">FORTUNE FAVORS THE BOLD</span>
+          <h2 id="boon-title">Choose a frontier boon.</h2>
+          <p>The next raids will be harsher. Pick the advantage that fits your fort.</p>
+          <div class="boon-options">
+            <button type="button" data-boon="ranger"><b>FLETCHER'S MARK</b><small>Hero damage +18%</small></button>
+            <button type="button" data-boon="keep"><b>STONE OATH</b><small>Keep integrity +70</small></button>
+            <button type="button" data-boon="tower"><b>ENGINEER'S EYE</b><small>Tower power +22%</small></button>
+          </div>
+        </div>
+        <div id="settings" class="settings-panel" role="dialog" aria-modal="true" aria-label="Game settings">
+          <div class="settings-card">
+            <div class="settings-head">
+              <div>
+                <span class="eyebrow">FORT COMMAND</span>
+                <h2>BALANCE SETTINGS</h2>
+              </div>
+              <button id="settings-resume" type="button">RESUME GAME</button>
+            </div>
+            <nav class="settings-tabs" id="settings-tabs"></nav>
+            <div class="settings-body" id="settings-body"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bottombar" aria-label="Hero and keep status">
+        <div class="status-card">
+          <button id="hero-switch" class="portrait" type="button" aria-label="Switch hero">A</button>
+          <div class="status-copy">
+            <span id="hero-label" class="status-label">ASH, RANGER</span>
+            <small id="hero-xp" class="hero-xp">XP 0/8</small>
+            <div class="meter"><i id="hero-health"></i></div>
+          </div>
+          <b id="hero-level">LV 1</b>
+        </div>
+        <button id="ability-button" class="ability-card" type="button" aria-label="Fire Ember Volley">
+          <span class="ability-key">SPACE</span>
+          <div>
+            <b>EMBER VOLLEY</b>
+            <small id="ability-status">READY</small>
+          </div>
+        </button>
+        <div class="status-card keep-card">
+          <span class="keep-symbol">K</span>
+          <div class="status-copy">
+            <span class="status-label">KEEP INTEGRITY</span>
+            <div class="meter keep-meter"><i id="keep-health"></i></div>
+          </div>
+          <b id="keep-health-text">100%</b>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/game.js"></script>
+  </body>
+</html>

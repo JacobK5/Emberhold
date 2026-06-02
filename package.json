@@ -1,0 +1,17 @@
+{
+  "name": "emberhold",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/core.js && node --check src/config.js && node --check src/game.js && node --check scripts/browser-smoke.mjs",
+    "smoke": "node scripts/browser-smoke.mjs",
+    "verify": "npm run check && npm test && npm run smoke",
+    "start": "python -m http.server 4173",
+    "bundle": "node scripts/bundle.mjs"
+  },
+  "devDependencies": {
+    "ws": "^8.21.0"
+  }
+}
