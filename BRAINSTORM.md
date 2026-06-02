@@ -8,6 +8,10 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.8.1 — "Spectacle" (polish)
+- **Structure personalities** — towers rotate a barrel to track their target and
+  flash at the muzzle when firing.
+
 ### v0.8.0 — "Onslaught"
 - **Assassin enemies** — teleport/blink past walls & traps to the keep; walls alone
   can't stop them.

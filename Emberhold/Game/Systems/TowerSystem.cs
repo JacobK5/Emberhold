@@ -18,7 +18,7 @@ public static class TowerSystem
         {
             if (t.Role != StructureRole.Tower) continue;
             t.Cooldown -= dt;
-            if (t.Cooldown > 0f) continue;
+            t.MuzzleFlash = MathF.Max(0f, t.MuzzleFlash - dt);
 
             var (dmgMult, rateMult, rangeBonus) = Aura(s, t);
             float range = t.Range + rangeBonus + t.SynRangeBonus;
@@ -27,6 +27,13 @@ public static class TowerSystem
             var target = MathUtils.Nearest(t.Pos, s.Enemies, e => e.Pos,
                 e => !e.Dead && Vector2.Distance(t.Pos, e.Pos) <= range);
             if (target is null) continue;
+
+            // Rotate the barrel toward the target every frame (even between shots).
+            var aimDir = MathUtils.Normalize(target.Pos - t.Pos);
+            if (aimDir != System.Numerics.Vector2.Zero)
+                t.Facing = MathUtils.Normalize(t.Facing + (aimDir - t.Facing) * MathF.Min(1f, dt * 12f));
+
+            if (t.Cooldown > 0f) continue; // aimed, but not ready to fire
 
             // Burn payload: native + Wildfire keystone (chains ignite) + Hellfire field (cannon ignites).
             float burnDps = MathF.Max(t.BurnDps, t.SynBurnDps);
@@ -50,6 +57,10 @@ public static class TowerSystem
                 burnDps: burnDps, burnDuration: burnDur,
                 chains: chains, chainRange: chains > 0 ? 130f : 0f,
                 pierce: t.Pierce);
+
+            // Muzzle flash + spark at the barrel tip.
+            t.MuzzleFlash = 0.08f;
+            s.AddParticles(t.Pos + t.Facing * (t.Radius + 6f), ColorFor(t.ProjSource), 4, 64f);
 
             t.Cooldown = t.Rate * rateMult / Balance.TowerFireSpeedMult;
         }

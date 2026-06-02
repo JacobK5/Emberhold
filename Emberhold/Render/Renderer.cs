@@ -333,7 +333,14 @@ public static class Renderer
             StructureKind.StormSpire => Palette.Hex("9fb8ff"),
             _ => Palette.Hex("b08b59"),
         };
+
+        // Barrel aimed at the current target, with a muzzle dot and flash.
+        var muzzle = t.Pos + t.Facing * (t.Radius + 5f);
+        Raylib.DrawLineEx(t.Pos, muzzle, 5f, Palette.Hex("4a3c2c"));
         Raylib.DrawCircleV(t.Pos, t.Radius * 0.5f, top);
+        Raylib.DrawCircleV(muzzle, 2.6f, top);
+        if (t.MuzzleFlash > 0f)
+            Raylib.DrawCircleV(muzzle, 5.5f, new Color((byte)255, (byte)230, (byte)150, (byte)200));
     }
 
     private static void DrawWall(Structure w)
