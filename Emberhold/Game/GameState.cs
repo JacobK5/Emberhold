@@ -75,6 +75,11 @@ public sealed class GameState
     public float StreakTimer;
     public const float StreakWindow = 2.5f;
 
+    // Rally Horn: a gold-for-time clutch ability that slows the whole wave.
+    public float RallyCooldown;
+    public const float RallyMaxCooldown = 12f;
+    public int RallyCost => Math.Min(140, 25 + Wave * 4);
+
     // Synergy discovery popups: queued ids shown one at a time as a banner.
     public readonly Queue<string> SynergyPopups = new();
     public string? ActivePopup;
@@ -201,6 +206,30 @@ public sealed class GameState
         if (Streak <= 0) return;
         StreakTimer -= dt;
         if (StreakTimer <= 0f) { Streak = 0; StreakTimer = 0f; }
+    }
+
+    /// <summary>Spend gold to blast the wave with a strong slow. Returns true if it fired.</summary>
+    public bool TryRally()
+    {
+        if (RallyCooldown > 0f || Over) return false;
+        int cost = RallyCost;
+        if (Gold < cost) return false;
+
+        Gold -= cost;
+        RallyCooldown = RallyMaxCooldown;
+        var chill = new Color((byte)150, (byte)200, (byte)235, (byte)255);
+        foreach (var e in Enemies)
+        {
+            if (e.Dead || e.StatusImmune) continue; // wraiths shrug it off
+            float factor = e.Boss ? 0.6f : 0.25f;
+            float dur = e.Boss ? 2.5f : 4.5f;
+            e.SlowFactor = e.SlowTimer <= 0f ? factor : MathF.Min(e.SlowFactor, factor);
+            e.SlowTimer = MathF.Max(e.SlowTimer, dur);
+            AddParticles(e.Pos, chill, 5, 46f);
+        }
+        AddFloater(Hero.Pos + new Vector2(0, -42), "RALLY!", chill);
+        KickShake(6f);
+        return true;
     }
 
     /// <summary>Advance the synergy-discovery banner, pulling the next from the queue.</summary>
