@@ -8,6 +8,10 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.14.0 — "Momentum"
+- **Hero combo (dash)** — Dash is now an offensive dash-strike (bursts enemies, shatters
+  slowed ones) with brief i-frames; rewards mechanical skill.
+
 ### v0.13.0 — "Volatile Pact"
 - **Anti-synergy** — a new synergy category: pairing Cannon + Storm Spire weakens both
   but grants all towers +15% fire rate (deckbuilding tension around what NOT to pair).
