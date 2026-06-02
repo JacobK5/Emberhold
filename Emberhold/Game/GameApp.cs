@@ -33,7 +33,7 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false)
     {
         Auto = auto;
         _seed = seed;
@@ -43,6 +43,7 @@ public sealed class GameApp
         _showCodex = codex;
         _lose = lose;
         NewRun();
+        if (paused) _state.Paused = true;
     }
 
     private void NewRun()

@@ -57,7 +57,7 @@ public static class Renderer
         }
         if (s.BannerTimer > 0f)
             DrawCentered(s.BannerText, 30, Raylib.GetScreenHeight() / 2 - 64, Palette.Hex("e07a4a"));
-        if (s.Paused && !s.Over) DrawCentered("PAUSED", 44, Raylib.GetScreenHeight() / 2 - 20, Palette.Hex("efd18a"));
+        if (s.Paused && !s.Over) DrawPausePanel(s);
 
         if (s.Phase == Phase.Draft) OverlayUI.DrawDraft(s, draft.Offer);
         else if (s.Phase == Phase.Placement) OverlayUI.DrawPlacementHud(s, draft);
@@ -181,6 +181,62 @@ public static class Renderer
     {
         int w = Raylib.MeasureText(text, fontSize);
         Raylib.DrawText(text, x + width / 2 - w / 2, y, fontSize, color);
+    }
+
+    private static string RelicName(RelicKind r) => r switch
+    {
+        RelicKind.EmberRing => "Ember Ring",
+        RelicKind.SwiftBoots => "Swift Boots",
+        RelicKind.WardenCloak => "Warden's Cloak",
+        _ => "Hawk Eye",
+    };
+
+    /// <summary>Rich pause overlay: the whole run state at a glance.</summary>
+    private static void DrawPausePanel(GameState s)
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 205));
+        var hero = s.Hero;
+
+        var lines = new List<(string, Color)>
+        {
+            ($"TRIAL:  {s.Modifier.Name}", Palette.Hex("d6a6e0")),
+            ($"   {s.Modifier.Desc}", Palette.PathEdge),
+        };
+
+        var passives = new List<string>();
+        if (hero.QuickHands) passives.Add("Quick Hands");
+        if (hero.Signature) passives.Add(hero.Kind == HeroKind.Warden ? "Cleave" : hero.Kind == HeroKind.Artificer ? "Overclock" : "Ricochet");
+        if (hero.SecondWind) passives.Add("Second Wind");
+        lines.Add(($"HERO:  {hero.Profile.Name}   -   Lv {hero.Level}", Palette.Hero));
+        lines.Add(($"   Passives: {(passives.Count > 0 ? string.Join(", ", passives) : "none yet")}", Palette.Hex("9fd0ff")));
+        if (hero.Relics.Count > 0)
+            lines.Add(($"   Relics: {string.Join(", ", hero.Relics.Select(RelicName))}", Palette.Hex("d9b6ff")));
+        if (s.HordeTier > 0)
+            lines.Add(($"HORDE TIER:  {s.HordeTier}  (+{s.HordeTier * 8}% enemy HP)", Palette.Hex("e0795a")));
+        if (s.ActiveSynergies.Count > 0)
+        {
+            var names = SynergyEngine.Catalog.Where(d => s.ActiveSynergies.Contains(d.Id)).Select(d => d.Name);
+            lines.Add(($"SYNERGIES ({s.ActiveSynergies.Count}):  {string.Join(", ", names)}", Palette.Gold));
+        }
+        string preview = WaveSystem.PreviewLine(s.NextWaveKinds);
+        if (preview.Length > 0)
+            lines.Add(($"NEXT WAVE:  {preview}", Palette.Hex("c49a62")));
+
+        int pw = 760;
+        int ph = 64 + lines.Count * 26 + 36;
+        int px = w / 2 - pw / 2, py = h / 2 - ph / 2;
+        Raylib.DrawRectangle(px, py, pw, ph, new Color(16, 23, 22, 242));
+        Raylib.DrawRectangleLinesEx(new Rectangle(px, py, pw, ph), 2f, Palette.Hex("c49a62"));
+        DrawCenteredAt("PAUSED", 34, px, pw, py + 14, Palette.Hex("efd18a"));
+
+        int ly = py + 58;
+        foreach (var (text, col) in lines)
+        {
+            Raylib.DrawText(text, px + 24, ly, 16, col);
+            ly += 26;
+        }
+        DrawCenteredAt("P / ESC to resume", 15, px, pw, py + ph - 26, Palette.PathEdge);
     }
 
     /// <summary>Animated banner the first time a synergy triggers in a run.</summary>
