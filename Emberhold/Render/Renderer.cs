@@ -47,6 +47,7 @@ public static class Renderer
         DrawWaveStatus(s);
         DrawStreak(s);
         DrawWaveSummary(s);
+        DrawSynergyPopup(s);
         if (showIntro && s.Phase == Phase.Combat) DrawIntro();
         if (s.BossBannerTimer > 0f) DrawCentered("ELITE RAID INCOMING", 40, Raylib.GetScreenHeight() / 2 - 130, Palette.Hex("e0994f"));
         if (s.Paused && !s.Over) DrawCentered("PAUSED", 44, Raylib.GetScreenHeight() / 2 - 20, Palette.Hex("efd18a"));
@@ -157,6 +158,33 @@ public static class Renderer
     {
         int w = Raylib.MeasureText(text, fontSize);
         Raylib.DrawText(text, x + width / 2 - w / 2, y, fontSize, color);
+    }
+
+    /// <summary>Animated banner the first time a synergy triggers in a run.</summary>
+    private static void DrawSynergyPopup(GameState s)
+    {
+        if (s.ActivePopup is null) return;
+        var def = SynergyEngine.Catalog.FirstOrDefault(c => c.Id == s.ActivePopup);
+        string name = def?.Name ?? s.ActivePopup;
+        string effect = def?.Effect ?? "";
+
+        // Fade in over 0.25s, hold, fade out over the last 0.5s; drift upward as it appears.
+        float age = GameState.PopupDuration - s.PopupTimer;
+        float alpha = MathUtils.Clamp(MathF.Min(age / 0.25f, s.PopupTimer / 0.5f), 0f, 1f);
+        byte a = (byte)(alpha * 255);
+        byte ad = (byte)(alpha * 220);
+
+        const int pw = 440, ph = 92;
+        int w = Raylib.GetScreenWidth();
+        int px = w / 2 - pw / 2;
+        int py = (int)(Raylib.GetScreenHeight() / 2 - 110 - (1f - alpha) * 12f); // slight rise-in
+
+        Raylib.DrawRectangle(px, py, pw, ph, new Color((byte)18, (byte)24, (byte)22, (byte)(ad * 0.92f)));
+        Raylib.DrawRectangleLinesEx(new Rectangle(px, py, pw, ph), 2.5f, new Color(Palette.Gold.R, Palette.Gold.G, Palette.Gold.B, a));
+
+        DrawCenteredAt("SYNERGY DISCOVERED", 16, px, pw, py + 12, new Color((byte)0x9a, (byte)0xa6, (byte)0xa0, a));
+        DrawCenteredAt(name, 30, px, pw, py + 34, new Color(Palette.Gold.R, Palette.Gold.G, Palette.Gold.B, a));
+        DrawCenteredAt(effect, 15, px, pw, py + 68, new Color(Palette.Hero.R, Palette.Hero.G, Palette.Hero.B, a));
     }
 
     private static void DrawIntro()
