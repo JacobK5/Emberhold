@@ -1,0 +1,81 @@
+using System.Numerics;
+using Emberhold.Core;
+using Emberhold.Render;
+using Raylib_cs;
+
+namespace Emberhold.Game;
+
+/// <summary>
+/// Drives attack structures: acquire targets in (aura-extended) range and fire
+/// projectiles carrying the tower's splash / pierce / chain / status payload.
+/// Support auras (banner/forge/watchtower) buff towers within their radius.
+/// </summary>
+public static class TowerSystem
+{
+    public static void Update(GameState s, float dt)
+    {
+        foreach (var t in s.Structures)
+        {
+            if (t.Role != StructureRole.Tower) continue;
+            t.Cooldown -= dt;
+            if (t.Cooldown > 0f) continue;
+
+            var (dmgMult, rateMult, rangeBonus) = Aura(s, t);
+            float range = t.Range + rangeBonus + t.SynRangeBonus;
+            int chains = t.ChainCount + t.SynExtraChains;
+
+            var target = MathUtils.Nearest(t.Pos, s.Enemies, e => e.Pos,
+                e => !e.Dead && Vector2.Distance(t.Pos, e.Pos) <= range);
+            if (target is null) continue;
+
+            // Wildfire keystone: chain towers also ignite their targets.
+            float burnDps = t.BurnDps;
+            float burnDur = t.BurnDuration;
+            if (s.Wildfire && t.ChainCount > 0) { burnDps = MathF.Max(burnDps, 8f); burnDur = MathF.Max(burnDur, 2f); }
+
+            var aim = CombatSystem.AimAhead(t.Pos, target, t.ProjSpeed);
+            CombatSystem.FireProjectile(s, t.Pos, aim,
+                damage: t.Damage * dmgMult * t.SynDamageMult * Balance.TowerDamageMult,
+                speed: t.ProjSpeed,
+                color: ColorFor(t.ProjSource),
+                source: t.ProjSource,
+                life: 1.4f,
+                radius: t.ProjSource is ProjectileSource.Cannon ? 6f : 4f,
+                splash: t.Splash + t.SynSplashBonus,
+                slowFactor: t.SlowFactor, slowDuration: t.SlowDuration,
+                burnDps: burnDps, burnDuration: burnDur,
+                chains: chains, chainRange: chains > 0 ? 130f : 0f,
+                pierce: t.Pierce);
+
+            t.Cooldown = t.Rate * rateMult / Balance.TowerFireSpeedMult;
+        }
+    }
+
+    /// <summary>Aggregate support-aura effects on a tower: (damage×, rate×, +range).</summary>
+    public static (float dmgMult, float rateMult, float rangeBonus) Aura(GameState s, Structure tower)
+    {
+        float dmg = 1f, rate = 1f, range = 0f;
+        foreach (var a in s.Structures)
+        {
+            if (a.Role != StructureRole.Aura) continue;
+            float reach = s.AurasGlobal ? float.PositiveInfinity : a.AuraRange;
+            if (Vector2.Distance(tower.Pos, a.Pos) > reach) continue;
+            switch (a.AuraKind)
+            {
+                case AuraKind.Damage: dmg *= a.AuraMagnitude; break;
+                case AuraKind.Rate:   rate *= a.AuraMagnitude; break;
+                case AuraKind.Range:  range += a.AuraMagnitude; break;
+            }
+        }
+        return (dmg, rate, range);
+    }
+
+    private static Color ColorFor(ProjectileSource src) => src switch
+    {
+        ProjectileSource.Cannon => Palette.Hex("ec8b4d"),
+        ProjectileSource.Ballista => Palette.Hex("d4e8aa"),
+        ProjectileSource.Chain => Palette.Hex("a9d8ff"),
+        ProjectileSource.Flame => Palette.Fire,
+        _ => Palette.Hex("cfdfb2"),
+    };
+}

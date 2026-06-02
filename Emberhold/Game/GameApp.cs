@@ -1,0 +1,271 @@
+using System.Numerics;
+using Emberhold.Core;
+using Emberhold.Data;
+using Emberhold.Render;
+using Raylib_cs;
+
+namespace Emberhold.Game;
+
+/// <summary>
+/// Top-level game object: owns the simulation state + draft controller, drives the
+/// Draft → Placement → Combat phase machine, runs systems, and renders.
+/// </summary>
+public sealed class GameApp
+{
+    private GameState _state = null!;
+    private DraftController _draft = null!;
+    private Vector2? _pointerTarget;
+
+    /// <summary>When set, the draft/placement phases auto-resolve (for smoke tests).</summary>
+    public bool Auto;
+
+    private readonly bool _seed;
+    private readonly int _startWave;
+    private readonly bool _lose;
+    private float _introTimer = 8f;
+    private bool _showCodex;
+    private Profile _profile = Persistence.Load();
+
+    /// <param name="auto">Auto-resolve draft/placement (smoke).</param>
+    /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
+    /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
+    /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false)
+    {
+        Auto = auto;
+        _seed = seed;
+        _startWave = startWave;
+        _showCodex = codex;
+        _lose = lose;
+        NewRun();
+    }
+
+    private void NewRun()
+    {
+        _state = new GameState(seedDebug: _seed) { BestWave = _profile.BestWave };
+        _draft = new DraftController();
+        _pointerTarget = null;
+        if (_startWave > 0) _state.Wave = _startWave;
+        if (_seed) _state.Phase = Phase.Combat;
+        else _draft.StartRun(_state);
+        if (_lose) { _state.Phase = Phase.Combat; _state.KeepHealth = 0f; }
+    }
+
+    public void Update(float dt)
+    {
+        if (Raylib.IsKeyPressed(KeyboardKey.R) && _state.Over) { NewRun(); return; }
+
+        _state.Elapsed += dt;
+        _introTimer -= dt;
+        UpdateCameraOffset();
+
+        if (Raylib.IsKeyPressed(KeyboardKey.C)) _showCodex = !_showCodex;
+        if (_showCodex)
+        {
+            SynergyEngine.Evaluate(_state); // refresh active set for the codex outside combat
+            return;
+        }
+
+        if (_state.Over) return;
+
+        switch (_state.Phase)
+        {
+            case Phase.Draft: UpdateDraft(); EaseCameraHome(dt); break;
+            case Phase.Placement: UpdatePlacement(); EaseCameraHome(dt); break;
+            case Phase.Combat: UpdateCombat(dt); break;
+        }
+    }
+
+    public bool ShowIntro => _introTimer > 0f;
+
+    public void Draw() => Renderer.Draw(_state, _draft, ShowIntro, _showCodex);
+
+    // ---- phases ---------------------------------------------------------
+
+    private void UpdateDraft()
+    {
+        if (Auto) { _draft.AutoAdvance(_state); return; }
+
+        if (Raylib.IsKeyPressed(KeyboardKey.One)) _draft.Pick(_state, 0);
+        else if (Raylib.IsKeyPressed(KeyboardKey.Two)) _draft.Pick(_state, 1);
+        else if (Raylib.IsKeyPressed(KeyboardKey.Three)) _draft.Pick(_state, 2);
+        else if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+        {
+            var rects = OverlayUI.DraftCardRects();
+            var m = Raylib.GetMousePosition();
+            for (int i = 0; i < rects.Length; i++)
+                if (Raylib.CheckCollisionPointRec(m, rects[i])) { _draft.Pick(_state, i); break; }
+        }
+    }
+
+    private void UpdatePlacement()
+    {
+        if (Auto) { _draft.AutoAdvance(_state); return; }
+
+        if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+        {
+            var world = Raylib.GetScreenToWorld2D(Raylib.GetMousePosition(), _state.Cam);
+            _draft.TryPlace(_state, world);
+        }
+    }
+
+    private void UpdateCombat(float dt)
+    {
+        if (Raylib.IsKeyPressed(KeyboardKey.P) || Raylib.IsKeyPressed(KeyboardKey.Escape))
+            _state.Paused = !_state.Paused;
+        if (_state.Paused) return;
+
+        _state.BossBannerTimer = MathF.Max(0f, _state.BossBannerTimer - dt);
+        HandleAbilityInput();
+
+        WaveSystem.Update(_state, dt);
+
+        if (_state.PendingDraft)
+        {
+            Expand();
+            return;
+        }
+
+        SynergyEngine.Evaluate(_state);
+        if (Auto) AutoHeroMove(dt); else UpdateHeroMovement(dt);
+        EconomySystem.UpdateBuilding(_state, dt);
+        EconomySystem.UpdateUpgrades(_state, dt);
+        CombatSystem.UpdateHeroCombat(_state, dt);
+        TowerSystem.Update(_state, dt);
+        EnemySystem.Update(_state, dt);
+        DefenseSystem.Update(_state, dt);
+        CombatSystem.UpdateProjectiles(_state, dt);
+        CombatSystem.UpdatePickups(_state);
+        EconomySystem.UpdateMines(_state, dt);
+        EffectsSystem.Update(_state, dt);
+        UpdateCamera(dt);
+
+        if (_state.KeepHealth <= 0f || _state.Hero.Health <= 0f)
+        {
+            _state.Over = true;
+            _profile = Persistence.Record(_profile, _state.Wave, _state.Kills);
+            _state.BestWave = _profile.BestWave;
+        }
+    }
+
+    /// <summary>Milestone reached: grow the fort, reinforce the keep, open a draft.</summary>
+    private void Expand()
+    {
+        _state.PendingDraft = false;
+        _state.Chapter += 1;
+        _state.KeepMaxHealth += 80f;
+        _state.KeepHealth = MathF.Min(_state.KeepMaxHealth, _state.KeepHealth + 80f);
+        _draft.StartDraft(_state);
+    }
+
+    // ---- input / movement / camera -------------------------------------
+
+    private void HandleAbilityInput()
+    {
+        if (Raylib.IsKeyPressed(KeyboardKey.Space)) CombatSystem.ShootVolley(_state);
+        if (Raylib.IsKeyPressed(KeyboardKey.LeftShift) || Raylib.IsKeyPressed(KeyboardKey.RightShift))
+            CombatSystem.Dash(_state);
+        if (Raylib.IsKeyPressed(KeyboardKey.H)) SwitchHero();
+    }
+
+    private void SwitchHero()
+    {
+        _state.Hero.Kind = _state.Hero.Kind == HeroKind.Ranger ? HeroKind.Warden : HeroKind.Ranger;
+        _state.AddParticles(_state.Hero.Pos, Palette.Hex("f3c878"), 14, 68f);
+    }
+
+    private void UpdateCameraOffset()
+        => _state.Cam.Offset = new Vector2(Raylib.GetScreenWidth() / 2f, Raylib.GetScreenHeight() / 2f);
+
+    private void EaseCameraHome(float dt)
+        => _state.Cam.Target += (Vector2.Zero - _state.Cam.Target) * MathF.Min(1f, dt * 4.5f);
+
+    private void UpdateHeroMovement(float dt)
+    {
+        var hero = _state.Hero;
+
+        float mx = 0, my = 0;
+        if (Raylib.IsKeyDown(KeyboardKey.W) || Raylib.IsKeyDown(KeyboardKey.Up)) my -= 1;
+        if (Raylib.IsKeyDown(KeyboardKey.S) || Raylib.IsKeyDown(KeyboardKey.Down)) my += 1;
+        if (Raylib.IsKeyDown(KeyboardKey.A) || Raylib.IsKeyDown(KeyboardKey.Left)) mx -= 1;
+        if (Raylib.IsKeyDown(KeyboardKey.D) || Raylib.IsKeyDown(KeyboardKey.Right)) mx += 1;
+
+        if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+            _pointerTarget = Raylib.GetScreenToWorld2D(Raylib.GetMousePosition(), _state.Cam);
+
+        var movement = MathUtils.Normalize(mx, my);
+        var desired = movement;
+        if (movement != Vector2.Zero)
+            _pointerTarget = null;
+        else if (_pointerTarget is Vector2 target)
+        {
+            desired = MathUtils.Normalize(target - hero.Pos);
+            if (Vector2.Distance(hero.Pos, target) < 6f) _pointerTarget = null;
+        }
+
+        MoveHero(desired, dt);
+    }
+
+    /// <summary>Simple bot for smoke/balance runs: fund pads, collect gold, fight.</summary>
+    private void AutoHeroMove(float dt)
+    {
+        var hero = _state.Hero;
+        Vector2? target = null;
+
+        if (_state.Gold > 0 && _state.Pads.Count > 0)
+            target = MathUtils.Nearest(hero.Pos, _state.Pads, p => p.Pos)?.Pos;
+        if (target is null && _state.Gold >= 40)
+            target = MathUtils.Nearest(hero.Pos, _state.Structures, st => st.Pos, st => st.Upgradable)?.Pos;
+        if (target is null)
+        {
+            var drop = MathUtils.Nearest(hero.Pos, _state.Drops, d => d.Pos, d => d.Kind == DropKind.Gold && !d.Collected);
+            target = drop?.Pos;
+        }
+
+        var desired = target is Vector2 p ? MathUtils.Normalize(p - hero.Pos) : Vector2.Zero;
+        MoveHero(desired, dt);
+
+        if (hero.AbilityCooldown <= 0f && _state.Enemies.Count > 0) CombatSystem.ShootVolley(_state);
+    }
+
+    private void MoveHero(Vector2 desired, float dt)
+    {
+        var hero = _state.Hero;
+        var profile = hero.Profile;
+
+        if (desired != Vector2.Zero)
+        {
+            hero.Facing = desired;
+            var delta = desired * hero.Speed * profile.Speed * Balance.HeroSpeedMult * dt;
+            hero.Pos = Geometry.MoveWithCollisions(hero.Pos, hero.Radius, delta, _state.SolidRects());
+        }
+
+        float roam = _state.RoamLimit;
+        hero.Pos = new Vector2(MathUtils.Clamp(hero.Pos.X, -roam, roam), MathUtils.Clamp(hero.Pos.Y, -roam, roam));
+        hero.Pos = Geometry.ResolveCircleRects(hero.Pos, hero.Radius, _state.SolidRects());
+
+        hero.Invulnerable = MathF.Max(0, hero.Invulnerable - dt);
+        hero.AbilityCooldown = MathF.Max(0, hero.AbilityCooldown - dt);
+        hero.DashCooldown = MathF.Max(0, hero.DashCooldown - dt);
+        hero.Overdrive = MathF.Max(0, hero.Overdrive - dt);
+    }
+
+    public string Report()
+        => $"wave={_state.Wave} fort={_state.Chapter} keep={_state.KeepHealth:0}/{_state.KeepMaxHealth:0} "
+         + $"gold={_state.Gold} structures={_state.Structures.Count} pads={_state.Pads.Count} "
+         + $"kills={_state.Kills} synergies={_state.SeenSynergies.Count} over={_state.Over} heroLv={_state.Hero.Level}";
+
+    private void UpdateCamera(float dt)
+    {
+        var hero = _state.Hero;
+        float screenMin = MathF.Min(Raylib.GetScreenWidth(), Raylib.GetScreenHeight());
+        float deadzone = MathUtils.Clamp(screenMin * 0.22f, 88f, 150f);
+        float limit = MathF.Max(0f, _state.RoamLimit - deadzone);
+
+        float TargetAxis(float h)
+            => MathUtils.Clamp(MathF.Abs(h) > deadzone ? h - MathF.Sign(h) * deadzone : 0f, -limit, limit);
+
+        var target = new Vector2(TargetAxis(hero.Pos.X), TargetAxis(hero.Pos.Y));
+        _state.Cam.Target += (target - _state.Cam.Target) * MathF.Min(1f, dt * 4.5f);
+    }
+}

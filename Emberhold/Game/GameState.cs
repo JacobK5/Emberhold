@@ -1,0 +1,167 @@
+using System.Numerics;
+using Emberhold.Core;
+using Emberhold.Data;
+using Raylib_cs;
+
+namespace Emberhold.Game;
+
+/// <summary>The current run phase. Combat is the only active phase until the
+/// draft/placement systems are wired in.</summary>
+public enum Phase { Draft, Placement, Combat }
+
+/// <summary>Wave spawn progress.</summary>
+public sealed class Spawning
+{
+    public int Remaining;
+    public float Timer;
+    public float Interval;
+    public bool ElitePending;
+}
+
+/// <summary>
+/// All mutable simulation state for a run. Systems read and mutate this; it owns
+/// helper methods for the shared FX (particles, floaters, drops) but no system
+/// behaviour itself.
+/// </summary>
+public sealed class GameState
+{
+    public Hero Hero = new();
+    public Camera2D Cam;
+
+    public int Chapter = 1;
+    public int Gold = 20;
+    public int Wave = 1;
+    public Phase Phase = Phase.Combat;
+
+    public float Elapsed;
+    public int Kills;
+    public bool Over;
+    public bool Paused;
+    public float Shake;
+    public float BossBannerTimer;
+    public int BestWave = 1;
+    public readonly HashSet<string> SeenSynergies = new(); // discovered this run, for the summary
+
+    // Global synergy flags, recomputed each combat frame by SynergyEngine.
+    public float SlowDurationMult = 1f; // CryoForge keystone
+    public bool VolleySplash;           // Ember Battery keystone
+    public bool SupplyLines;            // Supply Lines keystone (mines +output)
+    public bool WallsSharePool;         // Iron Tide keystone (wall regen)
+    public bool Fortified;              // mono-Defend amplifier (wall damage reduction)
+    public bool AurasGlobal;            // mono-Support amplifier (fort-wide auras)
+    public bool FrostfireActive;        // Frostfire field synergy
+    public bool SpoilsActive;           // Spoils field synergy
+    public bool Glacier;                // Glacier keystone (cannons crush slowed)
+    public bool Wildfire;               // Wildfire keystone (chains ignite)
+    public readonly HashSet<string> ActiveSynergies = new();
+
+    // Keep
+    public float KeepHealth = 260f;
+    public float KeepMaxHealth = 260f;
+
+    // Wave flow
+    public Spawning? Spawning;
+    public float BetweenWaves = 4f; // grace before the first wave to establish defenses
+    public bool WaveBonusPending;
+    public bool UpgradeBreak;
+    public bool PendingDraft;   // a milestone wave cleared; hand off to the draft
+
+    // Entities
+    public readonly List<Enemy> Enemies = new();
+    public readonly List<Projectile> Projectiles = new();
+    public readonly List<Drop> Drops = new();
+    public readonly List<Particle> Particles = new();
+    public readonly List<Floater> Floaters = new();
+    public readonly List<Pad> Pads = new();
+    public readonly List<Structure> Structures = new();
+
+    private int _nextId = 1;
+    public int NextId() => _nextId++;
+
+    private readonly Random _rng = new();
+    public float Rand() => (float)_rng.NextDouble();
+    public float Rand(float min, float max) => min + (float)_rng.NextDouble() * (max - min);
+
+    public GameState(bool seedDebug = true)
+    {
+        Cam = new Camera2D
+        {
+            Target = Vector2.Zero,
+            Offset = new Vector2(Program.DesignWidth / 2f, Program.DesignHeight / 2f),
+            Rotation = 0f,
+            Zoom = 1f,
+        };
+
+        if (seedDebug) SeedDebugStructures();
+    }
+
+    public float FortHalfSize => Map.FortHalfSize(Chapter);
+    public float RoamLimit => Map.RoamLimit(Chapter);
+
+    /// <summary>Solid rectangles for collision: fort walls plus standing wall structures.</summary>
+    public IReadOnlyList<Rectangle> SolidRects()
+    {
+        var rects = new List<Rectangle>(Map.WallRects(Chapter));
+        foreach (var st in Structures)
+            if (st.IsWallAlive)
+                rects.Add(new Rectangle(st.Pos.X - st.Radius, st.Pos.Y - st.Radius, st.Radius * 2f, st.Radius * 2f));
+        return rects;
+    }
+
+    /// <summary>
+    /// Temporary: seed a representative set of built structures so combat systems
+    /// can be exercised before the draft/placement UI exists. Replaced in task 6.
+    /// </summary>
+    private void SeedDebugStructures()
+    {
+        void Add(StructureKind kind, Vector2 pos)
+            => Structures.Add(StructureFactory.Create(this, Data.CardDb.All.First(c => c.Kind == kind), pos));
+
+        Add(StructureKind.ArcherPost, new Vector2(84, -84));   // NE zone
+        Add(StructureKind.Cannon,     new Vector2(-84, -84));  // NW zone
+        Add(StructureKind.WarBanner,  new Vector2(60, -120));  // buffs the archer
+        Add(StructureKind.GoldMine,   new Vector2(-84, 84));   // SW zone
+        Add(StructureKind.Barricade,  new Vector2(0, -95));    // blocks the north lane
+        Add(StructureKind.TarPit,     new Vector2(0, 95));     // slows the south lane
+    }
+
+    // ---- Shared FX helpers ---------------------------------------------
+
+    public void KickShake(float amount) => Shake = MathF.Max(Shake, amount);
+
+    public void AddParticles(Vector2 at, Color color, int count = 8, float speed = 48f)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            float angle = Rand() * MathUtils.Tau;
+            float v = (0.35f + Rand() * 0.65f) * speed;
+            Particles.Add(new Particle
+            {
+                Pos = at,
+                Vel = new Vector2(MathF.Cos(angle) * v, MathF.Sin(angle) * v),
+                Color = color,
+                Life = 0.35f + Rand() * 0.38f,
+                MaxLife = 0.73f,
+                Size = 1.5f + Rand() * 3f,
+            });
+        }
+    }
+
+    public void AddFloater(Vector2 at, string text, Color color)
+        => Floaters.Add(new Floater { Pos = at, Text = text, Color = color, Life = 1f, MaxLife = 1f });
+
+    public void SpawnDrop(Vector2 at, int value, bool fromMine = false)
+        => Drops.Add(new Drop
+        {
+            Id = NextId(), Pos = at, Value = value, FromMine = fromMine,
+            Radius = fromMine ? 7f : 6f, Kind = DropKind.Gold,
+            Life = fromMine ? 24f : 14f, Bob = Rand() * MathUtils.Tau,
+        });
+
+    public void SpawnEmber(Vector2 at)
+        => Drops.Add(new Drop
+        {
+            Id = NextId(), Pos = at, Value = 0, FromMine = false, Radius = 9f,
+            Kind = DropKind.Ember, Life = 20f, Bob = Rand() * MathUtils.Tau,
+        });
+}

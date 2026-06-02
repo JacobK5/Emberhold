@@ -1,65 +1,62 @@
 # Emberhold
 
-Emberhold is an original browser action-defense prototype inspired by the satisfying loop
-shown in mobile strategy ads: defend a keep, collect dropped gold, stand on build pads, and
-grow a small camp into an automated fortress.
+Emberhold is an original action-defense **strategy** game: defend a keep, collect dropped
+gold, build a fort, and survive escalating raids. The strategy comes from a roguelike
+**draft** (choose your buildings), **hand placement** within the fort, and **cross-building
+synergies** that reward unique combinations over going deep on one path.
 
-The current build includes four fort stages, mines, archer towers, cannons, support banners,
-tower upgrades, buildable barricades, solid wall collision, between-wave keep repairs, elite
-raids, temporary Ember Sigil power-ups, between-wave boon drafts, hero XP, range-based coin
-attraction, frontier navigation beacons, and an unlockable Warden hero.
+This repository is mid-migration from a browser prototype to a native desktop build:
 
-## Run
+- **`Emberhold/`** — the current game. **C# + Raylib-cs**, all code, procedural rendering,
+  no engine/editor. This is what's being actively developed (targets Steam eventually).
+- **`Emberhold.Tests/`** — xUnit tests for the math, economy, placement, and synergy logic.
+- **`src/`, `index.html`, `styles.css`** — the original JavaScript/canvas prototype, kept as
+  a porting reference. Its docs are in the git history.
+
+See [GAME_DESIGN.md](./GAME_DESIGN.md) for the full design spec (draft, placement, the
+two-layer synergy system, the card pool, economy, and map).
+
+## Run (C# build)
+
+Requires the .NET 8 SDK.
 
 ```powershell
-npm install
-npm start
+dotnet run --project Emberhold/Emberhold.csproj
 ```
 
-Open `http://localhost:4173`.
+A headless smoke mode runs a fixed number of frames and can capture a screenshot — used for
+automated verification of a GUI app:
+
+```powershell
+# run 120 frames then exit; optionally write a screenshot
+dotnet run --project Emberhold/Emberhold.csproj -- --smoke 120 --shot shot.png
+# --auto  auto-resolves the draft/placement phases
+# --seed  seeds a debug fort and starts straight in combat
+```
+
+## Test
+
+```powershell
+dotnet test
+```
 
 ## Controls
 
-- Move with `WASD`, arrow keys, or a click/tap destination.
-- Press `Shift` or tap the on-canvas control for a short collection-run dash.
-- The deployed hero automatically shoots the nearest raider in range.
-- Press `Space` to fire Ember Volley when its cooldown is ready.
-- After unlocking the Warden Lodge, click the hero portrait or press `H` to switch heroes.
-- Hold position on glowing pads briefly to invest carried gold.
-- Press `P`, `Escape`, or use the HUD button to pause.
+- Move with `WASD` / arrow keys, or click a destination.
+- `SPACE` fires the hero's Ember Volley; `SHIFT` dashes.
+- `H` switches hero (Ash the Ranger ↔ Mira the Warden — faster fire/more damage vs. speed/range).
+- `C` opens the synergy codex; `P` / `Escape` pauses.
+- **Draft:** press `1` / `2` / `3` or click a card to choose one of Attack / Defend / Support.
+- **Placement:** click to drop the current building — Attack/Support snap into the quadrant
+  zones, Defend (walls/traps) onto the lanes. A green/red ghost shows valid spots.
 
-## Gameplay Guide
+## Core Loop
 
-1. Defeat incoming raiders with the hero's automatic ranged attacks and Ember Volley.
-2. Leave the walls to collect dropped gold. Coins within the deployed hero's shooting range
-   drift toward the hero, and edge beacons point toward off-screen loot and back toward the
-   keep during longer runs.
-3. Stand on glowing pads to invest carried gold into archer towers, mines, training,
-   expansions, support banners, cannons, barricades, the armory, repairs, and late-game
-   unlocks. Pads wait half a second before spending so crossing one does not drain gold.
-4. Expand the walls three times to reveal the full four-stage frontier. Mines create
-   collectible gold automatically while towers defend the keep.
-5. Survive increasingly dense waves. Every fifth wave adds an elite carrying an Ember Sigil
-   overdrive pickup, and every third cleared wave pauses for a three-way boon choice.
-
-Ash the Ranger is the starting hero. The stage-four Warden Lodge unlocks Mira the Warden,
-who trades some speed and range for heavier attacks. The Repair Yard restores keep integrity
-after held waves, banners improve nearby towers, the armory improves all towers, and level-II
-pads upgrade specific defenses without adding map clutter. Buildable cardinal barricades
-block gate lanes, absorb raider attacks before the keep, and return as rebuild pads when
-destroyed. Heroes and raiders cannot walk through fort walls or active barricades.
-
-## Verify
-
-```powershell
-npm run check
-npm test
-npm run smoke
-```
-
-The smoke test launches a headless Edge session, plays through representative state
-transitions, and writes barricade, desktop, frontier, boon, and mobile visual QA captures
-under `tmp/`. Keep `npm start` running in another terminal for the smoke test. Run all checks
-together with `npm run verify`.
-
-See [DESIGN.md](./DESIGN.md) for the core loop, architecture, roadmap, and decision log.
+1. **Draft** one card from three (one per category) at the start and on each expansion.
+2. **Place** your buildings by hand inside the fort's zones and lanes (locked once placed).
+3. **Fight:** the hero auto-fires; run the field collecting gold and stand on pads to fund
+   construction (build time scales with √cost). Towers, traps, and auras do the rest.
+4. **Synergize:** field synergies (adjacency, e.g. a Cannon covering a Tar Pit) and keystone
+   synergies (owning a pair, e.g. Frost Spire + Forge) make combinations stronger than the
+   sum of their parts.
+5. **Expand** the fort to grow your buildable space and open the next draft. Survive forever.

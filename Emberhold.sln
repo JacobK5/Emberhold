@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Emberhold", "Emberhold\Emberhold.csproj", "{78DC1722-4810-48B3-99DE-F3D9FF6770DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Emberhold.Tests", "Emberhold.Tests\Emberhold.Tests.csproj", "{AA12D6B7-DBB0-465A-9F15-C2DD38AB728F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{78DC1722-4810-48B3-99DE-F3D9FF6770DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78DC1722-4810-48B3-99DE-F3D9FF6770DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78DC1722-4810-48B3-99DE-F3D9FF6770DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78DC1722-4810-48B3-99DE-F3D9FF6770DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA12D6B7-DBB0-465A-9F15-C2DD38AB728F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA12D6B7-DBB0-465A-9F15-C2DD38AB728F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA12D6B7-DBB0-465A-9F15-C2DD38AB728F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA12D6B7-DBB0-465A-9F15-C2DD38AB728F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

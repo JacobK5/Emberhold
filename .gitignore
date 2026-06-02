@@ -1,3 +1,15 @@
 node_modules/
 tmp/
 emberhold-v*.html
+
+# .NET build output
+bin/
+obj/
+*.user
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Smoke-test screenshots (debug captures written to repo root)
+/*.png
