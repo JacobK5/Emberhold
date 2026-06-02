@@ -49,6 +49,7 @@ public sealed class GameApp
         _pointerTarget = null;
         if (_startChapter > 0) _state.Chapter = _startChapter;
         if (_startWave > 0) _state.Wave = _startWave;
+        _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave); // seed the wave-1 preview
         if (_seed) _state.Phase = Phase.Combat;
         else _draft.StartRun(_state);
         if (_lose) { _state.Phase = Phase.Combat; _state.KeepHealth = 0f; }

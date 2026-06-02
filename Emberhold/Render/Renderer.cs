@@ -125,7 +125,7 @@ public static class Renderer
         if (s.Spawning is not null || s.BetweenWaves <= 0f) return;
         if (s.LastSummary is not WaveSummary sum) return;
 
-        const int pw = 250;
+        const int pw = 300;
         var rows = new List<(string, string, Color)>
         {
             ("Raiders slain", sum.Kills.ToString(), Palette.Hero),
@@ -133,10 +133,15 @@ public static class Renderer
             ("Damage dealt", sum.DamageDealt.ToString(), Palette.Hex("d98f6b")),
             ("Best streak", $"x{sum.BestStreak}", Palette.Hex("ff9a4d")),
         };
+        if (sum.Interest > 0)
+            rows.Add(("Treasury interest", $"+{sum.Interest}", Palette.Gold));
         if (sum.StructuresLost > 0)
             rows.Add(("Structures lost", sum.StructuresLost.ToString(), Palette.Hex("d2604f")));
 
-        int ph = 44 + rows.Count * 22 + 12;
+        string preview = WaveSystem.PreviewLine(s.NextWaveKinds);
+        bool hasPreview = preview.Length > 0;
+
+        int ph = 44 + rows.Count * 22 + 12 + (hasPreview ? 42 : 0);
         int sw = Raylib.GetScreenWidth();
         int px = sw / 2 - pw / 2;
         int py = 78;
@@ -151,6 +156,14 @@ public static class Renderer
             int vw = Raylib.MeasureText(value, 16);
             Raylib.DrawText(value, px + pw - vw - 16, ry - 1, 16, col);
             ry += 22;
+        }
+
+        if (hasPreview)
+        {
+            int fy = ry + 4;
+            Raylib.DrawLine(px + 12, fy, px + pw - 12, fy, Palette.Hex("3c4a44"));
+            DrawCenteredAt("NEXT WAVE", 13, px, pw, fy + 6, Palette.Hex("c49a62"));
+            DrawCenteredAt(preview, 12, px, pw, fy + 22, Palette.PathEdge);
         }
     }
 

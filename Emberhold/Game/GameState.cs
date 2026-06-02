@@ -9,13 +9,13 @@ namespace Emberhold.Game;
 /// draft/placement systems are wired in.</summary>
 public enum Phase { Draft, Placement, Combat }
 
-/// <summary>Wave spawn progress.</summary>
+/// <summary>Wave spawn progress. Kinds are precomputed so the wave preview is exact.</summary>
 public sealed class Spawning
 {
     public int Remaining;
     public float Timer;
     public float Interval;
-    public bool ElitePending;
+    public Queue<Data.EnemyKind> Kinds = new();
 }
 
 /// <summary>
@@ -30,6 +30,7 @@ public struct WaveSummary
     public int DamageDealt;
     public int StructuresLost;
     public int BestStreak;
+    public int Interest;
 }
 
 /// <summary>
@@ -95,6 +96,7 @@ public sealed class GameState
 
     // Wave flow
     public Spawning? Spawning;
+    public List<Data.EnemyKind>? NextWaveKinds; // precomputed composition of the upcoming wave (for the preview)
     public float BetweenWaves = 4f; // grace before the first wave to establish defenses
     public bool WaveBonusPending;
     public bool UpgradeBreak;

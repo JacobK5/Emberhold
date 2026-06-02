@@ -1,28 +1,81 @@
 using System.Numerics;
 using Emberhold.Core;
 using Emberhold.Data;
+using Emberhold.Render;
 
 namespace Emberhold.Game;
 
 /// <summary>
 /// Drives wave spawning and the between-wave cadence. Enemies enter on the four
-/// cardinal lanes and march to the keep. Composition + scaling ported from the
-/// prototype's waveStats / spawnEnemy.
+/// cardinal lanes and march to the keep. Each wave's enemy composition is
+/// precomputed (so the upcoming-wave preview is exact) and consumed at spawn time.
 /// </summary>
 public static class WaveSystem
 {
     public static void StartWave(GameState s)
     {
-        var stats = WaveStats.For(s.Wave);
         s.Live = new WaveSummary { Wave = s.Wave }; // reset per-wave tally
+        var kinds = s.NextWaveKinds ?? BuildComposition(s, s.Wave);
+        s.NextWaveKinds = null; // consumed; recomputed when this wave clears
+        var stats = WaveStats.For(s.Wave);
         s.Spawning = new Spawning
         {
-            Remaining = Math.Max(1, (int)MathF.Round(stats.Count * Balance.EnemyCountMult)) + (stats.Elite ? 1 : 0),
+            Remaining = kinds.Count,
             Timer = 0f,
             Interval = stats.Interval,
-            ElitePending = stats.Elite,
+            Kinds = new Queue<EnemyKind>(kinds),
         };
-        if (stats.Elite) s.BossBannerTimer = 1.8f;
+        if (kinds.Contains(EnemyKind.Elite)) s.BossBannerTimer = 1.8f;
+    }
+
+    /// <summary>Precompute a wave's full enemy composition (kinds only; lanes chosen at spawn).</summary>
+    public static List<EnemyKind> BuildComposition(GameState s, int wave)
+    {
+        var stats = WaveStats.For(wave);
+        int count = Math.Max(1, (int)MathF.Round(stats.Count * Balance.EnemyCountMult));
+        var list = new List<EnemyKind>(count + 1);
+        for (int i = 0; i < count; i++)
+            list.Add(PickKind(wave, s.Rand()));
+        if (stats.Elite) list.Add(EnemyKind.Elite);
+        return list;
+    }
+
+    /// <summary>
+    /// Counter-types unlock with depth and occupy the low end of the roll; basic
+    /// raider/runner/brute fill the rest. Composition is the difficulty knob.
+    /// </summary>
+    private static EnemyKind PickKind(int wave, float roll)
+        => wave >= 7 && roll < 0.08f ? EnemyKind.Siege
+         : wave >= 10 && roll < 0.16f ? EnemyKind.Healer
+         : wave >= 8 && roll < 0.26f ? EnemyKind.Shielded
+         : wave >= 6 && roll < 0.38f ? EnemyKind.Flyer
+         : wave >= 4 && roll < 0.50f ? EnemyKind.Brute
+         : wave >= 2 && roll < 0.72f ? EnemyKind.Runner
+         : EnemyKind.Raider;
+
+    /// <summary>Human-readable summary of a wave's composition for the preview UI.</summary>
+    public static string PreviewLine(IReadOnlyList<EnemyKind>? kinds)
+    {
+        if (kinds is null || kinds.Count == 0) return "";
+        int siege = 0, elite = 0, healer = 0, shield = 0, flyer = 0, brute = 0;
+        foreach (var k in kinds)
+            switch (k)
+            {
+                case EnemyKind.Siege: siege++; break;
+                case EnemyKind.Elite: elite++; break;
+                case EnemyKind.Healer: healer++; break;
+                case EnemyKind.Shielded: shield++; break;
+                case EnemyKind.Flyer: flyer++; break;
+                case EnemyKind.Brute: brute++; break;
+            }
+        var parts = new List<string> { $"{kinds.Count} incoming" };
+        if (elite > 0) parts.Add($"Elite x{elite}");
+        if (siege > 0) parts.Add($"Siege x{siege}");
+        if (healer > 0) parts.Add($"Healer x{healer}");
+        if (shield > 0) parts.Add($"Shielded x{shield}");
+        if (flyer > 0) parts.Add($"Flyer x{flyer}");
+        if (brute > 0) parts.Add($"Brute x{brute}");
+        return string.Join("  -  ", parts);
     }
 
     public static void Update(GameState s, float dt)
@@ -35,8 +88,20 @@ public static class WaveSystem
             {
                 int cleared = s.Wave;
                 s.WaveBonusPending = false;
+
+                // Gold interest: a capped treasury return on banked gold rewards a
+                // reserve without letting it snowball.
+                int interest = s.Gold > 30 ? Math.Min(30, s.Gold * 8 / 100) : 0;
+                if (interest > 0)
+                {
+                    s.Gold += interest;
+                    s.AddFloater(s.Hero.Pos + new Vector2(0, -42), $"TREASURY +{interest}", Palette.Gold);
+                }
+                s.Live.Interest = interest;
+
                 s.LastSummary = s.Live; // snapshot for the wave-end stat card
                 s.Wave += 1;
+                s.NextWaveKinds = BuildComposition(s, s.Wave); // preview the upcoming wave
                 s.UpgradeBreak = cleared % 5 == 0;
                 s.BetweenWaves = s.UpgradeBreak ? 12f : 5f;
 
@@ -70,10 +135,9 @@ public static class WaveSystem
         if (s.Spawning is null) return;
 
         s.Spawning.Timer -= dt;
-        if (s.Spawning.Timer <= 0f && s.Spawning.Remaining > 0)
+        if (s.Spawning.Timer <= 0f && s.Spawning.Remaining > 0 && s.Spawning.Kinds.Count > 0)
         {
-            SpawnEnemy(s, s.Spawning.ElitePending);
-            s.Spawning.ElitePending = false;
+            SpawnEnemy(s, s.Spawning.Kinds.Dequeue());
             s.Spawning.Remaining -= 1;
             s.Spawning.Timer = s.Spawning.Interval;
         }
@@ -85,23 +149,11 @@ public static class WaveSystem
         }
     }
 
-    private static void SpawnEnemy(GameState s, bool elite)
+    private static void SpawnEnemy(GameState s, EnemyKind kind)
     {
         int side = (int)(s.Rand() * 4f) & 3;
         var stats = WaveStats.For(s.Wave);
-        int wave = s.Wave;
-        float roll = s.Rand();
-
-        // Counter-types unlock with depth and occupy the low end of the roll;
-        // basic raider/runner/brute fill the rest. Composition is the difficulty knob.
-        EnemyKind kind = elite ? EnemyKind.Elite
-            : wave >= 7 && roll < 0.08f ? EnemyKind.Siege
-            : wave >= 10 && roll < 0.16f ? EnemyKind.Healer
-            : wave >= 8 && roll < 0.26f ? EnemyKind.Shielded
-            : wave >= 6 && roll < 0.38f ? EnemyKind.Flyer
-            : wave >= 4 && roll < 0.50f ? EnemyKind.Brute
-            : wave >= 2 && roll < 0.72f ? EnemyKind.Runner
-            : EnemyKind.Raider;
+        bool elite = kind == EnemyKind.Elite;
 
         var profile = EnemyProfile.Get(kind);
         float hp = stats.Health * profile.Health * Balance.EnemyHealthMult;

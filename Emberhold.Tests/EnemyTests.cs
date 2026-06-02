@@ -44,4 +44,24 @@ public class EnemyTests
 
         Assert.True(hurt.Health > 10f, "healer should restore nearby wounded health");
     }
+
+    [Fact]
+    public void Composition_HasEliteEveryFifthWave_AndScalesCount()
+    {
+        var s = new GameState(seedDebug: false);
+        Assert.Contains(EnemyKind.Elite, WaveSystem.BuildComposition(s, 5));
+        Assert.DoesNotContain(EnemyKind.Elite, WaveSystem.BuildComposition(s, 4));
+        Assert.True(WaveSystem.BuildComposition(s, 12).Count > WaveSystem.BuildComposition(s, 1).Count);
+    }
+
+    [Fact]
+    public void PreviewLine_SummarizesSpecialThreats()
+    {
+        var kinds = new List<EnemyKind> { EnemyKind.Raider, EnemyKind.Raider, EnemyKind.Siege, EnemyKind.Elite };
+        string line = WaveSystem.PreviewLine(kinds);
+        Assert.Contains("4 incoming", line);
+        Assert.Contains("Siege x1", line);
+        Assert.Contains("Elite x1", line);
+        Assert.Equal("", WaveSystem.PreviewLine(null));
+    }
 }
