@@ -8,6 +8,10 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.11.0 — "Fortune"
+- **Supply cache objectives** — periodic high-value gold caches drop out on a lane
+  mid-fight; the hero must fight out to collect them.
+
 ### v0.10.0 — "Legacy"
 - **Meta-progression (light)** — the profile tracks lifetime runs, kills, bosses slain,
   and an all-time **codex completion** count, shown on the game-over recap.
