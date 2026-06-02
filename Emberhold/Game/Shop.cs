@@ -31,6 +31,7 @@ public sealed class ShopState
     // Price state
     public int PriceBump;          // resets each wave
     public int WaveBaseRise;       // accumulates 8g / wave after wave 20
+    public float PriceMult = 1f;   // run-modifier shop price multiplier
     public const int CardBasePrice      = 65;
     public const int PriceBumpPerBuy    = 28;
 
@@ -44,10 +45,12 @@ public sealed class ShopState
 
     // ---- Pricing ----------------------------------------------------------
 
-    public int CardCost          => CardBasePrice + WaveBaseRise + PriceBump;
-    public int ExpansionCost(int chapter) => 90 + chapter * 55;
+    public int CardCost          => Scaled(CardBasePrice + WaveBaseRise + PriceBump);
+    public int ExpansionCost(int chapter) => Scaled(90 + chapter * 55);
     public int HeroUpgradeCost(HeroUpgradeKind kind)
-        => HeroUpgradeBaseCosts[(int)kind] + HeroTiers[(int)kind] * 18 + PriceBump;
+        => Scaled(HeroUpgradeBaseCosts[(int)kind] + HeroTiers[(int)kind] * 18 + PriceBump);
+
+    private int Scaled(int baseCost) => (int)MathF.Round(baseCost * PriceMult);
 
     public void OnPurchase() => PriceBump += PriceBumpPerBuy;
 

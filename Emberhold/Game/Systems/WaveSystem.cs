@@ -33,7 +33,7 @@ public static class WaveSystem
     public static List<EnemyKind> BuildComposition(GameState s, int wave)
     {
         var stats = WaveStats.For(wave);
-        int count = Math.Max(1, (int)MathF.Round(stats.Count * Balance.EnemyCountMult));
+        int count = Math.Max(1, (int)MathF.Round(stats.Count * Balance.EnemyCountMult * s.Modifier.EnemyCountMult));
         var list = new List<EnemyKind>(count + 1);
         for (int i = 0; i < count; i++)
             list.Add(PickKind(wave, s.Rand()));
@@ -161,10 +161,11 @@ public static class WaveSystem
         bool elite = kind == EnemyKind.Elite;
 
         var profile = EnemyProfile.Get(kind);
-        // War Drums: each boss cleared ramps a gentle permanent horde buff.
+        // War Drums (horde tier) and the run modifier both scale spawn stats.
+        var mod = s.Modifier;
         float hpBuff = 1f + s.HordeTier * 0.08f;
         float spdBuff = 1f + s.HordeTier * 0.03f;
-        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff;
+        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult;
 
         s.Enemies.Add(new Enemy
         {
@@ -173,9 +174,9 @@ public static class WaveSystem
             Radius = profile.Radius,
             Health = hp,
             MaxHealth = hp,
-            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff,
+            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff * mod.EnemySpeedMult,
             Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult),
-            Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult),
+            Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult * mod.GoldMult),
             Kind = kind,
             Elite = elite,
             Side = side,

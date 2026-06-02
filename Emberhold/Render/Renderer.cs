@@ -48,7 +48,7 @@ public static class Renderer
         DrawStreak(s);
         DrawWaveSummary(s);
         DrawSynergyPopup(s);
-        if (showIntro && s.Phase == Phase.Combat) DrawIntro();
+        if (showIntro && s.Phase == Phase.Combat) DrawIntro(s);
         if (s.BossBannerTimer > 0f)
         {
             string txt = s.BossIncoming ? "!!  CHAPTER BOSS INCOMING  !!" : "ELITE RAID INCOMING";
@@ -207,9 +207,14 @@ public static class Renderer
         DrawCenteredAt(effect, 15, px, pw, py + 68, new Color(Palette.Hero.R, Palette.Hero.G, Palette.Hero.B, a));
     }
 
-    private static void DrawIntro()
+    private static void DrawIntro(GameState s)
     {
         int h = Raylib.GetScreenHeight();
+        if (s.Modifier.Id != "none")
+        {
+            DrawCentered($"TRIAL:  {s.Modifier.Name}", 24, h - 196, Palette.Hex("d6a6e0"));
+            DrawCentered(s.Modifier.Desc, 17, h - 168, Palette.Hex("b489c4"));
+        }
         DrawCentered("Collect gold, stand on pads to build. WASD / click to move.", 20, h - 150, Palette.Hero);
         DrawCentered("SPACE volley   /   SHIFT dash   /   H switch hero   /   S shop   /   C codex   /   P pause", 18, h - 124, Palette.PathEdge);
     }
@@ -638,6 +643,8 @@ public static class Renderer
             $"{s.Hero.Profile.Initial} LV{s.Hero.Level}");
         DrawHeroLoadout(s);
 
+        if (s.Modifier.Id != "none")
+            Raylib.DrawText($"TRIAL  {s.Modifier.Name}", 16, Raylib.GetScreenHeight() - 48, 16, Palette.Hex("d6a6e0"));
         Raylib.DrawText($"{Raylib.GetFPS()} FPS", 16, Raylib.GetScreenHeight() - 28, 18, Palette.PathEdge);
 
         DrawActiveSynergies(s);
