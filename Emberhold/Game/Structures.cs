@@ -64,6 +64,8 @@ public sealed class Structure
     public float BurnDuration;
     public ProjectileSource ProjSource;
     public float ProjSpeed = 360f;
+    public Vector2 Facing = new(0, -1); // barrel aim, smoothed toward the current target
+    public float MuzzleFlash;           // brief flash timer after firing
 
     // Mine
     public float Interval;
