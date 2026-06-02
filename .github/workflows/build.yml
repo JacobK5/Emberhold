@@ -1,4 +1,4 @@
-name: Build and Upload
+name: Build and Release
 
 on:
   push:
@@ -15,10 +15,6 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
 
       - name: Read version and short SHA
         id: id
@@ -44,42 +40,10 @@ jobs:
         shell: pwsh
         run: Copy-Item "publish/win/Emberhold.exe" "Emberhold-win-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.exe"
 
-      - name: Install Google API client
-        run: python -m pip install google-api-python-client google-auth --quiet
-
-      - name: Upload to Google Drive
-        shell: python
-        env:
-          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
-          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
-          FILE_PATH: Emberhold-win-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.exe
-        run: |
-          import os, json
-          from google.oauth2 import service_account
-          from googleapiclient.discovery import build
-          from googleapiclient.http import MediaFileUpload
-
-          sa_info   = json.loads(os.environ["GDRIVE_SERVICE_ACCOUNT_JSON"])
-          folder_id = os.environ["GDRIVE_FOLDER_ID"]
-          file_path = os.environ["FILE_PATH"]
-
-          creds = service_account.Credentials.from_service_account_info(
-              sa_info, scopes=["https://www.googleapis.com/auth/drive"]
-          )
-          svc = build("drive", "v3", credentials=creds)
-
-          result = svc.files().create(
-              body={"name": os.path.basename(file_path), "parents": [folder_id]},
-              media_body=MediaFileUpload(file_path, resumable=True),
-              fields="id,name,webViewLink",
-          ).execute()
-
-          svc.permissions().create(
-              fileId=result["id"],
-              body={"type": "anyone", "role": "reader"},
-          ).execute()
-
-          print(f"Uploaded: {result['name']}  ->  {result['webViewLink']}")
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: Emberhold-win-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.exe
 
   # ─── macOS (x64 + arm64 zipped together) ────────────────────────────────────
   build-mac:
@@ -92,17 +56,12 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
       - name: Read version and short SHA
         id: id
         run: |
           echo "ver=$(cat VERSION | tr -d '[:space:]')" >> $GITHUB_OUTPUT
           echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-      # osx-x64 is cross-compiled from this arm64 runner; .NET 8 supports this
       - name: Publish osx-x64
         run: |
           dotnet publish Emberhold/Emberhold.csproj \
@@ -124,39 +83,39 @@ jobs:
           chmod +x publish/mac-x64/Emberhold publish/mac-arm64/Emberhold
           (cd publish && zip -r "../Emberhold-mac-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.zip" mac-x64/ mac-arm64/)
 
-      - name: Install Google API client
-        run: python -m pip install google-api-python-client google-auth --quiet
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-build
+          path: Emberhold-mac-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.zip
 
-      - name: Upload to Google Drive
-        shell: python
-        env:
-          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
-          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
-          FILE_PATH: Emberhold-mac-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.zip
+  # ─── Publish GitHub Release ──────────────────────────────────────────────────
+  release:
+    needs: [build-windows, build-mac]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version and short SHA
+        id: id
         run: |
-          import os, json
-          from google.oauth2 import service_account
-          from googleapiclient.discovery import build
-          from googleapiclient.http import MediaFileUpload
+          echo "ver=$(cat VERSION | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+          echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-          sa_info   = json.loads(os.environ["GDRIVE_SERVICE_ACCOUNT_JSON"])
-          folder_id = os.environ["GDRIVE_FOLDER_ID"]
-          file_path = os.environ["FILE_PATH"]
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-build
 
-          creds = service_account.Credentials.from_service_account_info(
-              sa_info, scopes=["https://www.googleapis.com/auth/drive"]
-          )
-          svc = build("drive", "v3", credentials=creds)
+      - uses: actions/download-artifact@v4
+        with:
+          name: mac-build
 
-          result = svc.files().create(
-              body={"name": os.path.basename(file_path), "parents": [folder_id]},
-              media_body=MediaFileUpload(file_path, resumable=True),
-              fields="id,name,webViewLink",
-          ).execute()
-
-          svc.permissions().create(
-              fileId=result["id"],
-              body={"type": "anyone", "role": "reader"},
-          ).execute()
-
-          print(f"Uploaded: {result['name']}  ->  {result['webViewLink']}")
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}
+          name: v${{ steps.id.outputs.ver }} (${{ steps.id.outputs.short }})
+          files: |
+            Emberhold-win-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.exe
+            Emberhold-mac-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.zip
