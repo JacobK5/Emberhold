@@ -299,7 +299,25 @@ public static class CombatSystem
         float roam = s.RoamLimit;
         hero.Pos = new Vector2(MathUtils.Clamp(hero.Pos.X, -roam, roam), MathUtils.Clamp(hero.Pos.Y, -roam, roam));
         hero.DashCooldown = 2.4f;
-        s.AddParticles(hero.Pos, Palette.Hex("d5ebc5"), 12, 84f);
+        hero.Invulnerable = MathF.Max(hero.Invulnerable, 0.3f); // brief i-frames: dash through danger
+
+        // Dash strike: burst enemies you land among; slowed enemies shatter for more.
+        float dmg = hero.Damage * 1.6f * hero.Profile.Damage * Balance.HeroDamageMult * s.Modifier.HeroDamageMult;
+        bool hitAny = false;
+        foreach (var e in s.Enemies)
+        {
+            if (e.Dead) continue;
+            if (Vector2.Distance(e.Pos, hero.Pos) > e.Radius + 34f) continue;
+            DamageEnemy(s, e, dmg * (e.SlowTimer > 0f ? 1.3f : 1f));
+            hitAny = true;
+        }
+        if (hitAny)
+        {
+            s.AddFloater(hero.Pos + new Vector2(0, -22), "STRIKE", Palette.Hex("d5ebc5"));
+            s.KickShake(5f);
+        }
+
+        s.AddParticles(hero.Pos, Palette.Hex("d5ebc5"), 14, 88f);
         s.KickShake(3f);
     }
 

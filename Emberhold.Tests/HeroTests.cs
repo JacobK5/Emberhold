@@ -65,6 +65,19 @@ public class HeroTests
     }
 
     [Fact]
+    public void Dash_StrikesNearbyEnemies()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Pos = new Vector2(0, 48);
+        s.Hero.Facing = new Vector2(0, -1);
+        s.Hero.DashCooldown = 0f;
+        var e = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, Radius = 11, Pos = new Vector2(0, -48) };
+        s.Enemies.Add(e);
+        CombatSystem.Dash(s);
+        Assert.True(e.Health < 100f);
+    }
+
+    [Fact]
     public void Artificer_RepairsNearbyDamagedStructures()
     {
         var s = new GameState(seedDebug: false);
