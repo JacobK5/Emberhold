@@ -55,7 +55,8 @@ public sealed class GameApp
         if (_startWave > 0) _state.Wave = _startWave;
         _state.Hero.Kind = (HeroKind)Math.Clamp(_startHero, 0, 2);
         ApplyRunModifier(); // roll the run's trial before previewing the first wave
-        _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave); // seed the wave-1 preview
+        _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave);      // wave-1 preview
+        _state.NextWaveKinds2 = WaveSystem.BuildComposition(_state, _state.Wave + 1); // wave-2 foresight
         if (_seed) _state.Phase = Phase.Combat;
         else _draft.StartRun(_state);
         if (_lose) { _state.Phase = Phase.Combat; _state.KeepHealth = 0f; }
