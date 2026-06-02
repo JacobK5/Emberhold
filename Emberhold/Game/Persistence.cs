@@ -2,11 +2,15 @@ using System.Text.Json;
 
 namespace Emberhold.Game;
 
-/// <summary>Cross-run profile saved to disk (best wave + best kills).</summary>
+/// <summary>Cross-run profile saved to disk: bests plus lifetime tallies + collection.</summary>
 public sealed record Profile
 {
     public int BestWave { get; init; } = 1;
     public int BestKills { get; init; }
+    public int Runs { get; init; }
+    public int LifetimeKills { get; init; }
+    public int BossesSlain { get; init; }
+    public HashSet<string> DiscoveredSynergies { get; init; } = new();
 }
 
 /// <summary>
@@ -41,13 +45,19 @@ public static class Persistence
         catch { /* best-effort; ignore */ }
     }
 
-    /// <summary>Merge a finished run into the profile, keeping the best, and persist.</summary>
-    public static Profile Record(Profile current, int wave, int kills)
+    /// <summary>Merge a finished run into the profile, keeping bests + lifetime tallies, and persist.</summary>
+    public static Profile Record(Profile current, int wave, int kills, int bossesSlain, IEnumerable<string> synergies)
     {
+        var discovered = new HashSet<string>(current.DiscoveredSynergies);
+        discovered.UnionWith(synergies);
         var updated = current with
         {
             BestWave = Math.Max(current.BestWave, wave),
             BestKills = Math.Max(current.BestKills, kills),
+            Runs = current.Runs + 1,
+            LifetimeKills = current.LifetimeKills + kills,
+            BossesSlain = current.BossesSlain + bossesSlain,
+            DiscoveredSynergies = discovered,
         };
         Save(updated);
         return updated;

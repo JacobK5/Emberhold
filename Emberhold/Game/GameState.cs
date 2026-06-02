@@ -53,6 +53,7 @@ public sealed class GameState
 
     public float Elapsed;
     public int Kills;
+    public int BossKills;
     public bool Over;
     public bool Paused;
     public float Shake;
@@ -62,6 +63,7 @@ public sealed class GameState
     public float BannerTimer;        // generic notice banner (e.g. "THE HORDE GROWS STRONGER")
     public string BannerText = "";
     public int BestWave = 1;
+    public Profile? Profile;  // lifetime stats, set on game-over for the recap
     public readonly HashSet<string> SeenSynergies = new(); // discovered this run, for the summary
 
     // Per-wave stats: Live accumulates during the wave; LastSummary holds the most

@@ -213,6 +213,7 @@ public static class CombatSystem
             if (relicSpace) s.SpawnRelic(enemy.Pos);
             for (int i = 0; i < 10; i++)
                 s.SpawnDrop(enemy.Pos + new Vector2(s.Rand(-22, 22), s.Rand(-22, 22)), 1, fromMine: true);
+            s.BossKills += 1;
             s.HordeTier += 1;
             s.BannerText = "THE HORDE GROWS STRONGER";
             s.BannerTimer = 2.6f;

@@ -167,8 +167,9 @@ public sealed class GameApp
         if (_state.KeepHealth <= 0f || _state.Hero.Health <= 0f)
         {
             _state.Over = true;
-            _profile = Persistence.Record(_profile, _state.Wave, _state.Kills);
+            _profile = Persistence.Record(_profile, _state.Wave, _state.Kills, _state.BossKills, _state.SeenSynergies);
             _state.BestWave = _profile.BestWave;
+            _state.Profile = _profile;
         }
     }
 
