@@ -41,9 +41,12 @@ public static class Renderer
         if (s.Phase == Phase.Placement) OverlayUI.DrawPlacementWorld(s, draft);
         Raylib.EndMode2D();
 
+        DrawEdgeIndicators(s);
         DrawHud(s);
         DrawAbilityBar(s);
         DrawWaveStatus(s);
+        DrawStreak(s);
+        DrawWaveSummary(s);
         if (showIntro && s.Phase == Phase.Combat) DrawIntro();
         if (s.BossBannerTimer > 0f) DrawCentered("ELITE RAID INCOMING", 40, Raylib.GetScreenHeight() / 2 - 130, Palette.Hex("e0994f"));
         if (s.Paused && !s.Over) DrawCentered("PAUSED", 44, Raylib.GetScreenHeight() / 2 - 20, Palette.Hex("efd18a"));
@@ -88,6 +91,72 @@ public static class Renderer
             if (s.Shop.CanOpen)
                 DrawCentered("[S] Supply Shop", 16, 54, Palette.Hex("c49a62"));
         }
+    }
+
+    /// <summary>Live kill-streak meter with a draining timer bar, shown mid-combat.</summary>
+    private static void DrawStreak(GameState s)
+    {
+        if (s.Over || s.Streak < 3) return;
+        int tier = s.StreakTier;
+        Color col = tier switch { 3 => Palette.Hex("ff7a3a"), 2 => Palette.Hex("ff9a4d"), 1 => Palette.Hex("ffc15c"), _ => Palette.Hex("e8cf8a") };
+        string label = tier > 0 ? $"{GameState.StreakLabel(tier)}  x{s.Streak}" : $"STREAK x{s.Streak}";
+        int fs = tier >= 2 ? 24 : 20;
+        int w = Raylib.MeasureText(label, fs);
+        int sw = Raylib.GetScreenWidth();
+        int x = sw / 2 - w / 2, y = 92;
+        // Pulse the blazing tier.
+        if (tier == 3)
+        {
+            float pulse = 0.5f + 0.5f * MathF.Sin((float)Raylib.GetTime() * 9f);
+            Raylib.DrawText(label, x, y, fs, new Color(col.R, col.G, col.B, (byte)(160 + 95 * pulse)));
+        }
+        else Raylib.DrawText(label, x, y, fs, col);
+        // Timer bar underneath.
+        float frac = MathUtils.Clamp(s.StreakTimer / GameState.StreakWindow, 0f, 1f);
+        Raylib.DrawRectangle(sw / 2 - 70, y + fs + 4, 140, 4, new Color(19, 25, 24, 180));
+        Raylib.DrawRectangle(sw / 2 - 70, y + fs + 4, (int)(140 * frac), 4, col);
+    }
+
+    /// <summary>Between-wave recap of the wave just cleared.</summary>
+    private static void DrawWaveSummary(GameState s)
+    {
+        if (s.Phase != Phase.Combat || s.Over || s.PendingDraft || s.Shop.Open) return;
+        if (s.Spawning is not null || s.BetweenWaves <= 0f) return;
+        if (s.LastSummary is not WaveSummary sum) return;
+
+        const int pw = 250;
+        var rows = new List<(string, string, Color)>
+        {
+            ("Raiders slain", sum.Kills.ToString(), Palette.Hero),
+            ("Gold gathered", sum.GoldEarned.ToString(), Palette.Gold),
+            ("Damage dealt", sum.DamageDealt.ToString(), Palette.Hex("d98f6b")),
+            ("Best streak", $"x{sum.BestStreak}", Palette.Hex("ff9a4d")),
+        };
+        if (sum.StructuresLost > 0)
+            rows.Add(("Structures lost", sum.StructuresLost.ToString(), Palette.Hex("d2604f")));
+
+        int ph = 44 + rows.Count * 22 + 12;
+        int sw = Raylib.GetScreenWidth();
+        int px = sw / 2 - pw / 2;
+        int py = 78;
+        Raylib.DrawRectangle(px, py, pw, ph, new Color(16, 23, 22, 215));
+        Raylib.DrawRectangleLinesEx(new Rectangle(px, py, pw, ph), 2f, Palette.Hex("c49a62"));
+        DrawCenteredAt($"WAVE {sum.Wave} CLEARED", 20, px, pw, py + 10, Palette.Hex("efd18a"));
+
+        int ry = py + 40;
+        foreach (var (label, value, col) in rows)
+        {
+            Raylib.DrawText(label, px + 16, ry, 15, Palette.PathEdge);
+            int vw = Raylib.MeasureText(value, 16);
+            Raylib.DrawText(value, px + pw - vw - 16, ry - 1, 16, col);
+            ry += 22;
+        }
+    }
+
+    private static void DrawCenteredAt(string text, int fontSize, int x, int width, int y, Color color)
+    {
+        int w = Raylib.MeasureText(text, fontSize);
+        Raylib.DrawText(text, x + width / 2 - w / 2, y, fontSize, color);
     }
 
     private static void DrawIntro()
@@ -170,6 +239,15 @@ public static class Renderer
 
     private static void DrawStructureLevel(GameState s, Structure st)
     {
+        // Damage bar for non-wall structures (walls draw their own in DrawWall).
+        if (st.Role is not StructureRole.Wall and not StructureRole.HeroBuff
+            && st.MaxHealth > 0f && st.Health < st.MaxHealth)
+        {
+            float frac = MathUtils.Clamp(st.Health / st.MaxHealth, 0f, 1f);
+            Raylib.DrawRectangleRec(new Rectangle(st.Pos.X - 16, st.Pos.Y - st.Radius - 12, 32, 3), new Color(19, 25, 24, 210));
+            Raylib.DrawRectangleRec(new Rectangle(st.Pos.X - 16, st.Pos.Y - st.Radius - 12, 32 * frac, 3), Palette.Hex("d2604f"));
+        }
+
         // Level pips above the structure.
         for (int i = 0; i < st.Level - 1; i++)
             Raylib.DrawCircleV(st.Pos + new Vector2(-5 + i * 5, -st.Radius - 8), 2f, Palette.Hex("bfe0ff"));
@@ -288,18 +366,24 @@ public static class Renderer
             // Flyers cast a raised shadow to read as airborne.
             float shadowOff = e.Flying ? 12f : 4f;
             Raylib.DrawCircleV(e.Pos + new Vector2(2, shadowOff), e.Radius, new Color(22, 31, 29, 64));
-            Color body = e.Kind switch
-            {
-                EnemyKind.Runner => Palette.Hex("cc704b"),
-                EnemyKind.Brute => Palette.Hex("88453e"),
-                EnemyKind.Flyer => Palette.Hex("9a7bb0"),
-                EnemyKind.Shielded => Palette.Hex("6e7a86"),
-                EnemyKind.Healer => Palette.Hex("5f9e6a"),
-                _ => e.Elite ? Palette.Elite : Palette.Enemy,
-            };
+            Color body = EnemyBodyColor(e);
             if (e.HitTimer > 0f) body = Palette.Hex("f4b06e");
-            Raylib.DrawCircleV(e.Pos, e.Radius, body);
-            Raylib.DrawCircleLinesV(e.Pos, e.Radius, Palette.EnemyDark);
+
+            // Siege engines render as an armored chassis (square hull + treads).
+            if (e.Siege)
+            {
+                var r = new Rectangle(e.Pos.X - e.Radius, e.Pos.Y - e.Radius, e.Radius * 2f, e.Radius * 2f);
+                Raylib.DrawRectangleRec(r, body);
+                Raylib.DrawRectangleLinesEx(r, 2f, Palette.Hex("3c3026"));
+                Raylib.DrawRectangleRec(new Rectangle(e.Pos.X - e.Radius, e.Pos.Y - e.Radius, 4f, e.Radius * 2f), Palette.Hex("4a3c30"));
+                Raylib.DrawRectangleRec(new Rectangle(e.Pos.X + e.Radius - 4f, e.Pos.Y - e.Radius, 4f, e.Radius * 2f), Palette.Hex("4a3c30"));
+                Raylib.DrawRectangleRec(new Rectangle(e.Pos.X - 5f, e.Pos.Y - 5f, 10f, 10f), Palette.Hex("9a5240"));
+            }
+            else
+            {
+                Raylib.DrawCircleV(e.Pos, e.Radius, body);
+                Raylib.DrawCircleLinesV(e.Pos, e.Radius, Palette.EnemyDark);
+            }
 
             if (e.ShieldPerHit > 0f)
                 Raylib.DrawCircleLinesV(e.Pos, e.Radius + 4f, new Color(170, 200, 230, 200));
@@ -324,6 +408,61 @@ public static class Renderer
                 Raylib.DrawRectangleRec(new Rectangle(e.Pos.X - 17, e.Pos.Y - e.Radius - 9, 34 * frac, 4),
                     e.Elite ? Palette.Hex("e0994f") : Palette.Hex("c15d4d"));
             }
+        }
+    }
+
+    private static Color EnemyBodyColor(Enemy e) => e.Kind switch
+    {
+        EnemyKind.Runner => Palette.Hex("cc704b"),
+        EnemyKind.Brute => Palette.Hex("88453e"),
+        EnemyKind.Flyer => Palette.Hex("9a7bb0"),
+        EnemyKind.Shielded => Palette.Hex("6e7a86"),
+        EnemyKind.Healer => Palette.Hex("5f9e6a"),
+        EnemyKind.Siege => Palette.Hex("6f5a48"),
+        _ => e.Elite ? Palette.Elite : Palette.Enemy,
+    };
+
+    /// <summary>
+    /// Screen-edge arrows for off-screen enemies, coloured by type and sized by
+    /// threat — telegraphs incoming siege/elite/brute before they reach the walls.
+    /// </summary>
+    private static void DrawEdgeIndicators(GameState s)
+    {
+        if (s.Phase != Phase.Combat || s.Over) return;
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        const float margin = 26f;
+        var center = new Vector2(w / 2f, h / 2f);
+        float halfW = w / 2f - margin, halfH = h / 2f - margin;
+
+        foreach (var e in s.Enemies)
+        {
+            if (e.Dead) continue;
+            var sp = Raylib.GetWorldToScreen2D(e.Pos, s.Cam);
+            if (sp.X >= 0 && sp.X <= w && sp.Y >= 0 && sp.Y <= h) continue; // on-screen
+
+            var dir = MathUtils.Normalize(sp - center);
+            if (dir == Vector2.Zero) continue;
+
+            // Project the direction onto the inset screen-rect border.
+            float tx = MathF.Abs(dir.X) > 1e-4f ? halfW / MathF.Abs(dir.X) : float.PositiveInfinity;
+            float ty = MathF.Abs(dir.Y) > 1e-4f ? halfH / MathF.Abs(dir.Y) : float.PositiveInfinity;
+            var pos = center + dir * MathF.Min(tx, ty);
+
+            bool big = e.Siege || e.Elite || e.Kind == EnemyKind.Brute;
+            float size = big ? 13f : 8f;
+            float angle = MathF.Atan2(dir.Y, dir.X);
+            Color col = e.Siege ? Palette.Hex("c79256") : e.Elite ? Palette.Elite : EnemyBodyColor(e);
+
+            // Arrow triangle pointing outward (toward the threat).
+            Vector2 Tip(float lx, float ly)
+            {
+                float c = MathF.Cos(angle), si = MathF.Sin(angle);
+                return pos + new Vector2(lx * c - ly * si, lx * si + ly * c);
+            }
+            // Raylib back-face-culls DrawTriangle; vertices must be counter-clockwise.
+            Raylib.DrawTriangle(Tip(size, 0), Tip(-size * 0.7f, -size * 0.7f), Tip(-size * 0.7f, size * 0.7f), col);
+            if (big)
+                Raylib.DrawTriangleLines(Tip(size + 2f, 0), Tip(-size * 0.9f, size * 0.9f), Tip(-size * 0.9f, -size * 0.9f), Palette.Hex("1e2928"));
         }
     }
 

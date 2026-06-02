@@ -4,6 +4,21 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 ---
 
+## Shipped
+
+Ideas that have made it into a release (newest first).
+
+### v0.1.0 — "Heat of Battle"
+- **Kill streaks** — consecutive kills within 2.5s build a streak that buffs hero
+  damage (+15/30/50%) and drops bonus gold, with tier-up floaters and a live meter.
+- **Wave-end stat card** — between-wave recap: kills, gold, damage, best streak, structures lost.
+- **Siege engines** — slow, high-HP enemies (wave 7+) that hunt and demolish your
+  structures (all structures now have health); forces proactive defense.
+- **Typed enemy edge indicators** — screen-edge arrows coloured by enemy type,
+  enlarged for siege/elite/brute, telegraphing off-screen threats.
+
+---
+
 ## Core loop deepening
 
 ### Enemy variety & counterplay

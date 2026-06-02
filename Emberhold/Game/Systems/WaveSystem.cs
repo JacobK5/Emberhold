@@ -14,6 +14,7 @@ public static class WaveSystem
     public static void StartWave(GameState s)
     {
         var stats = WaveStats.For(s.Wave);
+        s.Live = new WaveSummary { Wave = s.Wave }; // reset per-wave tally
         s.Spawning = new Spawning
         {
             Remaining = Math.Max(1, (int)MathF.Round(stats.Count * Balance.EnemyCountMult)) + (stats.Elite ? 1 : 0),
@@ -34,6 +35,7 @@ public static class WaveSystem
             {
                 int cleared = s.Wave;
                 s.WaveBonusPending = false;
+                s.LastSummary = s.Live; // snapshot for the wave-end stat card
                 s.Wave += 1;
                 s.UpgradeBreak = cleared % 5 == 0;
                 s.BetweenWaves = s.UpgradeBreak ? 12f : 5f;
@@ -93,11 +95,12 @@ public static class WaveSystem
         // Counter-types unlock with depth and occupy the low end of the roll;
         // basic raider/runner/brute fill the rest. Composition is the difficulty knob.
         EnemyKind kind = elite ? EnemyKind.Elite
-            : wave >= 10 && roll < 0.10f ? EnemyKind.Healer
-            : wave >= 8 && roll < 0.20f ? EnemyKind.Shielded
-            : wave >= 6 && roll < 0.32f ? EnemyKind.Flyer
-            : wave >= 4 && roll < 0.46f ? EnemyKind.Brute
-            : wave >= 2 && roll < 0.70f ? EnemyKind.Runner
+            : wave >= 7 && roll < 0.08f ? EnemyKind.Siege
+            : wave >= 10 && roll < 0.16f ? EnemyKind.Healer
+            : wave >= 8 && roll < 0.26f ? EnemyKind.Shielded
+            : wave >= 6 && roll < 0.38f ? EnemyKind.Flyer
+            : wave >= 4 && roll < 0.50f ? EnemyKind.Brute
+            : wave >= 2 && roll < 0.72f ? EnemyKind.Runner
             : EnemyKind.Raider;
 
         var profile = EnemyProfile.Get(kind);
@@ -120,6 +123,7 @@ public static class WaveSystem
             Flying = kind == EnemyKind.Flyer,
             ShieldPerHit = kind == EnemyKind.Shielded ? 8f : 0f,
             Healer = kind == EnemyKind.Healer,
+            Siege = kind == EnemyKind.Siege,
         });
     }
 }

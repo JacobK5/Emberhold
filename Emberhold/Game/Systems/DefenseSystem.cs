@@ -1,4 +1,5 @@
 using System.Numerics;
+using Emberhold.Render;
 
 namespace Emberhold.Game;
 
@@ -38,7 +39,16 @@ public static class DefenseSystem
             }
         }
 
-        // Remove breached walls so the lane reopens.
-        s.Structures.RemoveAll(st => st.Role == StructureRole.Wall && st.Health <= 0f);
+        // Remove any demolished structure (breached walls reopen the lane; siege
+        // engines can wreck towers/mines/auras too). Tally the loss for the stat card.
+        for (int i = s.Structures.Count - 1; i >= 0; i--)
+        {
+            var st = s.Structures[i];
+            if (st.Role == StructureRole.HeroBuff || st.MaxHealth <= 0f || st.Health > 0f) continue;
+            s.Live.StructuresLost += 1;
+            s.AddParticles(st.Pos, Palette.Hex("c7794f"), 22, 95f);
+            s.KickShake(7f);
+            s.Structures.RemoveAt(i);
+        }
     }
 }

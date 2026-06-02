@@ -123,6 +123,13 @@ public static class EconomySystem
                 };
                 break;
         }
+
+        // Non-wall structures gain durability per level so investment resists siege.
+        if (st.Role is not StructureRole.Wall and not StructureRole.HeroBuff)
+        {
+            st.MaxHealth *= 1.35f;
+            st.Health = st.MaxHealth;
+        }
     }
 
     public static void UpdateMines(GameState s, float dt)

@@ -33,6 +33,7 @@ public sealed class Enemy
     public float ShieldPerHit;  // flat mitigation per direct hit (not DoT/traps)
     public bool Healer;         // periodically heals nearby enemies
     public float HealTimer;
+    public bool Siege;          // targets and demolishes structures, not just walls
 }
 
 public enum ProjectileSource { Hero, Tower, Cannon, Ballista, Chain, Flame }

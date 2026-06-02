@@ -21,6 +21,7 @@ public sealed class GameApp
 
     private readonly bool _seed;
     private readonly int _startWave;
+    private readonly int _startChapter;
     private readonly bool _lose;
     private float _introTimer = 8f;
     private bool _showCodex;
@@ -30,11 +31,12 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0)
     {
         Auto = auto;
         _seed = seed;
         _startWave = startWave;
+        _startChapter = startChapter;
         _showCodex = codex;
         _lose = lose;
         NewRun();
@@ -45,6 +47,7 @@ public sealed class GameApp
         _state = new GameState(seedDebug: _seed) { BestWave = _profile.BestWave };
         _draft = new DraftController();
         _pointerTarget = null;
+        if (_startChapter > 0) _state.Chapter = _startChapter;
         if (_startWave > 0) _state.Wave = _startWave;
         if (_seed) _state.Phase = Phase.Combat;
         else _draft.StartRun(_state);
@@ -141,6 +144,7 @@ public sealed class GameApp
         }
 
         SynergyEngine.Evaluate(_state);
+        _state.UpdateStreak(dt);
         if (Auto) AutoHeroMove(dt); else UpdateHeroMovement(dt);
         EconomySystem.UpdateBuilding(_state, dt);
         EconomySystem.UpdateUpgrades(_state, dt);
@@ -367,7 +371,8 @@ public sealed class GameApp
     public string Report()
         => $"wave={_state.Wave} fort={_state.Chapter} keep={_state.KeepHealth:0}/{_state.KeepMaxHealth:0} "
          + $"gold={_state.Gold} structures={_state.Structures.Count} pads={_state.Pads.Count} "
-         + $"kills={_state.Kills} synergies={_state.SeenSynergies.Count} over={_state.Over} heroLv={_state.Hero.Level}";
+         + $"kills={_state.Kills} synergies={_state.SeenSynergies.Count} over={_state.Over} heroLv={_state.Hero.Level} "
+         + $"enemies={_state.Enemies.Count}";
 
     private void UpdateCamera(float dt)
     {

@@ -160,6 +160,21 @@ public static class StructureFactory
                 st.Role = StructureRole.HeroBuff;
                 s.Hero.VolleyCooldown = 5.8f; s.Hero.VolleyDamage = 1.55f; break;
         }
+
+        // Generic structure health so Siege engines can demolish non-wall builds too.
+        // Walls already set their own Health in the switch; the shrine is intangible.
+        if (st.MaxHealth <= 0f && st.Role != StructureRole.HeroBuff)
+        {
+            st.MaxHealth = st.Role switch
+            {
+                StructureRole.Tower      => 130f,
+                StructureRole.Mine       => 100f,
+                StructureRole.Aura       => 100f,
+                StructureRole.GroundTrap => 120f,
+                _ => 100f,
+            };
+            st.Health = st.MaxHealth;
+        }
         return st;
     }
 }
