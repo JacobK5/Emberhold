@@ -8,6 +8,12 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.3.0 — "Champions"
+- **Passive level-up abilities** — Lv3 Quick Hands (pickup radius), Lv5 signature
+  (Ranger ricochet / Warden cleave), Lv7 Second Wind (regen).
+- **Equipment drops** — elites drop relics (Ember Ring, Swift Boots, Warden's Cloak,
+  Hawk Eye) with permanent run bonuses, shown as chips under the hero bar.
+
 ### v0.2.0 — "Arsenal"
 - **More field synergies** — four new cross-category combos (Backdraft, Hellfire,
   Conduit, Sniper's Nest) rewarding specific placements; appear in the codex/HUD automatically.

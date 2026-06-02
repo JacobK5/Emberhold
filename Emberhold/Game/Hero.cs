@@ -3,6 +3,9 @@ using Emberhold.Data;
 
 namespace Emberhold.Game;
 
+/// <summary>Run-long equipment dropped by elites; each grants a permanent bonus.</summary>
+public enum RelicKind { EmberRing, SwiftBoots, WardenCloak, HawkEye }
+
 /// <summary>The player-controlled hero. Stats ported from the prototype's hero state.</summary>
 public sealed class Hero
 {
@@ -39,4 +42,22 @@ public sealed class Hero
     public int RngUpgrades;
     public int HpUpgrades;
     public int VolleyUpgrades;
+
+    // Equipment collected this run (elite drops). Effects applied once on pickup.
+    public readonly HashSet<RelicKind> Relics = new();
+    public float BasePickupRadius = 24f;
+
+    // Level-gated passive abilities (computed live so hero-switching is seamless).
+    public bool QuickHands => Level >= 3;  // wider gold pickup radius
+    public bool Signature  => Level >= 5;  // Ranger: ricochet shots / Warden: cleave
+    public bool SecondWind => Level >= 7;  // slow passive health regen
+    public float PickupRadius => BasePickupRadius + (QuickHands ? 14f : 0f);
+
+    public static string PassiveName(int level, HeroKind kind) => level switch
+    {
+        3 => "QUICK HANDS",
+        5 => kind == HeroKind.Warden ? "CLEAVE" : "RICOCHET",
+        7 => "SECOND WIND",
+        _ => "",
+    };
 }

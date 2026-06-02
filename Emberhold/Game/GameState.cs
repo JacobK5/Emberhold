@@ -244,4 +244,11 @@ public sealed class GameState
             Id = NextId(), Pos = at, Value = 0, FromMine = false, Radius = 9f,
             Kind = DropKind.Ember, Life = 20f, Bob = Rand() * MathUtils.Tau,
         });
+
+    public void SpawnRelic(Vector2 at)
+        => Drops.Add(new Drop
+        {
+            Id = NextId(), Pos = at, Value = 0, FromMine = false, Radius = 10f,
+            Kind = DropKind.Relic, Life = 30f, Bob = Rand() * MathUtils.Tau,
+        });
 }
