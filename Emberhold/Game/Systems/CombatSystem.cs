@@ -79,6 +79,7 @@ public static class CombatSystem
 
     private static void ApplyStatus(GameState s, Enemy e, Projectile p)
     {
+        if (e.StatusImmune) return; // Wraiths shrug off burn and slow
         if (p.SlowFactor < 1f && p.SlowDuration > 0f)
         {
             // Strongest active slow wins; resets fresh once a prior slow has lapsed.

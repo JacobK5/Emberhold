@@ -48,19 +48,21 @@ public static class WaveSystem
     /// raider/runner/brute fill the rest. Composition is the difficulty knob.
     /// </summary>
     private static EnemyKind PickKind(int wave, float roll)
-        => wave >= 7 && roll < 0.08f ? EnemyKind.Siege
-         : wave >= 10 && roll < 0.16f ? EnemyKind.Healer
-         : wave >= 8 && roll < 0.26f ? EnemyKind.Shielded
-         : wave >= 6 && roll < 0.38f ? EnemyKind.Flyer
-         : wave >= 4 && roll < 0.50f ? EnemyKind.Brute
-         : wave >= 2 && roll < 0.72f ? EnemyKind.Runner
+        => wave >= 7 && roll < 0.07f ? EnemyKind.Siege
+         : wave >= 9 && roll < 0.14f ? EnemyKind.Assassin
+         : wave >= 11 && roll < 0.21f ? EnemyKind.Wraith
+         : wave >= 10 && roll < 0.28f ? EnemyKind.Healer
+         : wave >= 8 && roll < 0.37f ? EnemyKind.Shielded
+         : wave >= 6 && roll < 0.47f ? EnemyKind.Flyer
+         : wave >= 4 && roll < 0.57f ? EnemyKind.Brute
+         : wave >= 2 && roll < 0.76f ? EnemyKind.Runner
          : EnemyKind.Raider;
 
     /// <summary>Human-readable summary of a wave's composition for the preview UI.</summary>
     public static string PreviewLine(IReadOnlyList<EnemyKind>? kinds)
     {
         if (kinds is null || kinds.Count == 0) return "";
-        int boss = 0, siege = 0, elite = 0, healer = 0, shield = 0, flyer = 0, brute = 0;
+        int boss = 0, siege = 0, elite = 0, healer = 0, shield = 0, flyer = 0, brute = 0, assassin = 0, wraith = 0;
         foreach (var k in kinds)
             switch (k)
             {
@@ -71,11 +73,15 @@ public static class WaveSystem
                 case EnemyKind.Shielded: shield++; break;
                 case EnemyKind.Flyer: flyer++; break;
                 case EnemyKind.Brute: brute++; break;
+                case EnemyKind.Assassin: assassin++; break;
+                case EnemyKind.Wraith: wraith++; break;
             }
         var parts = new List<string> { $"{kinds.Count} incoming" };
         if (boss > 0) parts.Add("BOSS");
         if (elite > 0) parts.Add($"Elite x{elite}");
         if (siege > 0) parts.Add($"Siege x{siege}");
+        if (assassin > 0) parts.Add($"Assassin x{assassin}");
+        if (wraith > 0) parts.Add($"Wraith x{wraith}");
         if (healer > 0) parts.Add($"Healer x{healer}");
         if (shield > 0) parts.Add($"Shielded x{shield}");
         if (flyer > 0) parts.Add($"Flyer x{flyer}");
@@ -187,6 +193,9 @@ public static class WaveSystem
             Siege = kind == EnemyKind.Siege,
             Boss = kind == EnemyKind.Boss,
             SummonTimer = kind == EnemyKind.Boss ? 5f : 0f,
+            Phantom = kind == EnemyKind.Assassin,
+            BlinkTimer = kind == EnemyKind.Assassin ? 1.6f : 0f,
+            StatusImmune = kind == EnemyKind.Wraith,
         });
     }
 }

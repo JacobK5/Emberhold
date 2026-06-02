@@ -31,6 +31,20 @@ public static class EnemySystem
                 }
             }
 
+            // Assassin blinks forward toward the keep, phasing past walls and traps.
+            if (e.Phantom)
+            {
+                e.BlinkTimer -= dt;
+                if (e.BlinkTimer <= 0f && Vector2.Distance(e.Pos, Map.KeepPos) > Map.KeepRadius + e.Radius + 20f)
+                {
+                    e.BlinkTimer = 1.8f;
+                    var dir = MathUtils.Normalize(Map.KeepPos - e.Pos);
+                    s.AddParticles(e.Pos, Palette.Hex("b07bd0"), 8, 55f);
+                    e.Pos += dir * 85f;
+                    s.AddParticles(e.Pos, Palette.Hex("b07bd0"), 8, 55f);
+                }
+            }
+
             e.HitTimer = MathF.Max(0f, e.HitTimer - dt);
             e.AttackTimer -= dt;
 
@@ -79,8 +93,9 @@ public static class EnemySystem
             }
             else
             {
+                bool ignoresWalls = e.Flying || e.Phantom; // flyers and assassins bypass walls
                 float reach = e.Radius + Map.KeepRadius;
-                var blockingWall = e.Flying ? null : NearestBlockingWall(s, e); // flyers pass over walls
+                var blockingWall = ignoresWalls ? null : NearestBlockingWall(s, e);
 
                 if (Vector2.Distance(e.Pos, Map.KeepPos) <= reach)
                 {
@@ -103,7 +118,7 @@ public static class EnemySystem
                 {
                     var dir = MathUtils.Normalize(Map.KeepPos - e.Pos);
                     var delta = dir * e.Speed * speedScale * dt;
-                    e.Pos = e.Flying ? e.Pos + delta : Geometry.MoveWithCollisions(e.Pos, e.Radius, delta, s.SolidRects());
+                    e.Pos = ignoresWalls ? e.Pos + delta : Geometry.MoveWithCollisions(e.Pos, e.Radius, delta, s.SolidRects());
                 }
             }
 
