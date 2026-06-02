@@ -8,6 +8,12 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.5.0 — "Warlord"
+- **Chapter boss** — a unique boss every 10th wave: huge HP, summons adds, resists
+  slows, telegraphed, with a guaranteed relic/gold reward.
+- **Fortnight clock** — each boss defeated ramps a permanent horde buff (War Drums),
+  keeping late-game pressure rising.
+
 ### v0.4.0 — "Strategist"
 - **Upcoming wave preview** — exact composition of the next wave shown on the
   between-wave card and the draft screen (e.g. "14 incoming · Siege x2 · Shielded x4").

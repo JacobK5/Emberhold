@@ -1,5 +1,6 @@
 using System.Numerics;
 using Emberhold.Core;
+using Emberhold.Data;
 using Emberhold.Render;
 
 namespace Emberhold.Game;
@@ -13,9 +14,22 @@ public static class EnemySystem
     public static void Update(GameState s, float dt)
     {
         var hero = s.Hero;
+        List<Enemy>? summons = null; // bosses summon adds; appended after the loop to keep iteration safe
         foreach (var e in s.Enemies)
         {
             if (e.Dead) continue;
+
+            // Chapter boss periodically summons a pair of raider adds.
+            if (e.Boss)
+            {
+                e.SummonTimer -= dt;
+                if (e.SummonTimer <= 0f)
+                {
+                    e.SummonTimer = 5.5f;
+                    (summons ??= new List<Enemy>()).AddRange(MakeAdds(s, e));
+                    s.AddParticles(e.Pos, Palette.Hex("c77a8f"), 14, 64f);
+                }
+            }
 
             e.HitTimer = MathF.Max(0f, e.HitTimer - dt);
             e.AttackTimer -= dt;
@@ -99,6 +113,33 @@ public static class EnemySystem
                 hero.Invulnerable = 0.75f;
                 s.AddParticles(hero.Pos, Palette.Hex("d9795c"), 8, 58f);
             }
+        }
+
+        if (summons is not null) s.Enemies.AddRange(summons);
+    }
+
+    /// <summary>Two weakened raiders spawned beside a boss as it summons.</summary>
+    private static IEnumerable<Enemy> MakeAdds(GameState s, Enemy boss)
+    {
+        var stats = WaveStats.For(s.Wave);
+        var profile = EnemyProfile.Raider;
+        for (int i = 0; i < 2; i++)
+        {
+            float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * 0.7f;
+            yield return new Enemy
+            {
+                Id = s.NextId(),
+                Pos = boss.Pos + new Vector2(s.Rand(-28, 28), s.Rand(-28, 28)),
+                Radius = profile.Radius,
+                Health = hp,
+                MaxHealth = hp,
+                Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult,
+                Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult),
+                Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult),
+                Kind = EnemyKind.Raider,
+                Side = boss.Side,
+                SlowFactor = 1f,
+            };
         }
     }
 

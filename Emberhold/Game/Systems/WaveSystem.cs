@@ -25,7 +25,8 @@ public static class WaveSystem
             Interval = stats.Interval,
             Kinds = new Queue<EnemyKind>(kinds),
         };
-        if (kinds.Contains(EnemyKind.Elite)) s.BossBannerTimer = 1.8f;
+        if (kinds.Contains(EnemyKind.Boss)) { s.BossBannerTimer = 2.4f; s.BossIncoming = true; }
+        else if (kinds.Contains(EnemyKind.Elite)) { s.BossBannerTimer = 1.8f; s.BossIncoming = false; }
     }
 
     /// <summary>Precompute a wave's full enemy composition (kinds only; lanes chosen at spawn).</summary>
@@ -36,7 +37,9 @@ public static class WaveSystem
         var list = new List<EnemyKind>(count + 1);
         for (int i = 0; i < count; i++)
             list.Add(PickKind(wave, s.Rand()));
-        if (stats.Elite) list.Add(EnemyKind.Elite);
+        // Every tenth wave is a chapter boss; other fifths are an elite raid.
+        if (wave % 10 == 0) list.Add(EnemyKind.Boss);
+        else if (stats.Elite) list.Add(EnemyKind.Elite);
         return list;
     }
 
@@ -57,10 +60,11 @@ public static class WaveSystem
     public static string PreviewLine(IReadOnlyList<EnemyKind>? kinds)
     {
         if (kinds is null || kinds.Count == 0) return "";
-        int siege = 0, elite = 0, healer = 0, shield = 0, flyer = 0, brute = 0;
+        int boss = 0, siege = 0, elite = 0, healer = 0, shield = 0, flyer = 0, brute = 0;
         foreach (var k in kinds)
             switch (k)
             {
+                case EnemyKind.Boss: boss++; break;
                 case EnemyKind.Siege: siege++; break;
                 case EnemyKind.Elite: elite++; break;
                 case EnemyKind.Healer: healer++; break;
@@ -69,6 +73,7 @@ public static class WaveSystem
                 case EnemyKind.Brute: brute++; break;
             }
         var parts = new List<string> { $"{kinds.Count} incoming" };
+        if (boss > 0) parts.Add("BOSS");
         if (elite > 0) parts.Add($"Elite x{elite}");
         if (siege > 0) parts.Add($"Siege x{siege}");
         if (healer > 0) parts.Add($"Healer x{healer}");
@@ -156,7 +161,10 @@ public static class WaveSystem
         bool elite = kind == EnemyKind.Elite;
 
         var profile = EnemyProfile.Get(kind);
-        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult;
+        // War Drums: each boss cleared ramps a gentle permanent horde buff.
+        float hpBuff = 1f + s.HordeTier * 0.08f;
+        float spdBuff = 1f + s.HordeTier * 0.03f;
+        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff;
 
         s.Enemies.Add(new Enemy
         {
@@ -165,7 +173,7 @@ public static class WaveSystem
             Radius = profile.Radius,
             Health = hp,
             MaxHealth = hp,
-            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult,
+            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff,
             Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult),
             Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult),
             Kind = kind,
@@ -176,6 +184,8 @@ public static class WaveSystem
             ShieldPerHit = kind == EnemyKind.Shielded ? 8f : 0f,
             Healer = kind == EnemyKind.Healer,
             Siege = kind == EnemyKind.Siege,
+            Boss = kind == EnemyKind.Boss,
+            SummonTimer = kind == EnemyKind.Boss ? 5f : 0f,
         });
     }
 }

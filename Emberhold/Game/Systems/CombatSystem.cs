@@ -82,9 +82,11 @@ public static class CombatSystem
         if (p.SlowFactor < 1f && p.SlowDuration > 0f)
         {
             // Strongest active slow wins; resets fresh once a prior slow has lapsed.
-            // CryoForge keystone extends slow duration globally.
+            // CryoForge keystone extends slow duration globally; bosses resist slows.
             float duration = p.SlowDuration * s.SlowDurationMult;
-            e.SlowFactor = e.SlowTimer <= 0f ? p.SlowFactor : MathF.Min(e.SlowFactor, p.SlowFactor);
+            float factor = p.SlowFactor;
+            if (e.Boss) { duration *= 0.45f; factor = MathF.Min(1f, factor + 0.3f); }
+            e.SlowFactor = e.SlowTimer <= 0f ? factor : MathF.Min(e.SlowFactor, factor);
             e.SlowTimer = MathF.Max(e.SlowTimer, duration);
         }
         if (p.BurnDps > 0f && p.BurnDuration > 0f)
@@ -194,19 +196,33 @@ public static class CombatSystem
         s.Kills += 1;
         s.Live.Kills += 1;
         bool tierUp = s.RegisterStreakKill();
-        GrantHeroXp(s, enemy.Elite ? 4 : enemy.Kind == EnemyKind.Brute ? 2 : 1);
-        s.AddParticles(enemy.Pos, enemy.Elite ? Palette.Hex("f2a552") : Palette.Hex("bd5d48"), enemy.Elite ? 18 : 10, 72f);
+        GrantHeroXp(s, enemy.Boss ? 12 : enemy.Elite ? 4 : enemy.Kind == EnemyKind.Brute ? 2 : 1);
+        bool fancy = enemy.Elite || enemy.Boss;
+        s.AddParticles(enemy.Pos, fancy ? Palette.Hex("f2a552") : Palette.Hex("bd5d48"), enemy.Boss ? 32 : enemy.Elite ? 18 : 10, enemy.Boss ? 96f : 72f);
         int reward = enemy.Reward;
         if (s.SpoilsActive && enemy.SlowTimer > 0f) reward += 1; // Spoils synergy
         reward += s.StreakBonusGold; // Hot Streak bonus gold
         for (int i = 0; i < reward; i++)
             s.SpawnDrop(enemy.Pos + new Vector2(s.Rand(-9, 9), s.Rand(-9, 9)), 1);
-        if (enemy.Elite)
+        bool relicSpace = s.Hero.Relics.Count < Enum.GetValues<RelicKind>().Length;
+        if (enemy.Boss)
+        {
+            // Guaranteed reward + a permanent horde escalation.
+            s.SpawnEmber(enemy.Pos);
+            if (relicSpace) s.SpawnRelic(enemy.Pos);
+            for (int i = 0; i < 10; i++)
+                s.SpawnDrop(enemy.Pos + new Vector2(s.Rand(-22, 22), s.Rand(-22, 22)), 1, fromMine: true);
+            s.HordeTier += 1;
+            s.BannerText = "THE HORDE GROWS STRONGER";
+            s.BannerTimer = 2.6f;
+            s.AddFloater(enemy.Pos + new Vector2(0, -38), "BOSS SLAIN", Palette.Gold);
+            s.KickShake(12f);
+        }
+        else if (enemy.Elite)
         {
             s.SpawnEmber(enemy.Pos);
             // Elites also yield equipment until the hero has collected the full set.
-            if (s.Hero.Relics.Count < Enum.GetValues<RelicKind>().Length)
-                s.SpawnRelic(enemy.Pos + new Vector2(s.Rand(-14, 14), s.Rand(-14, 14)));
+            if (relicSpace) s.SpawnRelic(enemy.Pos + new Vector2(s.Rand(-14, 14), s.Rand(-14, 14)));
         }
 
         // Announce a freshly reached streak tier.
