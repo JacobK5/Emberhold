@@ -64,4 +64,29 @@ public class EnemyTests
         Assert.Contains("Elite x1", line);
         Assert.Equal("", WaveSystem.PreviewLine(null));
     }
+
+    [Fact]
+    public void Composition_BossEveryTenthWave_ReplacesElite()
+    {
+        var s = new GameState(seedDebug: false);
+        var w10 = WaveSystem.BuildComposition(s, 10);
+        Assert.Contains(EnemyKind.Boss, w10);
+        Assert.DoesNotContain(EnemyKind.Elite, w10);
+
+        var w5 = WaveSystem.BuildComposition(s, 5);
+        Assert.Contains(EnemyKind.Elite, w5);
+        Assert.DoesNotContain(EnemyKind.Boss, w5);
+    }
+
+    [Fact]
+    public void BossDeath_RampsHorde_AndDropsReward()
+    {
+        var s = new GameState(seedDebug: false);
+        var boss = new Enemy { Id = s.NextId(), Health = 1, MaxHealth = 100, Boss = true, Reward = 14, Radius = 25, Pos = Vector2.Zero };
+        s.Enemies.Add(boss);
+        int tier0 = s.HordeTier;
+        CombatSystem.DamageEnemy(s, boss, 50f);
+        Assert.Equal(tier0 + 1, s.HordeTier);
+        Assert.Contains(s.Drops, d => d.Kind == DropKind.Relic);
+    }
 }

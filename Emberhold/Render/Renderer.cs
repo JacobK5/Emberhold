@@ -49,7 +49,14 @@ public static class Renderer
         DrawWaveSummary(s);
         DrawSynergyPopup(s);
         if (showIntro && s.Phase == Phase.Combat) DrawIntro();
-        if (s.BossBannerTimer > 0f) DrawCentered("ELITE RAID INCOMING", 40, Raylib.GetScreenHeight() / 2 - 130, Palette.Hex("e0994f"));
+        if (s.BossBannerTimer > 0f)
+        {
+            string txt = s.BossIncoming ? "!!  CHAPTER BOSS INCOMING  !!" : "ELITE RAID INCOMING";
+            DrawCentered(txt, s.BossIncoming ? 44 : 40, Raylib.GetScreenHeight() / 2 - 130,
+                s.BossIncoming ? Palette.Hex("e0584a") : Palette.Hex("e0994f"));
+        }
+        if (s.BannerTimer > 0f)
+            DrawCentered(s.BannerText, 30, Raylib.GetScreenHeight() / 2 - 64, Palette.Hex("e07a4a"));
         if (s.Paused && !s.Over) DrawCentered("PAUSED", 44, Raylib.GetScreenHeight() / 2 - 20, Palette.Hex("efd18a"));
 
         if (s.Phase == Phase.Draft) OverlayUI.DrawDraft(s, draft.Offer);
@@ -434,6 +441,18 @@ public static class Renderer
                 Raylib.DrawCircleLinesV(e.Pos, e.Radius, Palette.EnemyDark);
             }
 
+            // Chapter boss: a pulsing menace ring + a rotating crown of spikes.
+            if (e.Boss)
+            {
+                float t = (float)Raylib.GetTime();
+                Raylib.DrawCircleLinesV(e.Pos, e.Radius + 5f + MathF.Sin(t * 4f) * 1.5f, new Color((byte)224, (byte)88, (byte)74, (byte)190));
+                for (int i = 0; i < 8; i++)
+                {
+                    float a = i / 8f * MathUtils.Tau + t * 0.5f;
+                    Raylib.DrawCircleV(e.Pos + new Vector2(MathF.Cos(a), MathF.Sin(a)) * (e.Radius + 9f), 2.6f, Palette.Hex("e0a24a"));
+                }
+            }
+
             if (e.ShieldPerHit > 0f)
                 Raylib.DrawCircleLinesV(e.Pos, e.Radius + 4f, new Color(170, 200, 230, 200));
             if (e.Healer)
@@ -468,6 +487,7 @@ public static class Renderer
         EnemyKind.Shielded => Palette.Hex("6e7a86"),
         EnemyKind.Healer => Palette.Hex("5f9e6a"),
         EnemyKind.Siege => Palette.Hex("6f5a48"),
+        EnemyKind.Boss => Palette.Hex("9c3b46"),
         _ => e.Elite ? Palette.Elite : Palette.Enemy,
     };
 
@@ -497,10 +517,10 @@ public static class Renderer
             float ty = MathF.Abs(dir.Y) > 1e-4f ? halfH / MathF.Abs(dir.Y) : float.PositiveInfinity;
             var pos = center + dir * MathF.Min(tx, ty);
 
-            bool big = e.Siege || e.Elite || e.Kind == EnemyKind.Brute;
-            float size = big ? 13f : 8f;
+            bool big = e.Boss || e.Siege || e.Elite || e.Kind == EnemyKind.Brute;
+            float size = e.Boss ? 16f : big ? 13f : 8f;
             float angle = MathF.Atan2(dir.Y, dir.X);
-            Color col = e.Siege ? Palette.Hex("c79256") : e.Elite ? Palette.Elite : EnemyBodyColor(e);
+            Color col = e.Boss ? Palette.Hex("e0584a") : e.Siege ? Palette.Hex("c79256") : e.Elite ? Palette.Elite : EnemyBodyColor(e);
 
             // Arrow triangle pointing outward (toward the threat).
             Vector2 Tip(float lx, float ly)

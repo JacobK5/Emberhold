@@ -123,6 +123,7 @@ public sealed class GameApp
         if (_state.Paused) return;
 
         _state.BossBannerTimer = MathF.Max(0f, _state.BossBannerTimer - dt);
+        _state.BannerTimer = MathF.Max(0f, _state.BannerTimer - dt);
 
         // Shop toggle — available during the between-wave countdown.
         if (Raylib.IsKeyPressed(KeyboardKey.S) && _state.Shop.CanOpen && !_state.PendingDraft)

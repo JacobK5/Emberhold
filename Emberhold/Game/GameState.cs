@@ -54,6 +54,10 @@ public sealed class GameState
     public bool Paused;
     public float Shake;
     public float BossBannerTimer;
+    public bool BossIncoming;        // tints the incoming banner for a boss wave
+    public int HordeTier;            // War Drums: each boss cleared ramps a gentle global enemy buff
+    public float BannerTimer;        // generic notice banner (e.g. "THE HORDE GROWS STRONGER")
+    public string BannerText = "";
     public int BestWave = 1;
     public readonly HashSet<string> SeenSynergies = new(); // discovered this run, for the summary
 

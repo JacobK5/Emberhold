@@ -34,6 +34,8 @@ public sealed class Enemy
     public bool Healer;         // periodically heals nearby enemies
     public float HealTimer;
     public bool Siege;          // targets and demolishes structures, not just walls
+    public bool Boss;           // chapter boss: summons adds, resists slow, big reward
+    public float SummonTimer;
 }
 
 public enum ProjectileSource { Hero, Tower, Cannon, Ballista, Chain, Flame }

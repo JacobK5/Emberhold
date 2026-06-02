@@ -25,7 +25,8 @@ public static class DefenseSystem
 
                     if (st.TrapSlowFactor < 1f)
                     {
-                        e.SlowFactor = e.SlowTimer <= 0f ? st.TrapSlowFactor : MathF.Min(e.SlowFactor, st.TrapSlowFactor);
+                        float factor = e.Boss ? MathF.Min(1f, st.TrapSlowFactor + 0.3f) : st.TrapSlowFactor; // bosses resist
+                        e.SlowFactor = e.SlowTimer <= 0f ? factor : MathF.Min(e.SlowFactor, factor);
                         e.SlowTimer = MathF.Max(e.SlowTimer, 0.35f * s.SlowDurationMult); // CryoForge extends
                     }
                     if (st.TrapDps > 0f)
