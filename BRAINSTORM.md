@@ -8,6 +8,10 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.12.0 — "Artificer"
+- **Third hero class: Artificer** — overclocks nearby towers and repairs structures
+  instead of fighting directly; a tower-synergy playstyle.
+
 ### v0.11.0 — "Fortune"
 - **Supply cache objectives** — periodic high-value gold caches drop out on a lane
   mid-fight; the hero must fight out to collect them.
