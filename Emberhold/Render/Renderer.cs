@@ -41,6 +41,7 @@ public static class Renderer
         if (s.Phase == Phase.Placement) OverlayUI.DrawPlacementWorld(s, draft);
         Raylib.EndMode2D();
 
+        DrawEdgeIndicators(s);
         DrawHud(s);
         DrawAbilityBar(s);
         DrawWaveStatus(s);
@@ -365,16 +366,7 @@ public static class Renderer
             // Flyers cast a raised shadow to read as airborne.
             float shadowOff = e.Flying ? 12f : 4f;
             Raylib.DrawCircleV(e.Pos + new Vector2(2, shadowOff), e.Radius, new Color(22, 31, 29, 64));
-            Color body = e.Kind switch
-            {
-                EnemyKind.Runner => Palette.Hex("cc704b"),
-                EnemyKind.Brute => Palette.Hex("88453e"),
-                EnemyKind.Flyer => Palette.Hex("9a7bb0"),
-                EnemyKind.Shielded => Palette.Hex("6e7a86"),
-                EnemyKind.Healer => Palette.Hex("5f9e6a"),
-                EnemyKind.Siege => Palette.Hex("6f5a48"),
-                _ => e.Elite ? Palette.Elite : Palette.Enemy,
-            };
+            Color body = EnemyBodyColor(e);
             if (e.HitTimer > 0f) body = Palette.Hex("f4b06e");
 
             // Siege engines render as an armored chassis (square hull + treads).
@@ -416,6 +408,61 @@ public static class Renderer
                 Raylib.DrawRectangleRec(new Rectangle(e.Pos.X - 17, e.Pos.Y - e.Radius - 9, 34 * frac, 4),
                     e.Elite ? Palette.Hex("e0994f") : Palette.Hex("c15d4d"));
             }
+        }
+    }
+
+    private static Color EnemyBodyColor(Enemy e) => e.Kind switch
+    {
+        EnemyKind.Runner => Palette.Hex("cc704b"),
+        EnemyKind.Brute => Palette.Hex("88453e"),
+        EnemyKind.Flyer => Palette.Hex("9a7bb0"),
+        EnemyKind.Shielded => Palette.Hex("6e7a86"),
+        EnemyKind.Healer => Palette.Hex("5f9e6a"),
+        EnemyKind.Siege => Palette.Hex("6f5a48"),
+        _ => e.Elite ? Palette.Elite : Palette.Enemy,
+    };
+
+    /// <summary>
+    /// Screen-edge arrows for off-screen enemies, coloured by type and sized by
+    /// threat — telegraphs incoming siege/elite/brute before they reach the walls.
+    /// </summary>
+    private static void DrawEdgeIndicators(GameState s)
+    {
+        if (s.Phase != Phase.Combat || s.Over) return;
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        const float margin = 26f;
+        var center = new Vector2(w / 2f, h / 2f);
+        float halfW = w / 2f - margin, halfH = h / 2f - margin;
+
+        foreach (var e in s.Enemies)
+        {
+            if (e.Dead) continue;
+            var sp = Raylib.GetWorldToScreen2D(e.Pos, s.Cam);
+            if (sp.X >= 0 && sp.X <= w && sp.Y >= 0 && sp.Y <= h) continue; // on-screen
+
+            var dir = MathUtils.Normalize(sp - center);
+            if (dir == Vector2.Zero) continue;
+
+            // Project the direction onto the inset screen-rect border.
+            float tx = MathF.Abs(dir.X) > 1e-4f ? halfW / MathF.Abs(dir.X) : float.PositiveInfinity;
+            float ty = MathF.Abs(dir.Y) > 1e-4f ? halfH / MathF.Abs(dir.Y) : float.PositiveInfinity;
+            var pos = center + dir * MathF.Min(tx, ty);
+
+            bool big = e.Siege || e.Elite || e.Kind == EnemyKind.Brute;
+            float size = big ? 13f : 8f;
+            float angle = MathF.Atan2(dir.Y, dir.X);
+            Color col = e.Siege ? Palette.Hex("c79256") : e.Elite ? Palette.Elite : EnemyBodyColor(e);
+
+            // Arrow triangle pointing outward (toward the threat).
+            Vector2 Tip(float lx, float ly)
+            {
+                float c = MathF.Cos(angle), si = MathF.Sin(angle);
+                return pos + new Vector2(lx * c - ly * si, lx * si + ly * c);
+            }
+            // Raylib back-face-culls DrawTriangle; vertices must be counter-clockwise.
+            Raylib.DrawTriangle(Tip(size, 0), Tip(-size * 0.7f, -size * 0.7f), Tip(-size * 0.7f, size * 0.7f), col);
+            if (big)
+                Raylib.DrawTriangleLines(Tip(size + 2f, 0), Tip(-size * 0.9f, size * 0.9f), Tip(-size * 0.9f, -size * 0.9f), Palette.Hex("1e2928"));
         }
     }
 
