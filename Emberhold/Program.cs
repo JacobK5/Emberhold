@@ -32,7 +32,8 @@ public static class Program
             codex: Array.IndexOf(args, "--codex") >= 0,
             lose: Array.IndexOf(args, "--lose") >= 0,
             startChapter: startChapter,
-            startHero: startHero);
+            startHero: startHero,
+            paused: Array.IndexOf(args, "--pause") >= 0);
 
         int frame = 0;
         while (!Raylib.WindowShouldClose())
