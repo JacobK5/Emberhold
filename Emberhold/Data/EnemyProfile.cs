@@ -1,6 +1,6 @@
 namespace Emberhold.Data;
 
-public enum EnemyKind { Raider, Runner, Brute, Elite, Flyer, Shielded, Healer }
+public enum EnemyKind { Raider, Runner, Brute, Elite, Flyer, Shielded, Healer, Siege }
 
 /// <summary>
 /// Per-enemy-type multipliers applied on top of the wave's scaling stats.
@@ -23,6 +23,7 @@ public sealed record EnemyProfile(
     public static readonly EnemyProfile Flyer    = new(EnemyKind.Flyer,    0.8f,  1.2f,  0.9f,  1, 10f); // ignores walls/traps
     public static readonly EnemyProfile Shielded = new(EnemyKind.Shielded, 1.3f,  0.85f, 1.1f,  2, 13f); // resists per-hit; weak to burn/traps
     public static readonly EnemyProfile Healer   = new(EnemyKind.Healer,   1.1f,  0.9f,  0.6f,  2, 12f); // heals nearby; rewards burst
+    public static readonly EnemyProfile Siege    = new(EnemyKind.Siege,    5.2f,  0.55f, 1.9f,  6, 19f); // slow tank; demolishes structures
 
     public static EnemyProfile Get(EnemyKind kind) => kind switch
     {
@@ -32,6 +33,7 @@ public sealed record EnemyProfile(
         EnemyKind.Flyer    => Flyer,
         EnemyKind.Shielded => Shielded,
         EnemyKind.Healer   => Healer,
+        EnemyKind.Siege    => Siege,
         _ => Raider,
     };
 }

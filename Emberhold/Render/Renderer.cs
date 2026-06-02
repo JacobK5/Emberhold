@@ -238,6 +238,15 @@ public static class Renderer
 
     private static void DrawStructureLevel(GameState s, Structure st)
     {
+        // Damage bar for non-wall structures (walls draw their own in DrawWall).
+        if (st.Role is not StructureRole.Wall and not StructureRole.HeroBuff
+            && st.MaxHealth > 0f && st.Health < st.MaxHealth)
+        {
+            float frac = MathUtils.Clamp(st.Health / st.MaxHealth, 0f, 1f);
+            Raylib.DrawRectangleRec(new Rectangle(st.Pos.X - 16, st.Pos.Y - st.Radius - 12, 32, 3), new Color(19, 25, 24, 210));
+            Raylib.DrawRectangleRec(new Rectangle(st.Pos.X - 16, st.Pos.Y - st.Radius - 12, 32 * frac, 3), Palette.Hex("d2604f"));
+        }
+
         // Level pips above the structure.
         for (int i = 0; i < st.Level - 1; i++)
             Raylib.DrawCircleV(st.Pos + new Vector2(-5 + i * 5, -st.Radius - 8), 2f, Palette.Hex("bfe0ff"));
@@ -363,11 +372,26 @@ public static class Renderer
                 EnemyKind.Flyer => Palette.Hex("9a7bb0"),
                 EnemyKind.Shielded => Palette.Hex("6e7a86"),
                 EnemyKind.Healer => Palette.Hex("5f9e6a"),
+                EnemyKind.Siege => Palette.Hex("6f5a48"),
                 _ => e.Elite ? Palette.Elite : Palette.Enemy,
             };
             if (e.HitTimer > 0f) body = Palette.Hex("f4b06e");
-            Raylib.DrawCircleV(e.Pos, e.Radius, body);
-            Raylib.DrawCircleLinesV(e.Pos, e.Radius, Palette.EnemyDark);
+
+            // Siege engines render as an armored chassis (square hull + treads).
+            if (e.Siege)
+            {
+                var r = new Rectangle(e.Pos.X - e.Radius, e.Pos.Y - e.Radius, e.Radius * 2f, e.Radius * 2f);
+                Raylib.DrawRectangleRec(r, body);
+                Raylib.DrawRectangleLinesEx(r, 2f, Palette.Hex("3c3026"));
+                Raylib.DrawRectangleRec(new Rectangle(e.Pos.X - e.Radius, e.Pos.Y - e.Radius, 4f, e.Radius * 2f), Palette.Hex("4a3c30"));
+                Raylib.DrawRectangleRec(new Rectangle(e.Pos.X + e.Radius - 4f, e.Pos.Y - e.Radius, 4f, e.Radius * 2f), Palette.Hex("4a3c30"));
+                Raylib.DrawRectangleRec(new Rectangle(e.Pos.X - 5f, e.Pos.Y - 5f, 10f, 10f), Palette.Hex("9a5240"));
+            }
+            else
+            {
+                Raylib.DrawCircleV(e.Pos, e.Radius, body);
+                Raylib.DrawCircleLinesV(e.Pos, e.Radius, Palette.EnemyDark);
+            }
 
             if (e.ShieldPerHit > 0f)
                 Raylib.DrawCircleLinesV(e.Pos, e.Radius + 4f, new Color(170, 200, 230, 200));
