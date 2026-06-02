@@ -79,6 +79,20 @@ The release appears at `https://github.com/JacobK5/Emberhold/releases`.
 
 ---
 
+## Skipping a build
+
+If a push to `master` doesn't need a release (doc edits, CI tweaks, comment
+fixes), add `[skip ci]` anywhere in the commit message and GitHub Actions will
+skip the run entirely:
+
+```
+git commit -m "Fix typo in AGENTS.md [skip ci]"
+```
+
+Don't use this for any commit that changes game code or assets.
+
+---
+
 ## Summary checklist before merging to master
 
 - [ ] Feature works end-to-end in the game
