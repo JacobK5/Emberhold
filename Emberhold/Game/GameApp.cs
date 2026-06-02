@@ -22,6 +22,7 @@ public sealed class GameApp
     private readonly bool _seed;
     private readonly int _startWave;
     private readonly int _startChapter;
+    private readonly int _startHero;
     private readonly bool _lose;
     private float _introTimer = 8f;
     private bool _showCodex;
@@ -32,12 +33,13 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0)
     {
         Auto = auto;
         _seed = seed;
         _startWave = startWave;
         _startChapter = startChapter;
+        _startHero = startHero;
         _showCodex = codex;
         _lose = lose;
         NewRun();
@@ -50,6 +52,7 @@ public sealed class GameApp
         _pointerTarget = null;
         if (_startChapter > 0) _state.Chapter = _startChapter;
         if (_startWave > 0) _state.Wave = _startWave;
+        _state.Hero.Kind = (HeroKind)Math.Clamp(_startHero, 0, 2);
         ApplyRunModifier(); // roll the run's trial before previewing the first wave
         _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave); // seed the wave-1 preview
         if (_seed) _state.Phase = Phase.Combat;
@@ -338,7 +341,12 @@ public sealed class GameApp
 
     private void SwitchHero()
     {
-        _state.Hero.Kind = _state.Hero.Kind == HeroKind.Ranger ? HeroKind.Warden : HeroKind.Ranger;
+        _state.Hero.Kind = _state.Hero.Kind switch
+        {
+            HeroKind.Ranger => HeroKind.Warden,
+            HeroKind.Warden => HeroKind.Artificer,
+            _ => HeroKind.Ranger,
+        };
         _state.AddParticles(_state.Hero.Pos, Palette.Hex("f3c878"), 14, 68f);
     }
 

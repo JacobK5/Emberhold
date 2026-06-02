@@ -65,6 +65,31 @@ public class HeroTests
     }
 
     [Fact]
+    public void Artificer_RepairsNearbyDamagedStructures()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Artificer;
+        s.Hero.Pos = Vector2.Zero;
+        var tower = StructureFactory.Create(s, CardDb.Get("archer_post"), new Vector2(40, 0));
+        tower.Health = 10f;
+        s.Structures.Add(tower);
+        DefenseSystem.Update(s, 0.5f);
+        Assert.True(tower.Health > 10f);
+    }
+
+    [Fact]
+    public void NonArtificer_DoesNotRepairStructures()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Ranger;
+        var tower = StructureFactory.Create(s, CardDb.Get("archer_post"), new Vector2(40, 0));
+        tower.Health = 10f;
+        s.Structures.Add(tower);
+        DefenseSystem.Update(s, 0.5f);
+        Assert.Equal(10f, tower.Health);
+    }
+
+    [Fact]
     public void EliteDeath_NoRelic_WhenAllOwned()
     {
         var s = new GameState(seedDebug: false);

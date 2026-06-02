@@ -21,6 +21,15 @@ public static class TowerSystem
             t.MuzzleFlash = MathF.Max(0f, t.MuzzleFlash - dt);
 
             var (dmgMult, rateMult, rangeBonus) = Aura(s, t);
+
+            // Artificer hero: nearby towers get a personal overclock while she's active.
+            if (s.Hero.Kind == Data.HeroKind.Artificer
+                && System.Numerics.Vector2.Distance(t.Pos, s.Hero.Pos) <= 165f)
+            {
+                dmgMult *= s.Hero.Signature ? 1.5f : 1.35f; // Overclock passive (lv5) is stronger
+                rateMult *= 0.85f;
+            }
+
             float range = t.Range + rangeBonus + t.SynRangeBonus;
             int chains = t.ChainCount + t.SynExtraChains;
 
