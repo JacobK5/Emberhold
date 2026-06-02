@@ -32,4 +32,11 @@ public sealed class Hero
 
     public HeroKind Kind = HeroKind.Ranger;
     public HeroProfile Profile => HeroProfile.Get(Kind);
+
+    // Gold-based upgrade tiers purchased via the shop. Applied on purchase.
+    public int DmgUpgrades;
+    public int FrUpgrades;
+    public int RngUpgrades;
+    public int HpUpgrades;
+    public int VolleyUpgrades;
 }

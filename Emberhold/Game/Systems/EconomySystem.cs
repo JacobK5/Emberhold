@@ -55,7 +55,10 @@ public static class EconomySystem
         {
             if (!st.Upgradable) { st.Dwell = 0f; continue; }
 
-            bool onIt = Vector2.Distance(hero.Pos, st.Pos) < st.Radius + 12f && s.Gold > 0;
+            // Walls are solid so the hero can only press against them; use a wider
+            // reach so collision resolution doesn't leave the hero just outside the threshold.
+            float upgradeReach = st.Role == StructureRole.Wall ? st.Radius + 26f : st.Radius + 16f;
+            bool onIt = Vector2.Distance(hero.Pos, st.Pos) < upgradeReach && s.Gold > 0;
             if (!onIt) { st.Dwell = 0f; continue; }
 
             st.Dwell += dt;

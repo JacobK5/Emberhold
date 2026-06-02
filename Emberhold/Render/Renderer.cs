@@ -51,6 +51,7 @@ public static class Renderer
         if (s.Phase == Phase.Draft) OverlayUI.DrawDraft(s, draft.Offer);
         else if (s.Phase == Phase.Placement) OverlayUI.DrawPlacementHud(s, draft);
 
+        if (s.Shop.Open) OverlayUI.DrawShop(s);
         if (showCodex) OverlayUI.DrawCodex(s);
     }
 
@@ -82,14 +83,18 @@ public static class Renderer
     {
         if (s.Phase != Phase.Combat || s.Over) return;
         if (s.Spawning is null && s.BetweenWaves > 0f && !s.PendingDraft)
+        {
             DrawCentered($"NEXT WAVE IN {MathF.Ceiling(s.BetweenWaves)}s", 22, 24, Palette.Hero);
+            if (s.Shop.CanOpen)
+                DrawCentered("[S] Supply Shop", 16, 54, Palette.Hex("c49a62"));
+        }
     }
 
     private static void DrawIntro()
     {
         int h = Raylib.GetScreenHeight();
         DrawCentered("Collect gold, stand on pads to build. WASD / click to move.", 20, h - 150, Palette.Hero);
-        DrawCentered("SPACE volley   /   SHIFT dash   /   H switch hero   /   C codex   /   P pause", 18, h - 124, Palette.PathEdge);
+        DrawCentered("SPACE volley   /   SHIFT dash   /   H switch hero   /   S shop   /   C codex   /   P pause", 18, h - 124, Palette.PathEdge);
     }
 
     private static void DrawLanes(GameState s)
@@ -171,7 +176,8 @@ public static class Renderer
 
         // Upgrade affordance + progress when the hero is standing on it.
         if (!st.Upgradable) return;
-        if (Vector2.Distance(s.Hero.Pos, st.Pos) > st.Radius + 30f) return;
+        float showReach = st.Role == StructureRole.Wall ? st.Radius + 28f : st.Radius + 32f;
+        if (Vector2.Distance(s.Hero.Pos, st.Pos) > showReach) return;
 
         float prog = st.UpgradeCost > 0 ? (float)st.UpgradeInvested / st.UpgradeCost : 0f;
         Raylib.DrawRing(st.Pos, st.Radius + 5f, st.Radius + 8f, -90f, -90f + 360f * prog, 28, Palette.Hex("9fd0ff"));
@@ -331,20 +337,61 @@ public static class Renderer
     {
         var p = hero.Pos;
         float angle = MathF.Atan2(hero.Facing.Y, hero.Facing.X);
-        Raylib.DrawCircleV(p + new Vector2(2, 7), 11f, new Color(15, 24, 23, 70));
+        float now = (float)Raylib.GetTime();
 
+        // Standard rotation helper: lx = forward, ly = sideways (right).
+        // JS origin used rotate(angle+PI/2); point (jx,jy) → Rot(-jy, jx) here.
         Vector2 Rot(float lx, float ly)
         {
             float c = MathF.Cos(angle), si = MathF.Sin(angle);
             return p + new Vector2(lx * c - ly * si, lx * si + ly * c);
         }
-        Raylib.DrawTriangle(Rot(11, 0), Rot(-12, 12), Rot(-12, -12), hero.Profile.Cloak);
-        Raylib.DrawCircleV(p, 8f, Palette.Hero);
-        Raylib.DrawCircleLinesV(p, 8f, Palette.Hex("6c4d38"));
-        Raylib.DrawLineEx(p, p + hero.Facing * 14f, 2f, Palette.Hex("e3bb6a"));
 
+        // Invulnerability blink — alternate between 35% and full alpha.
+        bool blink = hero.Invulnerable > 0f && ((int)(hero.Invulnerable * 12f) % 2 == 0);
+        byte al = blink ? (byte)88 : (byte)255;
+
+        Color Tint(Color c) => new(c.R, c.G, c.B, al);
+
+        // Drop shadow (fixed light direction, independent of facing).
+        Raylib.DrawCircleV(p + new Vector2(2f, 7f), 11f, new Color(15, 24, 23, 70));
+
+        // Cape — wider trailing triangle: tip forward, base trailing.
+        // JS points: (0,-11)→Rot(11,0), (12,14)→Rot(-14,12), (-12,14)→Rot(-14,-12)
+        Raylib.DrawTriangle(Rot(11, 0), Rot(-14, 12), Rot(-14, -12), Tint(hero.Profile.Cloak));
+
+        // Body circle, offset 4 units forward (matches JS body at local (0,-4)).
+        var bodyPos = Rot(4, 0);
+        Raylib.DrawCircleV(bodyPos, 8f, Tint(Palette.Hero));
+        Raylib.DrawCircleLinesV(bodyPos, 8f, new Color((byte)0x6c, (byte)0x4d, (byte)0x38, al));
+
+        // Weapon — Ranger: bow arc (D-curve to the right); Warden: diagonal blade.
+        var weapCol = new Color((byte)0xe3, (byte)0xbb, (byte)0x6a, al);
+        if (hero.Kind == HeroKind.Warden)
+        {
+            // Heavier diagonal blade (light bluish steel).
+            var bladeCol = new Color((byte)0xb0, (byte)0xc8, (byte)0xff, al);
+            Raylib.DrawLineEx(Rot(-3, -7), Rot(9, 8), 4f, bladeCol);
+            Raylib.DrawCircleV(Rot(9, 8), 2.5f, bladeCol);
+        }
+        else
+        {
+            // Bow arc: centre at JS (9,-2) → Rot(2,9); spans ±92° facing outward.
+            var bowCenter = Rot(2, 9);
+            float bowMid = angle * (180f / MathF.PI) + 77f; // outward direction in Raylib degrees
+            Raylib.DrawRing(bowCenter, 5.5f, 7.5f, bowMid - 92f, bowMid + 92f, 16, weapCol);
+        }
+
+        // Ability-ready pulse ring.
+        if (hero.AbilityCooldown <= 0f)
+        {
+            float pulse = 18f + MathF.Sin(now * 6.25f) * 2f;
+            Raylib.DrawCircleLinesV(p, pulse, new Color(255, 208, 102, 128));
+        }
+
+        // Overdrive ring.
         if (hero.Overdrive > 0f)
-            Raylib.DrawCircleLinesV(p, 22f + MathF.Sin((float)Raylib.GetTime() * 11f) * 3f, new Color(255, 135, 75, 165));
+            Raylib.DrawCircleLinesV(p, 22f + MathF.Sin(now * 11f) * 3f, new Color(255, 135, 75, 165));
     }
 
     private static void DrawParticles(GameState s)
