@@ -8,6 +8,10 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.9.0 — "Quartermaster"
+- **Gold-for-time** — the Rally Horn (F) spends gold to slow the whole wave for a few
+  seconds, an emergency clutch tool on a cooldown.
+
 ### v0.8.1 — "Spectacle" (polish)
 - **Structure personalities** — towers rotate a barrel to track their target and
   flash at the muzzle when firing.

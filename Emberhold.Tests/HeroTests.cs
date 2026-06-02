@@ -40,6 +40,31 @@ public class HeroTests
     }
 
     [Fact]
+    public void Rally_SpendsGold_SlowsWave_ExceptWraiths()
+    {
+        var s = new GameState(seedDebug: false) { Gold = 200, Wave = 1 };
+        var normal = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, Radius = 11, Pos = Vector2.Zero };
+        var wraith = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, Radius = 12, StatusImmune = true, Pos = Vector2.Zero };
+        s.Enemies.Add(normal);
+        s.Enemies.Add(wraith);
+
+        int cost = s.RallyCost;
+        Assert.True(s.TryRally());
+        Assert.Equal(200 - cost, s.Gold);
+        Assert.True(s.RallyCooldown > 0f);
+        Assert.True(normal.SlowTimer > 0f);
+        Assert.Equal(0f, wraith.SlowTimer);
+    }
+
+    [Fact]
+    public void Rally_FailsWithoutEnoughGold()
+    {
+        var s = new GameState(seedDebug: false) { Gold = 0, Wave = 1 };
+        Assert.False(s.TryRally());
+        Assert.Equal(0f, s.RallyCooldown);
+    }
+
+    [Fact]
     public void EliteDeath_NoRelic_WhenAllOwned()
     {
         var s = new GameState(seedDebug: false);

@@ -126,6 +126,7 @@ public sealed class GameApp
 
         _state.BossBannerTimer = MathF.Max(0f, _state.BossBannerTimer - dt);
         _state.BannerTimer = MathF.Max(0f, _state.BannerTimer - dt);
+        _state.RallyCooldown = MathF.Max(0f, _state.RallyCooldown - dt);
 
         // Shop toggle — available during the between-wave countdown.
         if (Raylib.IsKeyPressed(KeyboardKey.S) && _state.Shop.CanOpen && !_state.PendingDraft)
@@ -312,6 +313,7 @@ public sealed class GameApp
         if (Raylib.IsKeyPressed(KeyboardKey.Space)) CombatSystem.ShootVolley(_state);
         if (Raylib.IsKeyPressed(KeyboardKey.LeftShift) || Raylib.IsKeyPressed(KeyboardKey.RightShift))
             CombatSystem.Dash(_state);
+        if (Raylib.IsKeyPressed(KeyboardKey.F)) _state.TryRally();
         if (Raylib.IsKeyPressed(KeyboardKey.H)) SwitchHero();
     }
 
@@ -374,6 +376,8 @@ public sealed class GameApp
         MoveHero(desired, dt);
 
         if (hero.AbilityCooldown <= 0f && _state.Enemies.Count > 0) CombatSystem.ShootVolley(_state);
+        if (_state.RallyCooldown <= 0f && _state.Gold >= _state.RallyCost && _state.Enemies.Count >= 6)
+            _state.TryRally();
     }
 
     private void MoveHero(Vector2 desired, float dt)
