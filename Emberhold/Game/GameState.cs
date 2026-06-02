@@ -77,6 +77,9 @@ public sealed class GameState
     public float StreakTimer;
     public const float StreakWindow = 2.5f;
 
+    // Supply caches: a high-value cache periodically drops out on a lane mid-fight.
+    public float CacheTimer = 14f;
+
     // Rally Horn: a gold-for-time clutch ability that slows the whole wave.
     public float RallyCooldown;
     public const float RallyMaxCooldown = 12f;
@@ -292,5 +295,12 @@ public sealed class GameState
         {
             Id = NextId(), Pos = at, Value = 0, FromMine = false, Radius = 10f,
             Kind = DropKind.Relic, Life = 30f, Bob = Rand() * MathUtils.Tau,
+        });
+
+    public void SpawnCache(Vector2 at, int value)
+        => Drops.Add(new Drop
+        {
+            Id = NextId(), Pos = at, Value = value, FromMine = false, Radius = 13f,
+            Kind = DropKind.Cache, Life = 16f, Bob = Rand() * MathUtils.Tau,
         });
 }

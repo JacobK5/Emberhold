@@ -138,6 +138,14 @@ public static class CombatSystem
             {
                 CollectRelic(s, d.Pos);
             }
+            else if (d.Kind == DropKind.Cache)
+            {
+                s.Gold += d.Value;
+                s.Live.GoldEarned += d.Value;
+                s.AddParticles(d.Pos, Palette.Gold, 18, 78f);
+                s.AddFloater(d.Pos + new Vector2(0, -10), $"+{d.Value} CACHE", Palette.Hex("ffd66b"));
+                s.KickShake(4f);
+            }
             else
             {
                 s.Gold += d.Value;
