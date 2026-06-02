@@ -135,6 +135,9 @@ public static class StructureFactory
             case StructureKind.FrostSpire:
                 st.Role = StructureRole.Tower; st.Range = 210; st.Damage = 4; st.Rate = 0.8f;
                 st.SlowFactor = 0.55f; st.SlowDuration = 1.6f; st.ProjSource = ProjectileSource.Tower; st.ProjSpeed = 360; break;
+            case StructureKind.StormSpire:
+                st.Role = StructureRole.Tower; st.Range = 290; st.Damage = 12; st.Rate = 1.2f;
+                st.ChainCount = 2; st.ProjSource = ProjectileSource.Chain; st.ProjSpeed = 540; break;
 
             // ---- Defend ----
             case StructureKind.Barricade:
@@ -149,10 +152,14 @@ public static class StructureFactory
                 st.Role = StructureRole.GroundTrap; st.TrapSlowFactor = 0.5f; st.Radius = 30; break;
             case StructureKind.MoatLine:
                 st.Role = StructureRole.GroundTrap; st.TrapDps = 11; st.TrapSlowFactor = 0.7f; st.Radius = 34; break;
+            case StructureKind.Caltrops:
+                st.Role = StructureRole.GroundTrap; st.TrapDps = 14; st.Radius = 32; break;
 
             // ---- Support ----
             case StructureKind.GoldMine:
                 st.Role = StructureRole.Mine; st.Interval = 2.6f; break;
+            case StructureKind.TradingPost:
+                st.Role = StructureRole.Mine; st.Interval = 2.0f; break;
             case StructureKind.WarBanner:
                 st.Role = StructureRole.Aura; st.AuraKind = AuraKind.Damage; st.AuraRange = 142; st.AuraMagnitude = 1.42f; break;
             case StructureKind.Forge:

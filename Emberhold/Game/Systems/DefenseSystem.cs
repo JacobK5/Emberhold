@@ -18,10 +18,13 @@ public static class DefenseSystem
         {
             if (st.Role == StructureRole.GroundTrap)
             {
+                // Minefield rune enlarges and sharpens every trap.
+                float radius = st.Radius * (s.Minefield ? 1.4f : 1f);
+                float dpsMult = s.Minefield ? 1.5f : 1f;
                 foreach (var e in s.Enemies)
                 {
                     if (e.Dead) continue;
-                    if (Vector2.Distance(e.Pos, st.Pos) > st.Radius + e.Radius) continue;
+                    if (Vector2.Distance(e.Pos, st.Pos) > radius + e.Radius) continue;
 
                     if (st.TrapSlowFactor < 1f)
                     {
@@ -30,7 +33,7 @@ public static class DefenseSystem
                         e.SlowTimer = MathF.Max(e.SlowTimer, 0.35f * s.SlowDurationMult); // CryoForge extends
                     }
                     if (st.TrapDps > 0f)
-                        CombatSystem.DamageEnemy(s, e, st.TrapDps * dt, mitigable: false);
+                        CombatSystem.DamageEnemy(s, e, st.TrapDps * dpsMult * dt, mitigable: false);
                     if (st.SynTrapBurnDps > 0f) // Backdraft: the trap sets enemies ablaze
                     {
                         e.BurnTimer = MathF.Max(e.BurnTimer, 1.6f);

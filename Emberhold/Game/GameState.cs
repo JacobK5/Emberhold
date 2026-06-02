@@ -92,6 +92,8 @@ public sealed class GameState
     public bool SpoilsActive;           // Spoils field synergy
     public bool Glacier;                // Glacier keystone (cannons crush slowed)
     public bool Wildfire;               // Wildfire keystone (chains ignite)
+    public bool Minefield;              // Minefield rune (3+ Trap: bigger, deadlier traps)
+    public bool BoomTown;               // Boom Town rune (3+ Economy: richer mines)
     public readonly HashSet<string> ActiveSynergies = new();
 
     // Keep

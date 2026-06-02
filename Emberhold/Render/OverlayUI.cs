@@ -82,25 +82,25 @@ public static class OverlayUI
         DrawCentered("active synergies are highlighted   -   (C) to close", 16, 80, Palette.PathEdge);
 
         int x = w / 2 - 430;
-        int y = 120;
+        int y = 102;
         string lastType = "";
         foreach (var def in SynergyEngine.Catalog)
         {
             if (def.Type != lastType)
             {
                 lastType = def.Type;
-                y += 14;
-                Raylib.DrawText(def.Type.ToUpper() + " SYNERGIES", x, y, 20, Palette.Hero);
-                y += 28;
+                y += 8;
+                Raylib.DrawText(def.Type.ToUpper() + " SYNERGIES", x, y, 19, Palette.Hero);
+                y += 23;
             }
 
             bool active = s.ActiveSynergies.Contains(def.Id);
             Color nameCol = active ? Palette.Gold : Palette.Hex("9aa6a0");
-            Raylib.DrawText(def.Name, x + 16, y, 18, nameCol);
+            Raylib.DrawText(def.Name, x + 16, y, 17, nameCol);
             Raylib.DrawText(def.Requires, x + 230, y, 16, active ? Palette.Hero : Palette.PathEdge);
             Raylib.DrawText(def.Effect, x + 520, y, 16, active ? Palette.Hero : Palette.PathEdge);
             if (active) Raylib.DrawText("ACTIVE", x - 60, y, 16, Palette.Hex("8fbf7f"));
-            y += 24;
+            y += 21;
         }
     }
 
@@ -279,17 +279,20 @@ public static class OverlayUI
         StructureKind.ChainCoil => new[] { "Arcs between nearby", "enemies (3 jumps)." },
         StructureKind.FlameJet => new[] { "Short range, sets", "enemies burning." },
         StructureKind.FrostSpire => new[] { "Low damage but", "slows what it hits." },
+        StructureKind.StormSpire => new[] { "Long-range bolts that", "chain between foes." },
         StructureKind.Barricade => new[] { "Destructible wall.", "Blocks a lane." },
         StructureKind.Bulwark => new[] { "Tanky wall that", "regenerates." },
         StructureKind.Redoubt => new[] { "Wall that retaliates", "against attackers." },
         StructureKind.SpikeTrap => new[] { "Ground trap: damages", "enemies passing over." },
         StructureKind.TarPit => new[] { "Ground trap: slows", "enemies inside it." },
         StructureKind.MoatLine => new[] { "Damages and slows", "enemies in the area." },
+        StructureKind.Caltrops => new[] { "Cheap, wide trap;", "damages over its area." },
         StructureKind.GoldMine => new[] { "Produces gold", "over time." },
         StructureKind.WarBanner => new[] { "+Damage to towers", "in range." },
         StructureKind.Forge => new[] { "+Fire rate to towers", "in range." },
         StructureKind.Watchtower => new[] { "+Range to towers", "in range." },
         StructureKind.Workshop => new[] { "Cheaper builds &", "repairs nearby." },
+        StructureKind.TradingPost => new[] { "A fast-producing", "gold mine." },
         StructureKind.EmberShrine => new[] { "Empowers the hero's", "volley ability." },
         _ => new[] { "" },
     };
