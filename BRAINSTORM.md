@@ -8,6 +8,11 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.2.0 — "Arsenal"
+- **More field synergies** — four new cross-category combos (Backdraft, Hellfire,
+  Conduit, Sniper's Nest) rewarding specific placements; appear in the codex/HUD automatically.
+- **Animated synergy popups** — a discovery banner the first time each synergy triggers in a run.
+
 ### v0.1.0 — "Heat of Battle"
 - **Kill streaks** — consecutive kills within 2.5s build a streak that buffs hero
   damage (+15/30/50%) and drops bonus gold, with tier-up floaters and a live meter.
