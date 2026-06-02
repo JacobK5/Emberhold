@@ -13,3 +13,6 @@ Thumbs.db
 
 # Smoke-test screenshots (debug captures written to repo root)
 /*.png
+
+# Packaged build output (large self-contained binary)
+/dist/
