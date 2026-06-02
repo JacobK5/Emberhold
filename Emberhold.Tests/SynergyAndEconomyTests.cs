@@ -198,6 +198,18 @@ public class SynergyTests
     }
 
     [Fact]
+    public void VolatilePact_PenalizesPair_AndFlagsHaste()
+    {
+        var s = State();
+        Add(s, StructureKind.Cannon, new Vector2(80, -80));
+        Add(s, StructureKind.StormSpire, new Vector2(-80, -80));
+        SynergyEngine.Evaluate(s);
+        Assert.True(s.VolatilePact);
+        Assert.Contains("volatile_pact", s.ActiveSynergies);
+        Assert.True(s.Structures.First(st => st.Kind == StructureKind.Cannon).SynDamageMult < 1f);
+    }
+
+    [Fact]
     public void Discovery_QueuesEachSynergyPopupOnce()
     {
         var s = State();

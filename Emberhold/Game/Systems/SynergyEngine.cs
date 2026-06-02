@@ -45,6 +45,8 @@ public static class SynergyEngine
         new SynergyDef("resonance", "Resonance", "Rune", "3+ Elemental structures", "Elemental towers +1 chain, +15% damage"),
         new SynergyDef("minefield", "Minefield", "Rune", "3+ Trap structures", "Ground traps +40% size & damage"),
         new SynergyDef("boom_town", "Boom Town", "Rune", "3+ Economy structures", "Mines yield richer gold"),
+        // Anti-synergy: a penalty on the pair, but a powerful fort-wide payoff.
+        new SynergyDef("volatile_pact", "Volatile Pact", "Anti", "Cannon + Storm Spire", "Those two -20% dmg, but ALL towers +15% fire rate"),
     };
 
     /// <summary>Keystone pairs (own both built structures) shared by evaluation + draft hints.</summary>
@@ -83,6 +85,7 @@ public static class SynergyEngine
         if (Has(StructureKind.Bulwark) && Has(StructureKind.Redoubt)) { s.WallsSharePool = true; s.ActiveSynergies.Add("iron_tide"); }
         if (Has(StructureKind.FrostSpire) && Has(StructureKind.Cannon)) { s.Glacier = true; s.ActiveSynergies.Add("glacier"); }
         if (Has(StructureKind.FlameJet) && Has(StructureKind.ChainCoil)) { s.Wildfire = true; s.ActiveSynergies.Add("wildfire"); }
+        if (Has(StructureKind.Cannon) && Has(StructureKind.StormSpire)) { s.VolatilePact = true; s.ActiveSynergies.Add("volatile_pact"); }
 
         // ---- Field (per structure / adjacency) ----
         int towerCount = 0, wallCount = 0, auraCount = 0;
@@ -115,6 +118,10 @@ public static class SynergyEngine
             // Resonance rune: elemental towers gain a chain jump and damage.
             if (elemental >= 3 && t.Tags.HasFlag(Data.Tag.Elemental))
             { t.SynExtraChains += 1; t.SynDamageMult *= 1.15f; s.ActiveSynergies.Add("resonance"); }
+
+            // Volatile Pact anti-synergy: the paired towers pay the damage cost.
+            if (s.VolatilePact && (t.Kind == StructureKind.Cannon || t.Kind == StructureKind.StormSpire))
+                t.SynDamageMult *= 0.8f;
 
             switch (t.Kind)
             {
@@ -198,6 +205,7 @@ public static class SynergyEngine
         s.Wildfire = false;
         s.Minefield = false;
         s.BoomTown = false;
+        s.VolatilePact = false;
         s.ActiveSynergies.Clear();
 
         foreach (var st in s.Structures)
