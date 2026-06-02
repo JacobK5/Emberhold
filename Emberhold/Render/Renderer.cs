@@ -44,6 +44,8 @@ public static class Renderer
         DrawHud(s);
         DrawAbilityBar(s);
         DrawWaveStatus(s);
+        DrawStreak(s);
+        DrawWaveSummary(s);
         if (showIntro && s.Phase == Phase.Combat) DrawIntro();
         if (s.BossBannerTimer > 0f) DrawCentered("ELITE RAID INCOMING", 40, Raylib.GetScreenHeight() / 2 - 130, Palette.Hex("e0994f"));
         if (s.Paused && !s.Over) DrawCentered("PAUSED", 44, Raylib.GetScreenHeight() / 2 - 20, Palette.Hex("efd18a"));
@@ -88,6 +90,72 @@ public static class Renderer
             if (s.Shop.CanOpen)
                 DrawCentered("[S] Supply Shop", 16, 54, Palette.Hex("c49a62"));
         }
+    }
+
+    /// <summary>Live kill-streak meter with a draining timer bar, shown mid-combat.</summary>
+    private static void DrawStreak(GameState s)
+    {
+        if (s.Over || s.Streak < 3) return;
+        int tier = s.StreakTier;
+        Color col = tier switch { 3 => Palette.Hex("ff7a3a"), 2 => Palette.Hex("ff9a4d"), 1 => Palette.Hex("ffc15c"), _ => Palette.Hex("e8cf8a") };
+        string label = tier > 0 ? $"{GameState.StreakLabel(tier)}  x{s.Streak}" : $"STREAK x{s.Streak}";
+        int fs = tier >= 2 ? 24 : 20;
+        int w = Raylib.MeasureText(label, fs);
+        int sw = Raylib.GetScreenWidth();
+        int x = sw / 2 - w / 2, y = 92;
+        // Pulse the blazing tier.
+        if (tier == 3)
+        {
+            float pulse = 0.5f + 0.5f * MathF.Sin((float)Raylib.GetTime() * 9f);
+            Raylib.DrawText(label, x, y, fs, new Color(col.R, col.G, col.B, (byte)(160 + 95 * pulse)));
+        }
+        else Raylib.DrawText(label, x, y, fs, col);
+        // Timer bar underneath.
+        float frac = MathUtils.Clamp(s.StreakTimer / GameState.StreakWindow, 0f, 1f);
+        Raylib.DrawRectangle(sw / 2 - 70, y + fs + 4, 140, 4, new Color(19, 25, 24, 180));
+        Raylib.DrawRectangle(sw / 2 - 70, y + fs + 4, (int)(140 * frac), 4, col);
+    }
+
+    /// <summary>Between-wave recap of the wave just cleared.</summary>
+    private static void DrawWaveSummary(GameState s)
+    {
+        if (s.Phase != Phase.Combat || s.Over || s.PendingDraft || s.Shop.Open) return;
+        if (s.Spawning is not null || s.BetweenWaves <= 0f) return;
+        if (s.LastSummary is not WaveSummary sum) return;
+
+        const int pw = 250;
+        var rows = new List<(string, string, Color)>
+        {
+            ("Raiders slain", sum.Kills.ToString(), Palette.Hero),
+            ("Gold gathered", sum.GoldEarned.ToString(), Palette.Gold),
+            ("Damage dealt", sum.DamageDealt.ToString(), Palette.Hex("d98f6b")),
+            ("Best streak", $"x{sum.BestStreak}", Palette.Hex("ff9a4d")),
+        };
+        if (sum.StructuresLost > 0)
+            rows.Add(("Structures lost", sum.StructuresLost.ToString(), Palette.Hex("d2604f")));
+
+        int ph = 44 + rows.Count * 22 + 12;
+        int sw = Raylib.GetScreenWidth();
+        int px = sw / 2 - pw / 2;
+        int py = 78;
+        Raylib.DrawRectangle(px, py, pw, ph, new Color(16, 23, 22, 215));
+        Raylib.DrawRectangleLinesEx(new Rectangle(px, py, pw, ph), 2f, Palette.Hex("c49a62"));
+        DrawCenteredAt($"WAVE {sum.Wave} CLEARED", 20, px, pw, py + 10, Palette.Hex("efd18a"));
+
+        int ry = py + 40;
+        foreach (var (label, value, col) in rows)
+        {
+            Raylib.DrawText(label, px + 16, ry, 15, Palette.PathEdge);
+            int vw = Raylib.MeasureText(value, 16);
+            Raylib.DrawText(value, px + pw - vw - 16, ry - 1, 16, col);
+            ry += 22;
+        }
+    }
+
+    private static void DrawCenteredAt(string text, int fontSize, int x, int width, int y, Color color)
+    {
+        int w = Raylib.MeasureText(text, fontSize);
+        Raylib.DrawText(text, x + width / 2 - w / 2, y, fontSize, color);
     }
 
     private static void DrawIntro()
