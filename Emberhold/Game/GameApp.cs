@@ -237,6 +237,7 @@ public sealed class GameApp
         EconomySystem.UpdateUpgrades(_state, dt);
         CombatSystem.UpdateHeroCombat(_state, dt);
         TowerSystem.Update(_state, dt);
+        CompanionSystem.Update(_state, dt);
         EnemySystem.Update(_state, dt);
         DefenseSystem.Update(_state, dt);
         CombatSystem.UpdateProjectiles(_state, dt);

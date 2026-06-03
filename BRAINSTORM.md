@@ -8,6 +8,15 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.21.0 — "Packlord"
+- **New hero: Rurik, the Beastmaster** — a summoner. A loyal wolf fights at his side
+  (a second body on the field), chasing and biting nearby enemies while he supports.
+- **Rally Pack (signature)** — summon a burst of three temporary wolves to swarm a wave.
+- **Pack / Wild skill branches** — Pack (Alpha = harder bites, Frenzy = faster bites) and
+  Wild (Greater Pack = keep two loyal wolves, Maul = wolf bites slow their prey).
+- Wolves are a new lightweight ally entity (`Companion` + `CompanionSystem`); they deal
+  damage but don't take it, so enemy AI is unchanged.
+
 ### v0.20.0 — "Frostweaver"
 - **New hero: Niva, the Elementalist** — a frost mage. Her bolts chill (slow) every
   enemy they hit, leaning into the existing slow / Glacier / Frostfire systems.
