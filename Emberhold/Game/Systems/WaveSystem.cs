@@ -28,6 +28,10 @@ public static class WaveSystem
         if (kinds.Contains(EnemyKind.Boss)) { s.BossBannerTimer = 2.4f; s.BossIncoming = true; }
         else if (kinds.Contains(EnemyKind.Elite)) { s.BossBannerTimer = 1.8f; s.BossIncoming = false; }
 
+        // A champion mini-boss may be promoted from the roster on deep non-boss waves.
+        s.ChampionSpawned = false;
+        s.ChampionPending = s.Wave >= 14 && s.Wave % 10 != 0;
+
         // Telegraph a special wave archetype.
         var arch = s.ArchetypeOf(s.Wave);
         if (arch != WaveArchetype.Normal)
@@ -214,7 +218,7 @@ public static class WaveSystem
         var am = special ? WaveArchetypes.Mods(WaveArchetype.Normal) : WaveArchetypes.Mods(s.ArchetypeOf(s.Wave));
         float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult * threat * am.Health * s.AscEnemyHpMult;
 
-        s.Enemies.Add(new Enemy
+        var enemy = new Enemy
         {
             Id = s.NextId(),
             Pos = Map.SpawnPoint(side, s.Chapter),
@@ -238,7 +242,17 @@ public static class WaveSystem
             BlinkTimer = kind == EnemyKind.Assassin ? 1.6f : 0f,
             StatusImmune = kind == EnemyKind.Wraith,
             General = kind == EnemyKind.General,
-        });
+        };
+        s.Enemies.Add(enemy);
         if (kind == EnemyKind.General) { s.BossBannerTimer = 2.2f; s.BossIncoming = false; }
+
+        // Promote one rank-and-file raider into a champion mini-boss this wave.
+        if (s.ChampionPending && !s.ChampionSpawned && !special
+            && kind is EnemyKind.Raider or EnemyKind.Runner or EnemyKind.Brute or EnemyKind.Shielded or EnemyKind.Flyer
+            && (s.Rand() < 0.14f || (s.Spawning?.Remaining ?? 0) <= 2))
+        {
+            Champions.Promote(s, enemy);
+            s.ChampionSpawned = true;
+        }
     }
 }

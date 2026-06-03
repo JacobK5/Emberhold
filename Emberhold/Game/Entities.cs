@@ -40,6 +40,8 @@ public sealed class Enemy
     public float BlinkTimer;
     public bool StatusImmune;   // wraith: immune to burn + slow
     public bool General;        // late-game commander: routs the wave if killed, rallies the horde if it breaks through
+    public bool Champion;       // promoted mini-boss: crown, big reward, a signature trait
+    public ChampionTrait Trait; // the champion's trait (only meaningful when Champion)
 }
 
 public enum ProjectileSource { Hero, Tower, Cannon, Ballista, Chain, Flame }

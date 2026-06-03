@@ -66,6 +66,7 @@ public static class EnemySystem
                 speedScale = e.SlowFactor;
                 if (e.SlowTimer <= 0f) e.SlowFactor = 1f;
             }
+            speedScale *= Champions.EnrageSpeed(e); // Warbringer champion speeds up as it's hurt
 
             if (!e.Inside && MathF.Abs(e.Pos.X) < s.FortHalfSize && MathF.Abs(e.Pos.Y) < s.FortHalfSize)
                 e.Inside = true;
