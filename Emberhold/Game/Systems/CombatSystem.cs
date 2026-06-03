@@ -140,7 +140,7 @@ public static class CombatSystem
             }
             else if (d.Kind == DropKind.Cache)
             {
-                s.Gold += d.Value;
+                s.EarnGold(d.Value);
                 s.Live.GoldEarned += d.Value;
                 s.AddParticles(d.Pos, Palette.Gold, 18, 78f);
                 s.AddFloater(d.Pos + new Vector2(0, -10), $"+{d.Value} CACHE", Palette.Hex("ffd66b"));
@@ -148,7 +148,7 @@ public static class CombatSystem
             }
             else
             {
-                s.Gold += d.Value;
+                s.EarnGold(d.Value);
                 s.Live.GoldEarned += d.Value;
                 s.AddParticles(d.Pos, Palette.Gold, 5, 43f);
                 s.AddFloater(d.Pos + new Vector2(0, -8), $"+{d.Value}", Palette.Hex("ffd66b"));
@@ -163,7 +163,7 @@ public static class CombatSystem
         var pool = new List<RelicKind>();
         foreach (RelicKind k in Enum.GetValues<RelicKind>())
             if (!hero.Relics.Contains(k)) pool.Add(k);
-        if (pool.Count == 0) { s.Gold += 25; s.AddFloater(at + new Vector2(0, -8), "+25", Palette.Gold); return; }
+        if (pool.Count == 0) { s.EarnGold(25); s.AddFloater(at + new Vector2(0, -8), "+25", Palette.Gold); return; }
 
         var relic = pool[(int)(s.Rand() * pool.Count) % pool.Count];
         hero.Relics.Add(relic);

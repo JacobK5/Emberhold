@@ -19,7 +19,7 @@ public static class Renderer
         Raylib.ClearBackground(Palette.Grass);
 
         var cam = s.Cam;
-        if (s.Shake > 0f)
+        if (s.Shake > 0f && s.Phase == Phase.Combat)
             cam.Offset += new Vector2(
                 (float)(Jitter.NextDouble() - 0.5) * s.Shake,
                 (float)(Jitter.NextDouble() - 0.5) * s.Shake);
@@ -77,7 +77,7 @@ public static class Renderer
         DrawAbilityPill(x0 + 150, y, "DASH", "SHIFT", hero.DashCooldown, 2.4f);
         string rallyKey = s.Gold >= s.RallyCost ? $"F  {s.RallyCost}g" : $"need {s.RallyCost}g";
         DrawAbilityPill(x0 + 300, y, "RALLY", rallyKey, s.RallyCooldown, GameState.RallyMaxCooldown);
-        DrawCentered($"{hero.Profile.Name}   (H) switch hero", 16, y - 24, Palette.PathEdge);
+        DrawCentered($"{hero.Profile.Name}   (H) switch hero", 16, y - 24, Palette.Hex("efd18a"));
         if (hero.Overdrive > 0f)
             DrawCentered($"OVERDRIVE {hero.Overdrive:0.0}s", 18, y - 46, Palette.Fire);
     }
@@ -101,7 +101,7 @@ public static class Renderer
         {
             DrawCentered($"NEXT WAVE IN {MathF.Ceiling(s.BetweenWaves)}s", 22, 24, Palette.Hero);
             if (s.Shop.CanOpen)
-                DrawCentered("[S] Supply Shop", 16, 54, Palette.Hex("c49a62"));
+                DrawCentered("[B] Supply Shop", 16, 54, Palette.Hex("c49a62"));
         }
     }
 
@@ -278,7 +278,7 @@ public static class Renderer
         if (s.CodexAdept)
             DrawCentered("CODEX ADEPT  -  bonus starter granted", 16, h - 218, Palette.Hex("c9b074"));
         DrawCentered("Collect gold, stand on pads to build. WASD / click to move.", 20, h - 150, Palette.Hero);
-        DrawCentered("SPACE volley   /   SHIFT dash   /   F rally   /   H switch hero   /   S shop   /   C codex   /   P pause", 17, h - 124, Palette.PathEdge);
+        DrawCentered("SPACE volley   /   SHIFT dash   /   F rally   /   H switch hero   /   B shop   /   C codex   /   P pause", 17, h - 124, Palette.PathEdge);
     }
 
     private static void DrawLanes(GameState s)

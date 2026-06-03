@@ -213,7 +213,7 @@ public static class OverlayUI
         string goldStr = $"GOLD: {s.Gold}";
         int gw = Raylib.MeasureText(goldStr, 18);
         Raylib.DrawText(goldStr, px + panelW - gw - 14, py + 18, 18, Palette.Gold);
-        DrawCentered("S / ESC to close", 14, py + 48, Palette.PathEdge);
+        DrawCentered("B / ESC to close", 14, py + 48, Palette.PathEdge);
 
         // Items.
         var mouse = Raylib.GetMousePosition();
@@ -326,6 +326,26 @@ public static class OverlayUI
         Category.Defend => Palette.Hex("6f97c4"),
         _ => Palette.Hex("8fbf7f"),
     };
+
+    /// <summary>Launch overlay offering to resume a saved run.</summary>
+    public static void DrawResumePrompt(RunSave save)
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 220));
+
+        const int pw = 540, ph = 200;
+        int px = w / 2 - pw / 2, py = h / 2 - ph / 2;
+        Raylib.DrawRectangle(px, py, pw, ph, new Color(18, 26, 24, 245));
+        Raylib.DrawRectangleLinesEx(new Rectangle(px, py, pw, ph), 2f, Palette.Hex("c49a62"));
+
+        DrawCentered("SAVED RUN FOUND", 30, py + 22, Palette.Hex("efd18a"));
+        string mod = save.ModifierId != "none" ? $"   -   Trial: {save.ModifierId}" : "";
+        DrawCentered($"Wave {save.Wave}   -   Fort {save.Chapter}   -   {save.Gold}g{mod}", 18, py + 66, Palette.Hero);
+        DrawCentered($"Hero Lv {save.Hero.Level}   -   {save.Structures.Count} structures standing", 16, py + 92, Palette.PathEdge);
+
+        DrawCentered("[ENTER]  resume", 22, py + 130, Palette.Gold);
+        DrawCentered("[N]  start a new run", 18, py + 160, Palette.Hex("a89878"));
+    }
 
     public static void DrawStructureTooltip(GameState s)
     {

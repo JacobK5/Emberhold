@@ -45,6 +45,7 @@ public sealed class GameState
 
     public int Chapter = 1;
     public int Gold = 20;
+    public long GoldAccrued = 20;  // lifetime gold earned this run (held + spent); drives late-game threat
     public int Wave = 1;
     public Phase Phase = Phase.Combat;
 
@@ -125,6 +126,7 @@ public sealed class GameState
     public bool PendingDraft;   // a milestone wave cleared; hand off to the draft
     public float DraftReadyTimer; // input blocked for the first 0.75s of a new draft
     public bool ViewingBase;     // player hid the draft overlay to survey the map
+    public bool NeedsAutosave;   // a wave cleared; checkpoint once the lull is stable
 
     // Entities
     public readonly List<Enemy> Enemies = new();
@@ -254,6 +256,22 @@ public sealed class GameState
         PopupTimer -= dt;
         if (PopupTimer <= 0f) ActivePopup = null;
     }
+
+    // ---- Economy / difficulty ------------------------------------------
+
+    /// <summary>Add gold and track it toward the run's lifetime accrual.</summary>
+    public void EarnGold(int amount)
+    {
+        Gold += amount;
+        if (amount > 0) GoldAccrued += amount;
+    }
+
+    /// <summary>
+    /// Late-game enemy strength multiplier. The more gold a run has accumulated
+    /// (held + already spent), the tougher raiders become — so a snowballing
+    /// economy stays threatened. Ramps from 1.0x up to 2.0x.
+    /// </summary>
+    public float GoldThreat => 1f + MathUtils.Clamp((GoldAccrued - 400f) / 2200f, 0f, 1f);
 
     // ---- Shared FX helpers ---------------------------------------------
 

@@ -8,6 +8,23 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.16.2 — "Frontier Comforts" (QoL patch #2)
+- **Wealth-scaled threat** — enemy HP (and, at half rate, damage) now ramps with a run's
+  total accumulated gold (held + spent), 1.0x→2.0x, so a snowballing economy stays dangerous.
+- **Run saves** — checkpoint autosave at each between-wave lull; the launch screen offers to
+  resume ([Enter]) or start fresh ([N]). Cleared on game-over.
+- **Shop cards cost their build** — structure cards bought from the shop are no longer
+  pre-funded; you pay the shop price for the card, then fund its construction (and upgrades).
+- **Draft mis-click guard** — a 0.75s grace before draft cards become selectable.
+- **Shop key moved to B** — was S, which collided with move-down.
+- **Readability** — brighter hero label; world no longer shakes during placement.
+
+### v0.16.1 — "Frontier Comforts" (QoL patch #1)
+- **Camera zoom** — mouse wheel zooms 0.5x–2.0x with smooth lerp.
+- **View base during draft** — press V to dismiss the draft overlay and survey your defenses.
+- **Structure tooltips** — hover any building to see its name, role stats, and effect.
+- **Pause fix** — ESC no longer quits the game; it pauses (alongside P).
+
 ### v0.16.0 — "Codex Adept"
 - **Codex completion reward** — discover 12+ synergies across all runs to earn a
   bonus free Gold Mine starter at the start of every future run.

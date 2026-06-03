@@ -33,6 +33,10 @@ public sealed class GameApp
     private const float ZoomMax = 2.0f;
     private const float ZoomStep = 0.12f;
 
+    // Resume-on-launch: when a checkpoint save exists, prompt before starting fresh.
+    private RunSave? _pendingSave;
+    private bool _resumePrompt;
+
     /// <param name="auto">Auto-resolve draft/placement (smoke).</param>
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
@@ -48,6 +52,14 @@ public sealed class GameApp
         _lose = lose;
         NewRun();
         if (paused) _state.Paused = true;
+
+        // Offer to resume a saved run (skip in smoke/debug-start modes).
+        bool debugStart = _seed || Auto || _lose || _startWave > 0 || _startChapter > 0;
+        if (!debugStart && RunStore.TryLoad(out var save))
+        {
+            _pendingSave = save;
+            _resumePrompt = true;
+        }
     }
 
     private void NewRun()
@@ -69,6 +81,7 @@ public sealed class GameApp
 
     public void Update(float dt)
     {
+        if (_resumePrompt) { HandleResumePrompt(); return; }
         if (Raylib.IsKeyPressed(KeyboardKey.R) && _state.Over) { NewRun(); return; }
 
         _state.Elapsed += dt;
@@ -87,15 +100,38 @@ public sealed class GameApp
 
         switch (_state.Phase)
         {
-            case Phase.Draft: UpdateDraft(dt); EaseCameraHome(dt); break;
-            case Phase.Placement: UpdatePlacement(); EaseCameraHome(dt); break;
+            // Settle any leftover screen shake while drafting/placing so the world is still.
+            case Phase.Draft: _state.Shake = 0f; UpdateDraft(dt); EaseCameraHome(dt); break;
+            case Phase.Placement: _state.Shake = 0f; UpdatePlacement(); EaseCameraHome(dt); break;
             case Phase.Combat: UpdateCombat(dt); break;
         }
     }
 
     public bool ShowIntro => _introTimer > 0f;
 
-    public void Draw() => Renderer.Draw(_state, _draft, ShowIntro, _showCodex);
+    public void Draw()
+    {
+        Renderer.Draw(_state, _draft, ShowIntro, _showCodex);
+        if (_resumePrompt && _pendingSave is RunSave sv)
+            OverlayUI.DrawResumePrompt(sv);
+    }
+
+    /// <summary>Title-screen resume choice: [Enter] continue the saved run, [N] start fresh.</summary>
+    private void HandleResumePrompt()
+    {
+        if (Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.KpEnter))
+        {
+            if (_pendingSave is RunSave save) RunStore.Apply(_state, save);
+            _resumePrompt = false;
+            _pendingSave = null;
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.N))
+        {
+            RunStore.Delete();
+            _resumePrompt = false;
+            _pendingSave = null;
+        }
+    }
 
     // ---- phases ---------------------------------------------------------
 
@@ -148,8 +184,8 @@ public sealed class GameApp
         _state.BannerTimer = MathF.Max(0f, _state.BannerTimer - dt);
         _state.RallyCooldown = MathF.Max(0f, _state.RallyCooldown - dt);
 
-        // Shop toggle — available during the between-wave countdown.
-        if (Raylib.IsKeyPressed(KeyboardKey.S) && _state.Shop.CanOpen && !_state.PendingDraft)
+        // Shop toggle — available during the between-wave countdown. (B, not S — S is move-down.)
+        if (Raylib.IsKeyPressed(KeyboardKey.B) && _state.Shop.CanOpen && !_state.PendingDraft)
         {
             if (_state.Shop.Open) CloseShop();
             else _state.Shop.Open = true;
@@ -188,9 +224,19 @@ public sealed class GameApp
         if (_state.KeepHealth <= 0f || _state.Hero.Health <= 0f)
         {
             _state.Over = true;
+            RunStore.Delete(); // the run is finished; don't resume a dead keep
             _profile = Persistence.Record(_profile, _state.Wave, _state.Kills, _state.BossKills, _state.SeenSynergies);
             _state.BestWave = _profile.BestWave;
             _state.Profile = _profile;
+            return;
+        }
+
+        // Checkpoint once the post-wave lull is stable (after any draft/placement resolves).
+        if (_state.NeedsAutosave && _state.Spawning is null && _state.BetweenWaves > 0f
+            && !_state.PendingDraft && !_state.Shop.Open && _state.Enemies.TrueForAll(e => e.Dead))
+        {
+            RunStore.Save(RunStore.Capture(_state));
+            _state.NeedsAutosave = false;
         }
     }
 
@@ -299,11 +345,9 @@ public sealed class GameApp
                 cost = shop.CardCost;
                 if (_state.Gold < cost) return;
                 _state.Gold -= cost;
-                // Queue as a pre-funded pad (cost 0 so it builds instantly on placement).
-                var freeDef = new CardDef(
-                    item.Card.Id, item.Card.Name, item.Card.Short,
-                    item.Card.Category, item.Card.Kind, item.Card.Tags, Cost: 0);
-                _draft.ToPlace.Enqueue(freeDef);
+                // The shop price buys the card; you still place and fund its build
+                // (and any upgrades) with gold, like a drafted card.
+                _draft.ToPlace.Enqueue(item.Card);
                 _state.AddFloater(hero.Pos, item.Card.Name, Palette.Gold);
                 item.Purchased = true;
                 shop.OnPurchase();

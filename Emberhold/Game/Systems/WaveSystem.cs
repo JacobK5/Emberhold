@@ -105,7 +105,7 @@ public static class WaveSystem
                 int interest = s.Gold > 30 ? Math.Min(30, s.Gold * 8 / 100) : 0;
                 if (interest > 0)
                 {
-                    s.Gold += interest;
+                    s.EarnGold(interest);
                     s.AddFloater(s.Hero.Pos + new Vector2(0, -42), $"TREASURY +{interest}", Palette.Gold);
                 }
                 s.Live.Interest = interest;
@@ -125,6 +125,9 @@ public static class WaveSystem
                 // Refresh the shop for the new between-wave window.
                 s.Shop.Refresh(s.Wave);
                 s.Shop.CanOpen = true;
+
+                // Checkpoint the run once the post-wave lull settles (after any draft).
+                s.NeedsAutosave = true;
 
                 // Every third cleared wave also hands off to a draft + placement beat.
                 if (cleared % 3 == 0) { s.PendingDraft = true; return; }
@@ -173,7 +176,11 @@ public static class WaveSystem
         var mod = s.Modifier;
         float hpBuff = 1f + s.HordeTier * 0.08f;
         float spdBuff = 1f + s.HordeTier * 0.03f;
-        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult;
+        // Accumulated-wealth threat: HP scales fully, damage at half rate (so a rich
+        // run stays dangerous without raiders one-shotting the hero).
+        float threat = s.GoldThreat;
+        float dmgThreat = 1f + (threat - 1f) * 0.5f;
+        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult * threat;
 
         s.Enemies.Add(new Enemy
         {
@@ -183,7 +190,7 @@ public static class WaveSystem
             Health = hp,
             MaxHealth = hp,
             Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff * mod.EnemySpeedMult,
-            Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult),
+            Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult * dmgThreat),
             Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult * mod.GoldMult),
             Kind = kind,
             Elite = elite,
