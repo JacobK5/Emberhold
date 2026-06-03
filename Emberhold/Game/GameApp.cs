@@ -52,7 +52,7 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false, bool ascendDemo = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false, bool ascendDemo = false, bool furyDemo = false)
     {
         _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
@@ -118,6 +118,20 @@ public sealed class GameApp
                 if (WaveArchetypes.For(12, salt) == WaveArchetype.Swarm) { _state.ArchetypeSalt = salt; break; }
             _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave);
             WaveSystem.StartWave(_state);
+        }
+        if (furyDemo)
+        {
+            // Debug: detonate a Cataclysm in a ring of foes to capture the shockwave.
+            _state.Phase = Phase.Combat;
+            var hp = _state.Hero.Pos;
+            for (int i = 0; i < 14; i++)
+            {
+                float a = i / 14f * (2f * MathF.PI);
+                var pos = hp + new Vector2(MathF.Cos(a), MathF.Sin(a)) * 130f;
+                _state.Enemies.Add(new Enemy { Id = _state.NextId(), Pos = pos, Radius = 11, Health = 200, MaxHealth = 200, Speed = 40, SlowFactor = 1f, Kind = Data.EnemyKind.Raider });
+            }
+            _state.Fury = 1f;
+            CombatSystem.Ultimate(_state);
         }
     }
 
@@ -368,6 +382,7 @@ public sealed class GameApp
         _state.BannerTimer = MathF.Max(0f, _state.BannerTimer - dt);
         _state.RallyCooldown = MathF.Max(0f, _state.RallyCooldown - dt);
         _state.OverchargeTimer = MathF.Max(0f, _state.OverchargeTimer - dt);
+        _state.UltFxTimer = MathF.Max(0f, _state.UltFxTimer - dt);
         _state.Hero.SwitchCooldown = MathF.Max(0f, _state.Hero.SwitchCooldown - dt);
         _state.Hero.StanceTimer = MathF.Max(0f, _state.Hero.StanceTimer - dt);
 
@@ -642,6 +657,7 @@ public sealed class GameApp
         if (Raylib.IsKeyPressed(KeyboardKey.LeftShift) || Raylib.IsKeyPressed(KeyboardKey.RightShift))
             CombatSystem.Dash(_state);
         if (Raylib.IsKeyPressed(KeyboardKey.F)) _state.TryRally();
+        if (Raylib.IsKeyPressed(KeyboardKey.Q)) CombatSystem.Ultimate(_state);
         if (Raylib.IsKeyPressed(KeyboardKey.H)) _heroSwapOpen = true;
     }
 
@@ -751,6 +767,7 @@ public sealed class GameApp
         MoveHero(desired, dt);
 
         if (hero.AbilityCooldown <= 0f && _state.Enemies.Count > 0) CombatSystem.Signature(_state);
+        if (_state.FuryReady && _state.Enemies.Count >= 4) CombatSystem.Ultimate(_state);
         if (_state.RallyCooldown <= 0f && _state.Gold >= _state.RallyCost && _state.Enemies.Count >= 6)
             _state.TryRally();
     }

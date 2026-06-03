@@ -8,6 +8,13 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.32.0 — "Cataclysm"
+- **Fury ultimate** — a kill-charged meter (under the ability bar) that fills as you slay
+  raiders (tougher foes charge it faster). At full, press **Q** to unleash the Cataclysm:
+  a huge radial blast around the hero that shreds and knocks back the swarm (ignoring
+  shields, bosses resist), plus a 4s Overdrive burst and an expanding shockwave. A
+  performance-gated power spike that rewards aggressive play.
+
 ### v0.31.0 — "Ascension"
 - **Ascension tiers** — a Hades-style difficulty ladder chosen at run start on the
   hero-select screen ([-]/[+] selector, with a live rule summary). Each tier stacks

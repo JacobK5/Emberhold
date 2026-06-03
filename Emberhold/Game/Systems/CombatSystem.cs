@@ -215,6 +215,9 @@ public static class CombatSystem
         enemy.Dead = true;
         s.Kills += 1;
         s.Live.Kills += 1;
+        // Charge the Fury ultimate — tougher foes feed it faster.
+        s.GainFury(enemy.Boss ? 0.25f : enemy.General ? 0.18f : enemy.Elite ? 0.09f
+                 : enemy.Kind == EnemyKind.Brute ? 0.06f : 0.045f);
         bool tierUp = s.RegisterStreakKill();
         GrantHeroXp(s, enemy.Boss ? 12 : enemy.Elite ? 4 : enemy.Kind == EnemyKind.Brute ? 2 : 1);
         bool fancy = enemy.Elite || enemy.Boss;
@@ -327,6 +330,45 @@ public static class CombatSystem
             case HeroKind.Beastmaster: RallyPack(s); break;
             default: ShootVolley(s); break;
         }
+    }
+
+    /// <summary>The Fury ultimate (Q): a huge radial Cataclysm that detonates the charged
+    /// meter — heavy area damage + knockback around the hero, plus an Overdrive burst.
+    /// Returns true if it fired (meter must be full).</summary>
+    public static bool Ultimate(GameState s)
+    {
+        var hero = s.Hero;
+        if (!s.FuryReady || s.Over) return false;
+        s.Fury = 0f;
+
+        const float radius = 240f;
+        float dmg = hero.Damage * 4.5f * hero.Profile.Damage * Balance.HeroDamageMult
+                  * s.StreakDamageMult * s.Modifier.HeroDamageMult;
+        foreach (var e in s.Enemies)
+        {
+            if (e.Dead) continue;
+            if (Vector2.Distance(e.Pos, hero.Pos) > radius + e.Radius) continue;
+            DamageEnemy(s, e, e.Boss ? dmg * 0.6f : dmg, mitigable: false); // bosses resist; ignores shields
+            if (!e.Boss)
+            {
+                var dir = MathUtils.Normalize(e.Pos - hero.Pos);
+                if (dir != Vector2.Zero) e.Pos += dir * 26f; // knock survivors back
+            }
+            if (!e.StatusImmune)
+            {
+                e.SlowFactor = e.SlowTimer <= 0f ? 0.5f : MathF.Min(e.SlowFactor, 0.5f);
+                e.SlowTimer = MathF.Max(e.SlowTimer, 1.5f);
+            }
+        }
+
+        hero.Overdrive = MathF.Max(hero.Overdrive, 4f);
+        s.UltFxPos = hero.Pos;
+        s.UltFxTimer = 0.55f;
+        s.AddParticles(hero.Pos, Palette.Fire, 46, 220f);
+        s.AddParticles(hero.Pos, Palette.Hex("ffd66b"), 30, 150f);
+        s.AddFloater(hero.Pos + new Vector2(0, -34), "CATACLYSM!", Palette.Hex("ffb04a"));
+        s.KickShake(16f);
+        return true;
     }
 
     /// <summary>Beastmaster signature: summon a burst of temporary wolves to swarm the wave.</summary>

@@ -108,6 +108,13 @@ public sealed class GameState
     // Overcharge: Artificer signature — a fort-wide tower frenzy while the timer runs.
     public float OverchargeTimer;
 
+    // Fury: a kill-charged meter (0..1). Full → unleash the Cataclysm ultimate (Q).
+    public float Fury;
+    public bool FuryReady => Fury >= 1f;
+    public float UltFxTimer;        // shockwave ring effect countdown
+    public Vector2 UltFxPos;        // where the last ultimate detonated
+    public void GainFury(float amount) => Fury = Math.Clamp(Fury + amount, 0f, 1f);
+
     // Rally Horn: a gold-for-time clutch ability that slows the whole wave.
     public float RallyCooldown;
     public const float RallyMaxCooldown = 12f;

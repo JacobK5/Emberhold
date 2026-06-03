@@ -39,6 +39,7 @@ public static class Renderer
         DrawCompanions(s);
         DrawMeteors(s);
         DrawHero(s.Hero);
+        DrawUltFx(s);
         DrawParticles(s);
         DrawFloaters(s);
         if (s.Phase == Phase.Placement) OverlayUI.DrawPlacementWorld(s, draft);
@@ -80,10 +81,43 @@ public static class Renderer
         DrawAbilityPill(x0 + 150, y, "DASH", "SHIFT", hero.DashCooldown, 2.4f);
         string rallyKey = s.Gold >= s.RallyCost ? $"F  {s.RallyCost}g" : $"need {s.RallyCost}g";
         DrawAbilityPill(x0 + 300, y, "RALLY", rallyKey, s.RallyCooldown, GameState.RallyMaxCooldown);
+
+        DrawFuryMeter(s, x0, 436, y - 16);
+
         string skillHint = hero.Cur.SkillPoints > 0 ? $"   (K) {hero.Cur.SkillPoints} skill pt" : "   (K) skills";
-        DrawCentered($"{hero.Profile.Name}   (H) switch{skillHint}", 16, y - 24, Palette.Hex("efd18a"));
+        DrawCentered($"{hero.Profile.Name}   (H) switch{skillHint}", 16, y - 50, Palette.Hex("efd18a"));
         if (hero.Overdrive > 0f)
-            DrawCentered($"OVERDRIVE {hero.Overdrive:0.0}s", 18, y - 46, Palette.Fire);
+            DrawCentered($"OVERDRIVE {hero.Overdrive:0.0}s", 18, y - 72, Palette.Fire);
+    }
+
+    /// <summary>The Fury ultimate meter under the ability pills; glows + prompts at full.</summary>
+    private static void DrawFuryMeter(GameState s, int x, int fw, int fy)
+    {
+        const int fh = 8;
+        bool ready = s.FuryReady;
+        Raylib.DrawRectangle(x, fy, fw, fh, new Color(19, 25, 24, 210));
+        Color fill = Palette.Hex("c2624f");
+        if (ready)
+        {
+            float pulse = 0.5f + 0.5f * MathF.Sin((float)Raylib.GetTime() * 8f);
+            fill = new Color((byte)255, (byte)176, (byte)74, (byte)(170 + 80 * pulse));
+        }
+        Raylib.DrawRectangle(x, fy, (int)(fw * MathUtils.Clamp(s.Fury, 0f, 1f)), fh, fill);
+        Raylib.DrawRectangleLinesEx(new Rectangle(x, fy, fw, fh), 1f, ready ? Palette.Gold : Palette.PathEdge);
+        string label = ready ? "Q  -  CATACLYSM READY" : $"FURY  {s.Fury * 100f:0}%";
+        DrawCentered(label, 13, fy - 16, ready ? Palette.Hex("ffd66b") : Palette.Hex("9aa6a0"));
+    }
+
+    /// <summary>Expanding shockwave rings from a freshly detonated Fury ultimate.</summary>
+    private static void DrawUltFx(GameState s)
+    {
+        if (s.UltFxTimer <= 0f) return;
+        float prog = 1f - s.UltFxTimer / 0.55f; // 0 -> 1
+        float r = 40f + prog * 230f;
+        byte a = (byte)(200 * (1f - prog));
+        Raylib.DrawCircleLinesV(s.UltFxPos, r, new Color((byte)0xff, (byte)0xb0, (byte)0x4a, a));
+        Raylib.DrawCircleLinesV(s.UltFxPos, r * 0.82f, new Color((byte)0xff, (byte)0xd6, (byte)0x6b, (byte)(a * 0.8f)));
+        Raylib.DrawCircleLinesV(s.UltFxPos, r * 0.6f, new Color((byte)0xed, (byte)0x74, (byte)0x43, (byte)(a * 0.55f)));
     }
 
     private static void DrawAbilityPill(int x, int y, string name, string key, float cooldown, float max)
@@ -316,7 +350,7 @@ public static class Renderer
         if (s.CodexAdept)
             DrawCentered("CODEX ADEPT  -  bonus starter granted", 16, h - 218, Palette.Hex("c9b074"));
         DrawCentered("Collect gold, stand on pads to build. WASD / click to move.", 20, h - 150, Palette.Hero);
-        DrawCentered("SPACE volley   /   SHIFT dash   /   F rally   /   H switch hero   /   B shop   /   C codex   /   P pause", 17, h - 124, Palette.PathEdge);
+        DrawCentered("SPACE volley   /   SHIFT dash   /   Q ultimate   /   F rally   /   H switch hero   /   B shop   /   C codex   /   P pause", 16, h - 124, Palette.PathEdge);
     }
 
     private static void DrawLanes(GameState s)
