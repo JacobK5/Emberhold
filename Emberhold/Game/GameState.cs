@@ -123,6 +123,8 @@ public sealed class GameState
     public bool WaveBonusPending;
     public bool UpgradeBreak;
     public bool PendingDraft;   // a milestone wave cleared; hand off to the draft
+    public float DraftReadyTimer; // input blocked for the first 0.75s of a new draft
+    public bool ViewingBase;     // player hid the draft overlay to survey the map
 
     // Entities
     public readonly List<Enemy> Enemies = new();

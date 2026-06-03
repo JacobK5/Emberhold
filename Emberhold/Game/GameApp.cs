@@ -28,6 +28,10 @@ public sealed class GameApp
     private bool _showCodex;
     private Profile _profile = Persistence.Load();
     private readonly Random _rng = new();
+    private float _targetZoom = 1f;
+    private const float ZoomMin = 0.5f;
+    private const float ZoomMax = 2.0f;
+    private const float ZoomStep = 0.12f;
 
     /// <param name="auto">Auto-resolve draft/placement (smoke).</param>
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
@@ -70,6 +74,7 @@ public sealed class GameApp
         _state.Elapsed += dt;
         _introTimer -= dt;
         UpdateCameraOffset();
+        UpdateZoom(dt);
 
         if (Raylib.IsKeyPressed(KeyboardKey.C)) _showCodex = !_showCodex;
         if (_showCodex)
@@ -82,7 +87,7 @@ public sealed class GameApp
 
         switch (_state.Phase)
         {
-            case Phase.Draft: UpdateDraft(); EaseCameraHome(dt); break;
+            case Phase.Draft: UpdateDraft(dt); EaseCameraHome(dt); break;
             case Phase.Placement: UpdatePlacement(); EaseCameraHome(dt); break;
             case Phase.Combat: UpdateCombat(dt); break;
         }
@@ -94,20 +99,29 @@ public sealed class GameApp
 
     // ---- phases ---------------------------------------------------------
 
-    private void UpdateDraft()
+    private void UpdateDraft(float dt)
     {
+        _state.DraftReadyTimer = MathF.Max(0f, _state.DraftReadyTimer - dt);
+
+        if (Raylib.IsKeyPressed(KeyboardKey.V)) _state.ViewingBase = !_state.ViewingBase;
+        if (_state.ViewingBase) return;
+        if (_state.DraftReadyTimer > 0f) return;
+
         if (Auto) { _draft.AutoAdvance(_state); return; }
 
-        if (Raylib.IsKeyPressed(KeyboardKey.One)) _draft.Pick(_state, 0);
-        else if (Raylib.IsKeyPressed(KeyboardKey.Two)) _draft.Pick(_state, 1);
-        else if (Raylib.IsKeyPressed(KeyboardKey.Three)) _draft.Pick(_state, 2);
+        int picked = -1;
+        if (Raylib.IsKeyPressed(KeyboardKey.One)) picked = 0;
+        else if (Raylib.IsKeyPressed(KeyboardKey.Two)) picked = 1;
+        else if (Raylib.IsKeyPressed(KeyboardKey.Three)) picked = 2;
         else if (Raylib.IsMouseButtonPressed(MouseButton.Left))
         {
             var rects = OverlayUI.DraftCardRects();
             var m = Raylib.GetMousePosition();
             for (int i = 0; i < rects.Length; i++)
-                if (Raylib.CheckCollisionPointRec(m, rects[i])) { _draft.Pick(_state, i); break; }
+                if (Raylib.CheckCollisionPointRec(m, rects[i])) { picked = i; break; }
         }
+
+        if (picked >= 0) { _draft.Pick(_state, picked); _state.ViewingBase = false; }
     }
 
     private void UpdatePlacement()
@@ -225,6 +239,8 @@ public sealed class GameApp
     private void TriggerDraft()
     {
         _state.PendingDraft = false;
+        _state.DraftReadyTimer = 0.75f;
+        _state.ViewingBase = false;
         _draft.StartDraft(_state);
     }
 
@@ -355,6 +371,14 @@ public sealed class GameApp
 
     private void UpdateCameraOffset()
         => _state.Cam.Offset = new Vector2(Raylib.GetScreenWidth() / 2f, Raylib.GetScreenHeight() / 2f);
+
+    private void UpdateZoom(float dt)
+    {
+        float wheel = Raylib.GetMouseWheelMove();
+        if (wheel != 0f)
+            _targetZoom = MathUtils.Clamp(_targetZoom + wheel * ZoomStep, ZoomMin, ZoomMax);
+        _state.Cam.Zoom += (_targetZoom - _state.Cam.Zoom) * MathF.Min(1f, dt * 9f);
+    }
 
     private void EaseCameraHome(float dt)
         => _state.Cam.Target += (Vector2.Zero - _state.Cam.Target) * MathF.Min(1f, dt * 4.5f);

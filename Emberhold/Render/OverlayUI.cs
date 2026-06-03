@@ -27,10 +27,22 @@ public static class OverlayUI
     public static void DrawDraft(GameState s, IReadOnlyList<CardDef> offer)
     {
         int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+
+        if (s.ViewingBase)
+        {
+            DrawCentered("V  -  return to draft", 17, h - 40, Palette.PathEdge);
+            return;
+        }
+
         Raylib.DrawRectangle(0, 0, w, h, new Color(11, 17, 19, 180));
         DrawCentered("CHOOSE A FRONTIER CARD", 34, h / 2 - 220, Palette.Hex("efd18a"));
-        DrawCentered("one Attack  /  one Defend  /  one Support  -  pick one (1 / 2 / 3 or click)", 18, h / 2 - 184, Palette.PathEdge);
-        DrawCentered("(C) synergy codex", 16, h / 2 - 160, Palette.PathEdge);
+
+        bool ready = s.DraftReadyTimer <= 0f;
+        DrawCentered(
+            ready ? "one Attack  /  one Defend  /  one Support  -  pick one (1 / 2 / 3 or click)"
+                  : $"Ready in  {s.DraftReadyTimer:0.0}s ...",
+            18, h / 2 - 184, ready ? Palette.PathEdge : Palette.Hex("9aa6a0"));
+        DrawCentered("(C) synergy codex   /   (V) view base", 16, h / 2 - 160, Palette.PathEdge);
 
         // Preview the next two waves you'll face after placing, below the cards.
         string preview = WaveSystem.PreviewLine(s.NextWaveKinds);
@@ -44,10 +56,10 @@ public static class OverlayUI
         var rects = DraftCardRects();
         var mouse = Raylib.GetMousePosition();
         for (int i = 0; i < offer.Count && i < rects.Length; i++)
-            DrawCard(rects[i], offer[i], i + 1, Raylib.CheckCollisionPointRec(mouse, rects[i]), owned);
+            DrawCard(rects[i], offer[i], i + 1, ready && Raylib.CheckCollisionPointRec(mouse, rects[i]), owned, ready);
     }
 
-    private static void DrawCard(Rectangle r, CardDef def, int hotkey, bool hovered, ISet<StructureKind> owned)
+    private static void DrawCard(Rectangle r, CardDef def, int hotkey, bool hovered, ISet<StructureKind> owned, bool enabled = true)
     {
         Color accent = CategoryColor(def.Category);
         Raylib.DrawRectangleRec(r, new Color(28, 36, 34, 240));
@@ -65,6 +77,12 @@ public static class OverlayUI
         {
             Raylib.DrawText(line, (int)r.X + 14, ty, 15, Palette.PathEdge);
             ty += 22;
+        }
+
+        if (!enabled)
+        {
+            Raylib.DrawRectangleRec(r, new Color(11, 17, 16, 160));
+            return;
         }
 
         // Keystone hint: drafting this would complete a synergy you already own a piece of.
@@ -274,7 +292,9 @@ public static class OverlayUI
             canAfford ? Palette.Gold : Palette.Hex("a05040"));
     }
 
-    private static IEnumerable<string> Describe(CardDef def) => def.Kind switch
+    private static IEnumerable<string> Describe(CardDef def) => Describe(def.Kind);
+
+    private static IEnumerable<string> Describe(StructureKind kind) => kind switch
     {
         StructureKind.ArcherPost => new[] { "Fast single-target", "fire. Reliable DPS." },
         StructureKind.Cannon => new[] { "Slow, heavy splash", "damage in an area." },
@@ -306,6 +326,81 @@ public static class OverlayUI
         Category.Defend => Palette.Hex("6f97c4"),
         _ => Palette.Hex("8fbf7f"),
     };
+
+    public static void DrawStructureTooltip(GameState s)
+    {
+        if (s.Over || s.ViewingBase) return;
+        if (s.Phase == Phase.Draft) return;
+
+        var mouse = Raylib.GetMousePosition();
+        var world = Raylib.GetScreenToWorld2D(mouse, s.Cam);
+
+        Structure? hit = null;
+        foreach (var st in s.Structures)
+            if (Vector2.Distance(world, st.Pos) <= st.Radius + 8f) { hit = st; break; }
+        if (hit is null) return;
+
+        string name = CardDb.All.FirstOrDefault(c => c.Kind == hit.Kind)?.Name ?? hit.Kind.ToString();
+        var lines = new List<(string, Color)>();
+
+        switch (hit.Role)
+        {
+            case StructureRole.Tower:
+                lines.Add(($"Dmg {hit.Damage:0}   Range {hit.Range:0}   {1f / hit.Rate:0.#}/s", Palette.Hex("bfe0ff")));
+                break;
+            case StructureRole.Wall:
+                lines.Add(($"HP  {hit.Health:0} / {hit.MaxHealth:0}", Palette.Hex("b9cc78")));
+                break;
+            case StructureRole.Mine:
+                lines.Add(($"Every {hit.Interval:0.#}s  (~4g/tick)", Palette.Gold));
+                break;
+            case StructureRole.Aura:
+                string auraLine = hit.AuraKind switch
+                {
+                    AuraKind.Damage  => $"+{(hit.AuraMagnitude - 1f) * 100f:0}% damage  r={hit.AuraRange:0}",
+                    AuraKind.Rate    => $"-{(1f - hit.AuraMagnitude) * 100f:0}% cd  r={hit.AuraRange:0}",
+                    AuraKind.Range   => $"+{hit.AuraMagnitude:0} range  r={hit.AuraRange:0}",
+                    _                => $"Economy aura  r={hit.AuraRange:0}",
+                };
+                lines.Add((auraLine, Palette.Hex("d6b46c")));
+                break;
+            case StructureRole.GroundTrap:
+                string trapLine = $"{hit.TrapDps:0} DPS";
+                if (hit.TrapSlowFactor < 1f) trapLine += $"  slows {hit.TrapSlowFactor * 100f:0}%";
+                lines.Add((trapLine, Palette.Hex("c49a62")));
+                break;
+            case StructureRole.HeroBuff:
+                lines.Add(("Empowers hero volley", Palette.Hero));
+                break;
+        }
+
+        string effect = string.Join(" ", Describe(hit.Kind));
+        if (effect.Trim().Length > 0)
+            lines.Add((effect.Trim(), Palette.PathEdge));
+
+        if (hit.Level > 1)
+            lines.Add(($"Level {hit.Level}", Palette.Hex("9fd0ff")));
+
+        const int tipW = 210, padX = 10, padY = 8, lineH = 19;
+        int tipH = padY * 2 + 22 + lines.Count * lineH;
+        int tx = (int)mouse.X + 16;
+        int ty = (int)mouse.Y - tipH / 2;
+
+        int sw = Raylib.GetScreenWidth(), sh = Raylib.GetScreenHeight();
+        if (tx + tipW > sw - 4) tx = (int)mouse.X - tipW - 16;
+        ty = Math.Clamp(ty, 4, sh - tipH - 4);
+
+        Raylib.DrawRectangle(tx, ty, tipW, tipH, new Color(16, 23, 22, 230));
+        Raylib.DrawRectangleLinesEx(new Rectangle(tx, ty, tipW, tipH), 1.5f, Palette.Hex("c49a62"));
+        Raylib.DrawText(name, tx + padX, ty + padY, 17, Palette.Hero);
+
+        int ly = ty + padY + 22;
+        foreach (var (text, col) in lines)
+        {
+            Raylib.DrawText(text, tx + padX, ly, 13, col);
+            ly += lineH;
+        }
+    }
 
     private static void DrawCentered(string text, int fontSize, int y, Color color)
     {

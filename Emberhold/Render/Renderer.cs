@@ -64,6 +64,7 @@ public static class Renderer
 
         if (s.Shop.Open) OverlayUI.DrawShop(s);
         if (showCodex) OverlayUI.DrawCodex(s);
+        OverlayUI.DrawStructureTooltip(s);
     }
 
     private static void DrawAbilityBar(GameState s)

@@ -18,6 +18,7 @@ public static class Program
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint);
         Raylib.InitWindow(DesignWidth, DesignHeight, "Emberhold");
         Raylib.SetTargetFPS(60);
+        Raylib.SetExitKey(KeyboardKey.Null);
 
         int startWave = 0;
         if (ParseStringArg(args, "--wave") is string ws && int.TryParse(ws, out int wv)) startWave = wv;
