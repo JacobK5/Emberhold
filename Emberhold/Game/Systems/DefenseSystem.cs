@@ -34,7 +34,7 @@ public static class DefenseSystem
                         e.SlowTimer = MathF.Max(e.SlowTimer, 0.35f * s.SlowDurationMult); // CryoForge extends
                     }
                     if (st.TrapDps > 0f) // direct damage still hits wraiths
-                        CombatSystem.DamageEnemy(s, e, st.TrapDps * dpsMult * dt, mitigable: false);
+                        CombatSystem.DamageEnemy(s, e, st.TrapDps * dpsMult * s.ZoneBonus(st.Pos) * dt, mitigable: false);
                     if (st.SynTrapBurnDps > 0f && !e.StatusImmune) // Backdraft: the trap sets enemies ablaze
                     {
                         e.BurnTimer = MathF.Max(e.BurnTimer, 1.6f);

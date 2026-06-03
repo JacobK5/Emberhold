@@ -36,6 +36,9 @@ public static class TowerSystem
             // Overcharge signature: every tower in the fort frenzies for a few seconds.
             if (s.OverchargeTimer > 0f) { dmgMult *= 1.5f; rateMult *= 0.7f; }
 
+            // Fortified Ground: towers in an upgraded quadrant hit harder.
+            dmgMult *= s.ZoneBonus(t.Pos);
+
             if (s.VolatilePact) rateMult *= 0.85f; // anti-synergy: fort-wide fire-rate boost
 
             float range = t.Range + rangeBonus + t.SynRangeBonus;

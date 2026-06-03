@@ -4,13 +4,14 @@ using System.Linq;
 namespace Emberhold.Game;
 
 public enum HeroUpgradeKind { Damage, FireRate, Range, Health, Volley }
-public enum ShopItemKind { StructureCard, HeroUpgrade, Expansion }
+public enum ShopItemKind { StructureCard, HeroUpgrade, Expansion, ZoneUpgrade }
 
 public sealed class ShopItem
 {
     public ShopItemKind Kind;
     public CardDef? Card;               // ShopItemKind.StructureCard
     public HeroUpgradeKind UpgradeKind; // ShopItemKind.HeroUpgrade
+    public int Zone;                    // ShopItemKind.ZoneUpgrade (quadrant 0-3)
     public bool Purchased;
 }
 
@@ -47,6 +48,7 @@ public sealed class ShopState
 
     public int CardCost          => Scaled(CardBasePrice + WaveBaseRise + PriceBump);
     public int ExpansionCost(int chapter) => Scaled(90 + chapter * 55);
+    public int ZoneCost(int chapter) => Scaled(110 + chapter * 30 + PriceBump);
     public int HeroUpgradeCost(HeroUpgradeKind kind)
         => Scaled(HeroUpgradeBaseCosts[(int)kind] + HeroTiers[(int)kind] * 18 + PriceBump);
 
@@ -78,7 +80,7 @@ public sealed class ShopState
 
     // ---- Wave refresh -----------------------------------------------------
 
-    public void Refresh(int wave)
+    public void Refresh(int wave, bool[]? zoneFortified = null)
     {
         PriceBump = 0;
         Open = false;
@@ -89,6 +91,12 @@ public sealed class ShopState
 
         // Expansion is always available.
         Items.Add(new ShopItem { Kind = ShopItemKind.Expansion });
+
+        // Fortified Ground: offer to upgrade any quadrant not already fortified.
+        if (zoneFortified is not null)
+            for (int q = 0; q < 4; q++)
+                if (!zoneFortified[q])
+                    Items.Add(new ShopItem { Kind = ShopItemKind.ZoneUpgrade, Zone = q });
 
         // Hero upgrades that haven't been maxed.
         foreach (HeroUpgradeKind kind in Enum.GetValues<HeroUpgradeKind>())

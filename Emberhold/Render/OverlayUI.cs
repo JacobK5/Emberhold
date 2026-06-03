@@ -358,6 +358,11 @@ public static class OverlayUI
                         tx, ty + 42, 12, Palette.Hex("7aa0c8"));
                     DrawItemCost(r, cost, canAfford);
                     break;
+                case ShopItemKind.ZoneUpgrade:
+                    Raylib.DrawText($"Fortify {GameState.ZoneName(item.Zone)}", tx, ty, 18, Palette.Hex("efd18a"));
+                    Raylib.DrawText("+15% output to that quadrant", tx, ty + 24, 13, Palette.PathEdge);
+                    DrawItemCost(r, cost, canAfford);
+                    break;
                 case ShopItemKind.StructureCard when item.Card is not null:
                     Raylib.DrawText(item.Card.Name, tx, ty, 18, CategoryColor(item.Card.Category));
                     Raylib.DrawText($"{item.Card.Category} structure (place + fund)", tx, ty + 24, 13, Palette.PathEdge);
@@ -381,6 +386,7 @@ public static class OverlayUI
     {
         ShopItemKind.Expansion    => shop.ExpansionCost(chapter),
         ShopItemKind.HeroUpgrade  => shop.HeroUpgradeCost(item.UpgradeKind),
+        ShopItemKind.ZoneUpgrade  => shop.ZoneCost(chapter),
         _                         => shop.CardCost,
     };
 

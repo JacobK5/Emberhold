@@ -8,6 +8,13 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.22.0 — "Fortified Ground"
+- **Zone upgrades** — buy a "Fortify" improvement for any of the four buildable
+  quadrants in the supply shop; every structure in that quadrant gets +15% output
+  (tower damage, trap DPS, mine yield). A new gold sink that rewards clustering a
+  quadrant and competes with expanding/hero upgrades.
+- Fortified quadrants are tinted gold on the map; the upgrade persists in run saves.
+
 ### v0.21.0 — "Packlord"
 - **New hero: Rurik, the Beastmaster** — a summoner. A loyal wolf fights at his side
   (a second body on the field), chasing and biting nearby enemies while he supports.
