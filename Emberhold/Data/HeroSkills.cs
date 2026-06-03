@@ -51,6 +51,12 @@ public static class HeroSkills
     public const string BAegis   = "b_aegis";
     public const string BAnchor  = "b_anchor";
 
+    // ---- Executioner node ids -------------------------------------------
+    public const string XHeadsman = "x_headsman";
+    public const string XReap     = "x_reap";
+    public const string XSwift    = "x_swift";
+    public const string XMark     = "x_mark";
+
     private static readonly SkillNode[] Foundations =
     {
         new(Vitality,   "Vitality",     "+30 max HP",                0, 0, null),
@@ -91,6 +97,14 @@ public static class HeroSkills
         new(BAnchor,  "Anchor",   "Stance lasts 7s & slows attackers", 2, 1, BAegis),
     };
 
+    private static readonly SkillNode[] ExecutionerTree =
+    {
+        new(XHeadsman, "Headsman", "Execute threshold 22% -> 35% HP", 1, 0, null),
+        new(XReap,     "Reaping",  "Executes refund cd & drop gold",  1, 1, XHeadsman),
+        new(XSwift,    "Shadowstep","Dash cd -40%, longer i-frames",  2, 0, null),
+        new(XMark,     "Deathmark","+25% hero damage vs elites/bosses",2, 1, XSwift),
+    };
+
     /// <summary>Every node a given hero can unlock: shared Foundations + its two branches.</summary>
     public static IReadOnlyList<SkillNode> Tree(HeroKind kind)
     {
@@ -99,6 +113,7 @@ public static class HeroSkills
             HeroKind.Warden => WardenTree,
             HeroKind.Artificer => ArtificerTree,
             HeroKind.Bulwark => BulwarkTree,
+            HeroKind.Executioner => ExecutionerTree,
             _ => RangerTree,
         };
         return Foundations.Concat(unique).ToList();
@@ -113,6 +128,7 @@ public static class HeroSkills
         HeroKind.Warden => "GROUND SLAM",
         HeroKind.Artificer => "OVERCHARGE",
         HeroKind.Bulwark => "STANCE",
+        HeroKind.Executioner => "EXECUTE",
         _ => "VOLLEY",
     };
 
@@ -125,6 +141,7 @@ public static class HeroSkills
             HeroKind.Warden => col == 1 ? "CLEAVE" : "JUGGERNAUT",
             HeroKind.Artificer => col == 1 ? "OVERCLOCK" : "CONSTRUCT",
             HeroKind.Bulwark => col == 1 ? "WALL" : "GUARDIAN",
+            HeroKind.Executioner => col == 1 ? "REAPING" : "SHADOW",
             _ => col == 1 ? "PRECISION" : "BARRAGE",
         };
     }

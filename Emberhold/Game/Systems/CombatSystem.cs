@@ -34,7 +34,9 @@ public static class CombatSystem
         int heroChains = hero.Has(HeroSkills.RRicochet) ? 1 : 0;
         float heroSplash = hero.Has(HeroSkills.WCleave) ? 34f : 0f;
         bool heroPierce = heroChains == 0 && hero.Has(HeroSkills.RPierce);
-        FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult,
+        // Executioner Deathmark: hero shots hit elites/bosses harder.
+        float markMult = hero.Has(HeroSkills.XMark) && (target.Elite || target.Boss) ? 1.25f : 1f;
+        FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult * markMult,
             speed: HeroProjSpeed, color: color, source: ProjectileSource.Hero,
             splash: heroSplash, chains: heroChains, chainRange: heroChains > 0 ? 150f : 0f, pierce: heroPierce);
 
@@ -295,7 +297,61 @@ public static class CombatSystem
             case HeroKind.Warden: GroundSlam(s); break;
             case HeroKind.Artificer: Overcharge(s); break;
             case HeroKind.Bulwark: BulwarkStance(s); break;
+            case HeroKind.Executioner: Execute(s); break;
             default: ShootVolley(s); break;
+        }
+    }
+
+    /// <summary>Executioner signature: blink to the weakest enemy in reach and strike;
+    /// finishes off anything below the execute threshold (bosses are immune to the
+    /// instakill but still take the burst).</summary>
+    public static void Execute(GameState s)
+    {
+        var hero = s.Hero;
+        if (hero.AbilityCooldown > 0f || s.Over) return;
+
+        float range = hero.Range * hero.Profile.Range * Balance.HeroRangeMult * 1.5f;
+        Enemy? target = null;
+        float lowest = float.MaxValue;
+        foreach (var e in s.Enemies)
+        {
+            if (e.Dead) continue;
+            if (Vector2.Distance(hero.Pos, e.Pos) > range) continue;
+            if (e.Health < lowest) { lowest = e.Health; target = e; }
+        }
+        if (target is null) return; // nothing to execute — don't waste the cooldown
+        hero.AbilityCooldown = hero.VolleyCooldown;
+
+        // Blink adjacent to the target.
+        var dir = MathUtils.Normalize(target.Pos - hero.Pos);
+        if (dir == Vector2.Zero) dir = hero.Facing;
+        var dest = target.Pos - dir * (target.Radius + hero.Radius + 2f);
+        float roam = s.RoamLimit;
+        hero.Pos = new Vector2(MathUtils.Clamp(dest.X, -roam, roam), MathUtils.Clamp(dest.Y, -roam, roam));
+        hero.Facing = dir;
+        hero.Invulnerable = MathF.Max(hero.Invulnerable, 0.3f);
+        s.AddParticles(target.Pos, Palette.Hex("b03a4a"), 18, 96f);
+
+        float threshold = hero.Has(HeroSkills.XHeadsman) ? 0.35f : 0.22f;
+        bool canExecute = !target.Boss && target.Health <= target.MaxHealth * threshold;
+        if (canExecute)
+        {
+            DamageEnemy(s, target, target.Health + 9999f, mitigable: false);
+            s.AddFloater(target.Pos + new Vector2(0, -22), "EXECUTED", Palette.Hex("ff7a6a"));
+            s.KickShake(6f);
+            if (hero.Has(HeroSkills.XReap))
+            {
+                hero.AbilityCooldown = MathF.Max(0f, hero.AbilityCooldown - hero.VolleyCooldown * 0.5f);
+                for (int i = 0; i < 3; i++) s.SpawnDrop(target.Pos + new Vector2(s.Rand(-10, 10), s.Rand(-10, 10)), 1);
+            }
+        }
+        else
+        {
+            float dmg = hero.Damage * 2.4f * hero.Profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult;
+            if (target.Elite || target.Boss) dmg *= 1.4f; // assassins hit big targets harder
+            DamageEnemy(s, target, dmg);
+            OnHeroHit(s, target, dmg);
+            s.AddFloater(target.Pos + new Vector2(0, -22), "STRIKE", Palette.Hex("ff9a8a"));
         }
     }
 
@@ -388,8 +444,10 @@ public static class CombatSystem
         hero.Pos = Geometry.MoveWithCollisions(hero.Pos, hero.Radius, hero.Facing * 96f, s.SolidRects());
         float roam = s.RoamLimit;
         hero.Pos = new Vector2(MathUtils.Clamp(hero.Pos.X, -roam, roam), MathUtils.Clamp(hero.Pos.Y, -roam, roam));
-        hero.DashCooldown = 2.4f;
-        hero.Invulnerable = MathF.Max(hero.Invulnerable, 0.3f); // brief i-frames: dash through danger
+        // Shadowstep (Executioner): faster dash with longer i-frames.
+        bool swift = hero.Has(HeroSkills.XSwift);
+        hero.DashCooldown = swift ? 1.45f : 2.4f;
+        hero.Invulnerable = MathF.Max(hero.Invulnerable, swift ? 0.5f : 0.3f); // brief i-frames: dash through danger
 
         // Dash strike: burst enemies you land among; slowed enemies shatter for more.
         float dmg = hero.Damage * 1.6f * hero.Profile.Damage * Balance.HeroDamageMult * s.Modifier.HeroDamageMult;

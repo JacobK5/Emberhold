@@ -700,6 +700,13 @@ public static class Renderer
             Raylib.DrawTriangle(Rot(11, -7), Rot(2, 9), Rot(2, -9), shieldCol);
             Raylib.DrawCircleV(Rot(7, 0), 2f, new Color((byte)0x3a, (byte)0x42, (byte)0x2c, al));
         }
+        else if (hero.Kind == HeroKind.Executioner)
+        {
+            // Twin daggers, one to each side.
+            var bladeCol = new Color((byte)0xe0, (byte)0x9a, (byte)0xa2, al);
+            Raylib.DrawLineEx(Rot(2, 6), Rot(10, 9), 3f, bladeCol);
+            Raylib.DrawLineEx(Rot(2, -6), Rot(10, -9), 3f, bladeCol);
+        }
         else
         {
             // Bow arc: centre at JS (9,-2) → Rot(2,9); spans ±92° facing outward.
