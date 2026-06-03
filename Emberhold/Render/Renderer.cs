@@ -249,6 +249,8 @@ public static class Renderer
         lines.Add(($"   Skills: {(skills.Count > 0 ? string.Join(", ", skills) : "none yet")}", Palette.Hex("9fd0ff")));
         if (hero.Relics.Count > 0)
             lines.Add(($"   Relics: {string.Join(", ", hero.Relics.Select(RelicName))}", Palette.Hex("d9b6ff")));
+        if (s.Exotics.Count > 0)
+            lines.Add(($"EXOTICS:  {string.Join(", ", s.Exotics.Select(ShopState.ExoticName))}", Palette.Hex("ffd66b")));
         if (s.HordeTier > 0)
             lines.Add(($"HORDE TIER:  {s.HordeTier}  (+{s.HordeTier * 8}% enemy HP)", Palette.Hex("e0795a")));
         if (s.ActiveSynergies.Count > 0)

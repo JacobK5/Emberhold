@@ -4,7 +4,10 @@ using System.Linq;
 namespace Emberhold.Game;
 
 public enum HeroUpgradeKind { Damage, FireRate, Range, Health, Volley }
-public enum ShopItemKind { StructureCard, HeroUpgrade, Expansion, ZoneUpgrade }
+public enum ShopItemKind { StructureCard, HeroUpgrade, Expansion, ZoneUpgrade, Exotic }
+
+/// <summary>Run-defining one-time mega-upgrades that surface deep in a run (wave 18+).</summary>
+public enum ExoticKind { OverdriveCore, SiegeBreaker, AegisMatrix, MotherLode, PhoenixHeart }
 
 public sealed class ShopItem
 {
@@ -12,6 +15,7 @@ public sealed class ShopItem
     public CardDef? Card;               // ShopItemKind.StructureCard
     public HeroUpgradeKind UpgradeKind; // ShopItemKind.HeroUpgrade
     public int Zone;                    // ShopItemKind.ZoneUpgrade (quadrant 0-3)
+    public ExoticKind Exotic;           // ShopItemKind.Exotic
     public bool Purchased;
 }
 
@@ -52,6 +56,10 @@ public sealed class ShopState
     public int HeroUpgradeCost(HeroUpgradeKind kind)
         => Scaled(HeroUpgradeBaseCosts[(int)kind] + HeroTiers[(int)kind] * 18 + PriceBump);
 
+    // Exotics are premium late-game gold sinks; base cost rises with depth.
+    public static readonly int[] ExoticBaseCosts = { 240, 240, 210, 190, 300 }; // by (int)ExoticKind
+    public int ExoticCost(ExoticKind kind) => Scaled(ExoticBaseCosts[(int)kind] + WaveBaseRise + PriceBump);
+
     private int Scaled(int baseCost) => (int)MathF.Round(baseCost * PriceMult);
 
     public void OnPurchase() => PriceBump += PriceBumpPerBuy;
@@ -78,9 +86,30 @@ public sealed class ShopState
         _ => "",
     };
 
+    public static string ExoticName(ExoticKind kind) => kind switch
+    {
+        ExoticKind.OverdriveCore => "Overdrive Core",
+        ExoticKind.SiegeBreaker  => "Siege Breaker",
+        ExoticKind.AegisMatrix   => "Aegis Matrix",
+        ExoticKind.MotherLode    => "Mother Lode",
+        ExoticKind.PhoenixHeart  => "Phoenix Heart",
+        _ => "?",
+    };
+
+    public static string ExoticDesc(ExoticKind kind) => kind switch
+    {
+        ExoticKind.OverdriveCore => "All towers fire 25% faster",
+        ExoticKind.SiegeBreaker  => "+35% tower dmg to heavies",
+        ExoticKind.AegisMatrix   => "Keep regenerates 3 HP/s",
+        ExoticKind.MotherLode    => "Mines: +1 gold, tick faster",
+        ExoticKind.PhoenixHeart  => "Revive once at 50% HP",
+        _ => "",
+    };
+
     // ---- Wave refresh -----------------------------------------------------
 
-    public void Refresh(int wave, bool[]? zoneFortified = null, IReadOnlyCollection<StructureKind>? owned = null)
+    public void Refresh(int wave, bool[]? zoneFortified = null, IReadOnlyCollection<StructureKind>? owned = null,
+        IReadOnlyCollection<ExoticKind>? ownedExotics = null)
     {
         PriceBump = 0;
         Open = false;
@@ -91,6 +120,15 @@ public sealed class ShopState
 
         // Expansion is always available.
         Items.Add(new ShopItem { Kind = ShopItemKind.Expansion });
+
+        // Deep run (wave 18+): one un-owned exotic mega-upgrade, kept near the top so
+        // this premium offer stays visible even when the list grows long.
+        if (wave >= 18 && ownedExotics is not null)
+        {
+            var remaining = Enum.GetValues<ExoticKind>().Where(e => !ownedExotics.Contains(e)).ToList();
+            if (remaining.Count > 0)
+                Items.Add(new ShopItem { Kind = ShopItemKind.Exotic, Exotic = remaining[_rng.Next(remaining.Count)] });
+        }
 
         // Fortified Ground: offer to upgrade any quadrant not already fortified.
         if (zoneFortified is not null)

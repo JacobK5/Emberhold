@@ -40,6 +40,7 @@ public static class TowerSystem
             dmgMult *= s.ZoneBonus(t.Pos);
 
             if (s.VolatilePact) rateMult *= 0.85f; // anti-synergy: fort-wide fire-rate boost
+            if (s.HasExotic(ExoticKind.OverdriveCore)) rateMult *= 0.75f; // exotic: +25% fire rate
 
             float range = t.Range + rangeBonus + t.SynRangeBonus;
             int chains = t.ChainCount + t.SynExtraChains;
@@ -64,9 +65,13 @@ public static class TowerSystem
             float slowFactor = MathF.Min(t.SlowFactor, t.SynSlowFactor);
             float slowDur = MathF.Max(t.SlowDuration, t.SynSlowDuration);
 
+            // Siege Breaker exotic: extra punch into heavy targets (boss/elite/siege/general).
+            float heavyMult = s.HasExotic(ExoticKind.SiegeBreaker)
+                && (target.Boss || target.Elite || target.Siege || target.General) ? 1.35f : 1f;
+
             var aim = CombatSystem.AimAhead(t.Pos, target, t.ProjSpeed);
             CombatSystem.FireProjectile(s, t.Pos, aim,
-                damage: t.Damage * dmgMult * t.SynDamageMult * Balance.TowerDamageMult,
+                damage: t.Damage * dmgMult * heavyMult * t.SynDamageMult * Balance.TowerDamageMult,
                 speed: t.ProjSpeed,
                 color: ColorFor(t.ProjSource),
                 source: t.ProjSource,

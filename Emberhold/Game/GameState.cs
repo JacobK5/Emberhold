@@ -91,6 +91,11 @@ public sealed class GameState
     public readonly List<Meteor> Meteors = new();
     public bool GoldRushActive;          // Gold Rush event: doubled bounties + mine yield
 
+    // Exotics: one-time run-defining mega-upgrades bought deep in the shop (wave 18+).
+    public readonly HashSet<ExoticKind> Exotics = new();
+    public bool PhoenixUsed;             // Phoenix Heart one-shot revive already spent
+    public bool HasExotic(ExoticKind k) => Exotics.Contains(k);
+
     // Overcharge: Artificer signature — a fort-wide tower frenzy while the timer runs.
     public float OverchargeTimer;
 

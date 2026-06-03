@@ -374,6 +374,12 @@ public static class OverlayUI
                         tx, ty + 24, 13, Palette.PathEdge);
                     DrawItemCost(r, cost, canAfford);
                     break;
+                case ShopItemKind.Exotic:
+                    Raylib.DrawText(ShopState.ExoticName(item.Exotic), tx, ty, 18, Palette.Hex("ffd66b"));
+                    Raylib.DrawText(ShopState.ExoticDesc(item.Exotic), tx, ty + 24, 13, Palette.PathEdge);
+                    Raylib.DrawText("EXOTIC  ·  one-time", tx, ty + 42, 12, Palette.Hex("c79be0"));
+                    DrawItemCost(r, cost, canAfford);
+                    break;
             }
         }
 
@@ -393,6 +399,7 @@ public static class OverlayUI
         ShopItemKind.Expansion    => shop.ExpansionCost(chapter),
         ShopItemKind.HeroUpgrade  => shop.HeroUpgradeCost(item.UpgradeKind),
         ShopItemKind.ZoneUpgrade  => shop.ZoneCost(chapter),
+        ShopItemKind.Exotic       => shop.ExoticCost(item.Exotic),
         _                         => shop.CardCost,
     };
 

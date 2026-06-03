@@ -72,6 +72,8 @@ public sealed class RunSave
     public List<string> SeenSynergies { get; set; } = new();
     public List<EnemyKind>? NextWaveKinds { get; set; }
     public List<EnemyKind>? NextWaveKinds2 { get; set; }
+    public List<ExoticKind> Exotics { get; set; } = new();  // bought mega-upgrades (absent in old saves -> empty)
+    public bool PhoenixUsed { get; set; }
 }
 
 /// <summary>
@@ -180,6 +182,8 @@ public static class RunStore
             SeenSynergies = s.SeenSynergies.ToList(),
             NextWaveKinds = s.NextWaveKinds?.ToList(),
             NextWaveKinds2 = s.NextWaveKinds2?.ToList(),
+            Exotics = s.Exotics.ToList(),
+            PhoenixUsed = s.PhoenixUsed,
         };
         return save;
     }
@@ -255,6 +259,10 @@ public static class RunStore
         s.NextWaveKinds = save.NextWaveKinds?.ToList();
         s.NextWaveKinds2 = save.NextWaveKinds2?.ToList();
 
+        s.Exotics.Clear();
+        foreach (var e in save.Exotics) s.Exotics.Add(e);
+        s.PhoenixUsed = save.PhoenixUsed;
+
         // Resume in the between-wave lull: no live enemies, shop available, next wave queued.
         s.Enemies.Clear();
         s.Projectiles.Clear();
@@ -267,7 +275,7 @@ public static class RunStore
         s.Paused = false;
         s.Phase = Phase.Combat;
         s.BetweenWaves = MathF.Max(4f, save.BetweenWaves);
-        s.Shop.Refresh(s.Wave, s.ZoneFortified, s.OwnedKinds());
+        s.Shop.Refresh(s.Wave, s.ZoneFortified, s.OwnedKinds(), s.Exotics);
         s.Shop.CanOpen = true;
         s.Shop.Open = false;
     }
