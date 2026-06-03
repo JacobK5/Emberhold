@@ -4,27 +4,37 @@ using Emberhold.Data;
 
 namespace Emberhold.Game;
 
-/// <summary>Serializable hero snapshot (omits transient combat timers + the Profile lookup).</summary>
-public sealed class HeroSave
+/// <summary>Serializable per-kind progression (level/XP, skill points, unlocked nodes, stats).</summary>
+public sealed class HeroProgressSave
 {
-    public Vector2 Pos { get; set; }
     public HeroKind Kind { get; set; }
-    public int Level { get; set; }
+    public int Level { get; set; } = 1;
     public int Xp { get; set; }
-    public int NextXp { get; set; }
-    public float Health { get; set; }
-    public float MaxHealth { get; set; }
-    public float Damage { get; set; }
-    public float FireRate { get; set; }
-    public float Range { get; set; }
-    public float VolleyCooldown { get; set; }
-    public float VolleyDamage { get; set; }
+    public int NextXp { get; set; } = 8;
+    public int SkillPoints { get; set; }
+    public List<string> Nodes { get; set; } = new();
+    public float Health { get; set; } = 100f;
+    public float MaxHealth { get; set; } = 100f;
+    public float Damage { get; set; } = 14f;
+    public float FireRate { get; set; } = 0.56f;
+    public float Range { get; set; } = 245f;
+    public float Speed { get; set; } = 150f;
+    public float VolleyCooldown { get; set; } = 8f;
+    public float VolleyDamage { get; set; } = 1.2f;
+    public float BasePickupRadius { get; set; } = 24f;
     public int DmgUpgrades { get; set; }
     public int FrUpgrades { get; set; }
     public int RngUpgrades { get; set; }
     public int HpUpgrades { get; set; }
     public int VolleyUpgrades { get; set; }
-    public float BasePickupRadius { get; set; }
+}
+
+/// <summary>Serializable hero snapshot (omits transient combat timers + the Profile lookup).</summary>
+public sealed class HeroSave
+{
+    public Vector2 Pos { get; set; }
+    public HeroKind Kind { get; set; }
+    public List<HeroProgressSave> Progress { get; set; } = new();
     public List<RelicKind> Relics { get; set; } = new();
 }
 
@@ -42,7 +52,7 @@ public sealed class PadSave
 /// </summary>
 public sealed class RunSave
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;  // v2: per-hero progression + skill trees
     public int Wave { get; set; }
     public int Chapter { get; set; }
     public int Gold { get; set; }
@@ -100,7 +110,7 @@ public static class RunStore
     {
         try
         {
-            if (File.Exists(FilePath) && FromJson(File.ReadAllText(FilePath)) is RunSave s)
+            if (File.Exists(FilePath) && FromJson(File.ReadAllText(FilePath)) is RunSave s && s.Version >= 2)
             {
                 save = s;
                 return true;
@@ -134,23 +144,30 @@ public static class RunStore
             {
                 Pos = h.Pos,
                 Kind = h.Kind,
-                Level = h.Level,
-                Xp = h.Xp,
-                NextXp = h.NextXp,
-                Health = h.Health,
-                MaxHealth = h.MaxHealth,
-                Damage = h.Damage,
-                FireRate = h.FireRate,
-                Range = h.Range,
-                VolleyCooldown = h.VolleyCooldown,
-                VolleyDamage = h.VolleyDamage,
-                DmgUpgrades = h.DmgUpgrades,
-                FrUpgrades = h.FrUpgrades,
-                RngUpgrades = h.RngUpgrades,
-                HpUpgrades = h.HpUpgrades,
-                VolleyUpgrades = h.VolleyUpgrades,
-                BasePickupRadius = h.BasePickupRadius,
                 Relics = h.Relics.ToList(),
+                Progress = h.Progress.Select(kv => new HeroProgressSave
+                {
+                    Kind = kv.Key,
+                    Level = kv.Value.Level,
+                    Xp = kv.Value.Xp,
+                    NextXp = kv.Value.NextXp,
+                    SkillPoints = kv.Value.SkillPoints,
+                    Nodes = kv.Value.Nodes.ToList(),
+                    Health = kv.Value.Health,
+                    MaxHealth = kv.Value.MaxHealth,
+                    Damage = kv.Value.Damage,
+                    FireRate = kv.Value.FireRate,
+                    Range = kv.Value.Range,
+                    Speed = kv.Value.Speed,
+                    VolleyCooldown = kv.Value.VolleyCooldown,
+                    VolleyDamage = kv.Value.VolleyDamage,
+                    BasePickupRadius = kv.Value.BasePickupRadius,
+                    DmgUpgrades = kv.Value.DmgUpgrades,
+                    FrUpgrades = kv.Value.FrUpgrades,
+                    RngUpgrades = kv.Value.RngUpgrades,
+                    HpUpgrades = kv.Value.HpUpgrades,
+                    VolleyUpgrades = kv.Value.VolleyUpgrades,
+                }).ToList(),
             },
             Structures = s.Structures.ToList(),
             Pads = s.Pads.Select(p => new PadSave { CardId = p.Def.Id, Pos = p.Pos, Invested = p.Invested }).ToList(),
@@ -178,24 +195,34 @@ public static class RunStore
         var h = s.Hero;
         h.Pos = hs.Pos;
         h.Kind = hs.Kind;
-        h.Level = hs.Level;
-        h.Xp = hs.Xp;
-        h.NextXp = hs.NextXp;
-        h.Health = hs.Health;
-        h.MaxHealth = hs.MaxHealth;
-        h.Damage = hs.Damage;
-        h.FireRate = hs.FireRate;
-        h.Range = hs.Range;
-        h.VolleyCooldown = hs.VolleyCooldown;
-        h.VolleyDamage = hs.VolleyDamage;
-        h.DmgUpgrades = hs.DmgUpgrades;
-        h.FrUpgrades = hs.FrUpgrades;
-        h.RngUpgrades = hs.RngUpgrades;
-        h.HpUpgrades = hs.HpUpgrades;
-        h.VolleyUpgrades = hs.VolleyUpgrades;
-        h.BasePickupRadius = hs.BasePickupRadius;
         h.Relics.Clear();
         foreach (var r in hs.Relics) h.Relics.Add(r);
+
+        // Restore each kind's progression (slots not present in the save keep defaults).
+        foreach (var ps in hs.Progress)
+        {
+            if (!h.Progress.TryGetValue(ps.Kind, out var prog)) continue;
+            prog.Level = ps.Level;
+            prog.Xp = ps.Xp;
+            prog.NextXp = ps.NextXp;
+            prog.SkillPoints = ps.SkillPoints;
+            prog.Nodes.Clear();
+            foreach (var n in ps.Nodes) prog.Nodes.Add(n);
+            prog.Health = ps.Health;
+            prog.MaxHealth = ps.MaxHealth;
+            prog.Damage = ps.Damage;
+            prog.FireRate = ps.FireRate;
+            prog.Range = ps.Range;
+            prog.Speed = ps.Speed;
+            prog.VolleyCooldown = ps.VolleyCooldown;
+            prog.VolleyDamage = ps.VolleyDamage;
+            prog.BasePickupRadius = ps.BasePickupRadius;
+            prog.DmgUpgrades = ps.DmgUpgrades;
+            prog.FrUpgrades = ps.FrUpgrades;
+            prog.RngUpgrades = ps.RngUpgrades;
+            prog.HpUpgrades = ps.HpUpgrades;
+            prog.VolleyUpgrades = ps.VolleyUpgrades;
+        }
 
         s.Structures.Clear();
         s.Structures.AddRange(save.Structures);

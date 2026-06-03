@@ -441,7 +441,8 @@ public static class OverlayUI
         DrawCentered("SAVED RUN FOUND", 30, py + 22, Palette.Hex("efd18a"));
         string mod = save.ModifierId != "none" ? $"   -   Trial: {save.ModifierId}" : "";
         DrawCentered($"Wave {save.Wave}   -   Fort {save.Chapter}   -   {save.Gold}g{mod}", 18, py + 66, Palette.Hero);
-        DrawCentered($"Hero Lv {save.Hero.Level}   -   {save.Structures.Count} structures standing", 16, py + 92, Palette.PathEdge);
+        int heroLv = save.Hero.Progress.FirstOrDefault(p => p.Kind == save.Hero.Kind)?.Level ?? 1;
+        DrawCentered($"Hero Lv {heroLv}   -   {save.Structures.Count} structures standing", 16, py + 92, Palette.PathEdge);
 
         DrawCentered("[ENTER]  resume", 22, py + 130, Palette.Gold);
         DrawCentered("[N]  start a new run", 18, py + 160, Palette.Hex("a89878"));
