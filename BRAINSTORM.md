@@ -8,6 +8,17 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.27.0 — "Frontier Hall"
+- **Home screen** — a proper title menu (EMBERHOLD / Frontier Siege) with Resume /
+  New Run / Balancing / Quit. A clean launch opens here; the run begins only once you
+  pick New Run + a hero (or Resume a checkpoint). Replaces the old launch resume-prompt.
+- **Hero-select screen** — a card grid of all seven heroes (portrait, role, stat bars,
+  signature, one-line blurb), shown both at the start of a run and as the in-game (H)
+  hero swap. H now opens a pick overlay instead of blind-cycling to the next hero.
+- **Balancing panel** — a live tuning screen (from the title or a paused run via B) over
+  every Balance multiplier: grouped -/+ steppers, Reset to defaults, and Copy/Paste a
+  preset through the clipboard. Changes persist to disk (balance.cfg).
+
 ### v0.26.0 — "Synthesis"
 - **Card fusion** — own both halves of a pair and a merged, legendary-grade card
   appears in the supply shop: Barricade + Bulwark → Fortress Wall, Archer Post +
