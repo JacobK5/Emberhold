@@ -8,6 +8,12 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.26.0 — "Synthesis"
+- **Card fusion** — own both halves of a pair and a merged, legendary-grade card
+  appears in the supply shop: Barricade + Bulwark → Fortress Wall, Archer Post +
+  Cannon → Siege Battery, Gold Mine + Workshop → Grand Exchange. Buy it, place it,
+  fund it like any card. Rewards building toward a combo.
+
 ### v0.25.0 — "Relics of Power"
 - **Legendary cards** — a draft slot is occasionally (10%) replaced by a Legendary: a
   souped-up version of a base structure (Dragon's Maw, Tempest Coil, Aegis Wall, King's

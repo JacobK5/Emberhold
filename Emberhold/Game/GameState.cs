@@ -182,6 +182,14 @@ public sealed class GameState
     public float FortHalfSize => Map.FortHalfSize(Chapter);
     public float RoamLimit => Map.RoamLimit(Chapter);
 
+    /// <summary>The distinct structure kinds currently built (for fusion availability).</summary>
+    public HashSet<Data.StructureKind> OwnedKinds()
+    {
+        var set = new HashSet<Data.StructureKind>();
+        foreach (var st in Structures) set.Add(st.Kind);
+        return set;
+    }
+
     /// <summary>Solid rectangles for collision: fort walls plus standing wall structures.</summary>
     public IReadOnlyList<Rectangle> SolidRects()
     {

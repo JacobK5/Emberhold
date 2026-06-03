@@ -80,7 +80,7 @@ public sealed class ShopState
 
     // ---- Wave refresh -----------------------------------------------------
 
-    public void Refresh(int wave, bool[]? zoneFortified = null)
+    public void Refresh(int wave, bool[]? zoneFortified = null, IReadOnlyCollection<StructureKind>? owned = null)
     {
         PriceBump = 0;
         Open = false;
@@ -97,6 +97,12 @@ public sealed class ShopState
             for (int q = 0; q < 4; q++)
                 if (!zoneFortified[q])
                     Items.Add(new ShopItem { Kind = ShopItemKind.ZoneUpgrade, Zone = q });
+
+        // Card fusions: offered once you own both component structures.
+        if (owned is not null)
+            foreach (var f in CardDb.Fusions)
+                if (owned.Contains(f.A) && owned.Contains(f.B))
+                    Items.Add(new ShopItem { Kind = ShopItemKind.StructureCard, Card = f.Result });
 
         // Hero upgrades that haven't been maxed.
         foreach (HeroUpgradeKind kind in Enum.GetValues<HeroUpgradeKind>())

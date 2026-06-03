@@ -267,7 +267,7 @@ public static class RunStore
         s.Paused = false;
         s.Phase = Phase.Combat;
         s.BetweenWaves = MathF.Max(4f, save.BetweenWaves);
-        s.Shop.Refresh(s.Wave, s.ZoneFortified);
+        s.Shop.Refresh(s.Wave, s.ZoneFortified, s.OwnedKinds());
         s.Shop.CanOpen = true;
         s.Shop.Open = false;
     }
