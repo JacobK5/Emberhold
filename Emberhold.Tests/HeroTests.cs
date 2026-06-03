@@ -365,4 +365,43 @@ public class HeroTests
         Assert.True(e.Health < 200f);
         Assert.True(e.SlowTimer > 0f);
     }
+
+    // ---- Beastmaster (summoner) -----------------------------------------
+
+    [Fact]
+    public void Beastmaster_KeepsALoyalWolf()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Beastmaster;
+        CompanionSystem.Update(s, 0.016f);
+        Assert.Contains(s.Companions, w => w.Permanent);
+
+        // Switching away dismisses the loyal wolves.
+        s.Hero.Kind = HeroKind.Ranger;
+        CompanionSystem.Update(s, 0.016f);
+        Assert.DoesNotContain(s.Companions, w => w.Permanent);
+    }
+
+    [Fact]
+    public void Wolf_BitesNearbyEnemy()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Beastmaster;
+        s.Hero.Pos = Vector2.Zero;
+        var e = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, Radius = 11, Pos = new Vector2(30, 0) };
+        s.Enemies.Add(e);
+        // Several ticks: the wolf spawns, closes the gap, and bites.
+        for (int i = 0; i < 40 && e.Health >= 100f; i++) CompanionSystem.Update(s, 0.05f);
+        Assert.True(e.Health < 100f);
+    }
+
+    [Fact]
+    public void RallyPack_SummonsTemporaryWolves()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Beastmaster;
+        s.Hero.AbilityCooldown = 0f;
+        CombatSystem.Signature(s);
+        Assert.True(s.Companions.Count(w => !w.Permanent) >= 3);
+    }
 }

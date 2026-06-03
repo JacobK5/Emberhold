@@ -35,6 +35,7 @@ public static class Renderer
         DrawDrops(s);
         DrawEnemies(s);
         DrawProjectiles(s);
+        DrawCompanions(s);
         DrawHero(s.Hero);
         DrawParticles(s);
         DrawFloaters(s);
@@ -715,6 +716,13 @@ public static class Renderer
             Raylib.DrawLineEx(Rot(-2, 7), Rot(11, 9), 2.5f, staffCol);
             Raylib.DrawCircleV(Rot(12, 9), 3.5f, orbCol);
         }
+        else if (hero.Kind == HeroKind.Beastmaster)
+        {
+            // A short spear / goad.
+            var spearCol = new Color((byte)0xcf, (byte)0xb0, (byte)0x82, al);
+            Raylib.DrawLineEx(Rot(0, 7), Rot(13, 8), 2.5f, spearCol);
+            Raylib.DrawTriangle(Rot(13, 6), Rot(13, 10), Rot(17, 8), spearCol);
+        }
         else
         {
             // Bow arc: centre at JS (9,-2) → Rot(2,9); spans ±92° facing outward.
@@ -745,6 +753,29 @@ public static class Renderer
             Raylib.DrawCircleLinesV(p, hero.TauntRadius, new Color((byte)170, (byte)190, (byte)120, ta));
             if (hero.StanceTimer > 0f)
                 Raylib.DrawCircleLinesV(p, 20f + MathF.Sin(now * 9f) * 3f, new Color(216, 224, 180, 180));
+        }
+    }
+
+    private static void DrawCompanions(GameState s)
+    {
+        foreach (var w in s.Companions)
+        {
+            float angle = MathF.Atan2(w.Facing.Y, w.Facing.X);
+            float c = MathF.Cos(angle), si = MathF.Sin(angle);
+            Vector2 Rot(float lx, float ly) => w.Pos + new Vector2(lx * c - ly * si, lx * si + ly * c);
+
+            byte a = w.Permanent ? (byte)255 : (byte)200; // summoned wolves are faintly spectral
+            var fur = new Color((byte)0x8a, (byte)0x76, (byte)0x52, a);
+            var dark = new Color((byte)0x53, (byte)0x46, (byte)0x30, a);
+
+            Raylib.DrawCircleV(w.Pos + new Vector2(1.5f, 4f), w.Radius * 0.8f, new Color(15, 24, 23, 60));
+            // Body + a snout poking forward.
+            Raylib.DrawCircleV(w.Pos, w.Radius, fur);
+            Raylib.DrawCircleLinesV(w.Pos, w.Radius, dark);
+            Raylib.DrawTriangle(Rot(w.Radius - 1, -3), Rot(w.Radius - 1, 3), Rot(w.Radius + 6, 0), fur);
+            // Ears.
+            Raylib.DrawCircleV(Rot(-2, -5), 2f, dark);
+            Raylib.DrawCircleV(Rot(-2, 5), 2f, dark);
         }
     }
 

@@ -139,6 +139,7 @@ public sealed class GameState
     public readonly List<Floater> Floaters = new();
     public readonly List<Pad> Pads = new();
     public readonly List<Structure> Structures = new();
+    public readonly List<Companion> Companions = new(); // Beastmaster wolves
 
     private int _nextId = 1;
     public int NextId() => _nextId++;

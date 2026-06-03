@@ -63,6 +63,12 @@ public static class HeroSkills
     public const string EArc        = "e_arc";
     public const string EEmber      = "e_ember";
 
+    // ---- Beastmaster node ids -------------------------------------------
+    public const string MAlpha  = "m_alpha";
+    public const string MFrenzy = "m_frenzy";
+    public const string MPack2  = "m_pack2";
+    public const string MMaul   = "m_maul";
+
     private static readonly SkillNode[] Foundations =
     {
         new(Vitality,   "Vitality",     "+30 max HP",                0, 0, null),
@@ -119,6 +125,14 @@ public static class HeroSkills
         new(EEmber,      "Emberwind",  "Frost Nova also ignites enemies",  2, 1, EArc),
     };
 
+    private static readonly SkillNode[] BeastmasterTree =
+    {
+        new(MAlpha,  "Alpha",        "Wolves bite for more damage",     1, 0, null),
+        new(MFrenzy, "Frenzy",       "Wolves attack faster",            1, 1, MAlpha),
+        new(MPack2,  "Greater Pack", "Keep two loyal wolves, not one",  2, 0, null),
+        new(MMaul,   "Maul",         "Wolf bites slow their prey",      2, 1, MPack2),
+    };
+
     /// <summary>Every node a given hero can unlock: shared Foundations + its two branches.</summary>
     public static IReadOnlyList<SkillNode> Tree(HeroKind kind)
     {
@@ -129,6 +143,7 @@ public static class HeroSkills
             HeroKind.Bulwark => BulwarkTree,
             HeroKind.Executioner => ExecutionerTree,
             HeroKind.Elementalist => ElementalistTree,
+            HeroKind.Beastmaster => BeastmasterTree,
             _ => RangerTree,
         };
         return Foundations.Concat(unique).ToList();
@@ -145,6 +160,7 @@ public static class HeroSkills
         HeroKind.Bulwark => "STANCE",
         HeroKind.Executioner => "EXECUTE",
         HeroKind.Elementalist => "FROST NOVA",
+        HeroKind.Beastmaster => "RALLY PACK",
         _ => "VOLLEY",
     };
 
@@ -159,6 +175,7 @@ public static class HeroSkills
             HeroKind.Bulwark => col == 1 ? "WALL" : "GUARDIAN",
             HeroKind.Executioner => col == 1 ? "REAPING" : "SHADOW",
             HeroKind.Elementalist => col == 1 ? "FROST" : "STORM",
+            HeroKind.Beastmaster => col == 1 ? "PACK" : "WILD",
             _ => col == 1 ? "PRECISION" : "BARRAGE",
         };
     }

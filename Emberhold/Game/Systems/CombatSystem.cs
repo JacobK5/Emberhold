@@ -305,8 +305,22 @@ public static class CombatSystem
             case HeroKind.Bulwark: BulwarkStance(s); break;
             case HeroKind.Executioner: Execute(s); break;
             case HeroKind.Elementalist: FrostNova(s); break;
+            case HeroKind.Beastmaster: RallyPack(s); break;
             default: ShootVolley(s); break;
         }
+    }
+
+    /// <summary>Beastmaster signature: summon a burst of temporary wolves to swarm the wave.</summary>
+    public static void RallyPack(GameState s)
+    {
+        var hero = s.Hero;
+        if (hero.AbilityCooldown > 0f || s.Over) return;
+        hero.AbilityCooldown = hero.VolleyCooldown;
+        for (int i = 0; i < 3; i++)
+            s.Companions.Add(CompanionSystem.NewWolf(s, permanent: false, life: 9f));
+        s.AddParticles(hero.Pos, Palette.Hex("d8c79a"), 22, 110f);
+        s.AddFloater(hero.Pos + new Vector2(0, -26), "RALLY!", Palette.Hex("e6d6a8"));
+        s.KickShake(5f);
     }
 
     /// <summary>Elementalist signature: a radial burst that damages and deeply chills

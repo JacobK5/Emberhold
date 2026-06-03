@@ -66,6 +66,20 @@ public sealed class Projectile
     public HashSet<int>? HitIds;
 }
 
+/// <summary>A Beastmaster wolf: chases nearby enemies and bites; follows the hero
+/// otherwise. Permanent wolves persist while the Beastmaster is active; summoned ones
+/// expire when Life runs out.</summary>
+public sealed class Companion
+{
+    public int Id;
+    public Vector2 Pos;
+    public Vector2 Facing = new(0, -1);
+    public float Radius = 8f;
+    public float AttackTimer;
+    public bool Permanent;   // a loyal wolf (despawns only when you leave the Beastmaster)
+    public float Life;       // summoned wolves expire when this hits 0 (ignored if Permanent)
+}
+
 public enum DropKind { Gold, Ember, Relic, Cache }
 
 public sealed class Drop

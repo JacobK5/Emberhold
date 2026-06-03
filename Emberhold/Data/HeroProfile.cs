@@ -3,7 +3,7 @@ using Emberhold.Render;
 
 namespace Emberhold.Data;
 
-public enum HeroKind { Ranger, Warden, Artificer, Bulwark, Executioner, Elementalist }
+public enum HeroKind { Ranger, Warden, Artificer, Bulwark, Executioner, Elementalist, Beastmaster }
 
 /// <summary>
 /// Per-hero multipliers + identity. Ported from config.js HERO_PROFILES.
@@ -48,6 +48,11 @@ public sealed record HeroProfile(
         Damage: 0.92f, Rate: 1.1f, Range: 1.12f, Speed: 0.96f, Cloak: Palette.Hex("4a7a8c"),
         BaseHealth: 90f);
 
+    public static readonly HeroProfile Beastmaster = new(
+        HeroKind.Beastmaster, "RURIK, BEASTMASTER", "R",
+        Damage: 0.85f, Rate: 1.05f, Range: 1f, Speed: 1.05f, Cloak: Palette.Hex("6a5a3a"),
+        BaseHealth: 110f);
+
     public static HeroProfile Get(HeroKind kind) => kind switch
     {
         HeroKind.Warden => Warden,
@@ -55,6 +60,7 @@ public sealed record HeroProfile(
         HeroKind.Bulwark => Bulwark,
         HeroKind.Executioner => Executioner,
         HeroKind.Elementalist => Elementalist,
+        HeroKind.Beastmaster => Beastmaster,
         _ => Ranger,
     };
 }
