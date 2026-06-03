@@ -37,6 +37,7 @@ public static class Renderer
         DrawEnemies(s);
         DrawProjectiles(s);
         DrawCompanions(s);
+        DrawMeteors(s);
         DrawHero(s.Hero);
         DrawParticles(s);
         DrawFloaters(s);
@@ -100,11 +101,45 @@ public static class Renderer
     private static void DrawWaveStatus(GameState s)
     {
         if (s.Phase != Phase.Combat || s.Over) return;
-        if (s.Spawning is null && s.BetweenWaves > 0f && !s.PendingDraft)
+        bool lull = s.Spawning is null && s.BetweenWaves > 0f && !s.PendingDraft;
+        if (lull)
         {
             DrawCentered($"NEXT WAVE IN {MathF.Ceiling(s.BetweenWaves)}s", 22, 24, Palette.Hero);
+            int y = 52;
+            if (s.PendingEvent != MapEventKind.None)
+            {
+                Color col = MapEvents.IsHazard(s.PendingEvent) ? Palette.Hex("e0584a") : Palette.Gold;
+                DrawCentered($"!  {MapEvents.Name(s.PendingEvent)}  -  {MapEvents.Blurb(s.PendingEvent)}", 15, y, col);
+                y += 22;
+            }
             if (s.Shop.CanOpen)
-                DrawCentered("[B] Supply Shop", 16, 54, Palette.Hex("c49a62"));
+                DrawCentered("[B] Supply Shop", 16, y, Palette.Hex("c49a62"));
+        }
+        else if (s.ActiveEvent != MapEventKind.None)
+        {
+            Color col = MapEvents.IsHazard(s.ActiveEvent) ? Palette.Hex("e0584a") : Palette.Gold;
+            DrawCentered(MapEvents.Name(s.ActiveEvent), 20, 24, col);
+        }
+    }
+
+    /// <summary>Falling Meteor Storm meteors: a ground danger ring that fills as the
+    /// rock descends from above, then bursts (particles handled on impact).</summary>
+    private static void DrawMeteors(GameState s)
+    {
+        foreach (var m in s.Meteors)
+        {
+            float frac = MathUtils.Clamp(m.Fall / m.MaxFall, 0f, 1f); // 1 = spawned, 0 = impact
+            byte ringA = (byte)(110 + 120 * (1f - frac));
+            Raylib.DrawCircleV(m.Target, m.Radius, new Color((byte)0xe0, (byte)0x58, (byte)0x4a, (byte)(24 + 36 * (1f - frac))));
+            Raylib.DrawRing(m.Target, m.Radius - 3f, m.Radius, -90f, -90f + 360f * (1f - frac), 40,
+                new Color((byte)0xff, (byte)0x9a, (byte)0x4d, ringA));
+            Raylib.DrawCircleLinesV(m.Target, m.Radius, new Color((byte)0xe0, (byte)0x58, (byte)0x4a, (byte)150));
+
+            // The rock plummets from ~230px up, trailing fire.
+            var pos = m.Target - new Vector2(0, 230f * frac);
+            Raylib.DrawLineEx(pos, pos + new Vector2(0, 18), 4f, new Color((byte)0xed, (byte)0x74, (byte)0x43, (byte)200));
+            Raylib.DrawCircleV(pos, 6f, Palette.Hex("3a2c24"));
+            Raylib.DrawCircleV(pos, 4f, Palette.Fire);
         }
     }
 

@@ -27,6 +27,8 @@ public static class WaveSystem
         };
         if (kinds.Contains(EnemyKind.Boss)) { s.BossBannerTimer = 2.4f; s.BossIncoming = true; }
         else if (kinds.Contains(EnemyKind.Elite)) { s.BossBannerTimer = 1.8f; s.BossIncoming = false; }
+
+        MapEventSystem.Activate(s); // promote any telegraphed dynamic event for this wave
     }
 
     /// <summary>Precompute a wave's full enemy composition (kinds only; lanes chosen at spawn).</summary>
@@ -120,6 +122,7 @@ public static class WaveSystem
                 // Carry the previously-previewed wave forward so foresight stays exact.
                 s.NextWaveKinds = s.NextWaveKinds2 ?? BuildComposition(s, s.Wave);
                 s.NextWaveKinds2 = BuildComposition(s, s.Wave + 1);
+                MapEventSystem.RollForNextWave(s); // telegraph a dynamic event for the upcoming wave
                 s.UpgradeBreak = cleared % 5 == 0;
                 s.BetweenWaves = s.UpgradeBreak ? 12f : 5f;
 

@@ -8,6 +8,15 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.28.0 — "Upheaval"
+- **Dynamic map events** — from wave 8 on (never on boss waves, with a 3-wave gap), a
+  battlefield event is telegraphed during the lull and runs through the next wave:
+  - **Meteor Storm** (hazard) — meteors rain across the field; area bursts shred the
+    swarm (ignoring shields) but scorch the hero if he stands in the blast.
+  - **Supply Drop** (boon) — one or two free, fully-built tower/support structures land
+    in your quadrants.
+  - **Gold Rush** (boon) — raider bounties and mine yields are doubled for the wave.
+
 ### v0.27.0 — "Frontier Hall"
 - **Home screen** — a proper title menu (EMBERHOLD / Frontier Siege) with Resume /
   New Run / Balancing / Quit. A clean launch opens here; the run begins only once you

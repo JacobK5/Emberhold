@@ -50,7 +50,7 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false)
     {
         _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
@@ -82,6 +82,15 @@ public sealed class GameApp
             _skillsOpen = true;
         }
         if (heroSwap) _heroSwapOpen = true; // debug: screenshot the in-game hero-swap overlay
+        if (meteorEvent)
+        {
+            // Debug: jump into a live wave with a Meteor Storm raging for screenshots.
+            _state.Wave = Math.Max(_state.Wave, 12);
+            _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave);
+            WaveSystem.StartWave(_state);
+            _state.ActiveEvent = MapEventKind.MeteorShower;
+            _state.MeteorTimer = 0.2f;
+        }
     }
 
     private void NewRun()
@@ -354,6 +363,7 @@ public sealed class GameApp
         EconomySystem.UpdateMines(_state, dt);
         EffectsSystem.Update(_state, dt);
         UpdateSupplyCache(dt);
+        MapEventSystem.Update(_state, dt);
         UpdateCamera(dt);
 
         if (_state.KeepHealth <= 0f || _state.Hero.Health <= 0f)
