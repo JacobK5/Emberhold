@@ -59,6 +59,14 @@ The file contains a single `MAJOR.MINOR.PATCH` line:
 
 Edit `VERSION`, commit it on the feature branch, then merge.
 
+> **CRITICAL:** `VERSION` (this file at the repo root) is the *single source of
+> truth* the release pipeline reads for the tag + release name. It is **not** the
+> `Program.Version` constant in `Emberhold/Program.cs` — that one only feeds the
+> title-screen label. Keep the two in sync, but if you only update `Program.Version`
+> the GitHub Release will be **mislabeled**. (This happened: `VERSION` was left at
+> `0.16.0` from ~v0.16 through v0.34 while only `Program.Version` moved, so every
+> release in that range published as "v0.16.0".) Always bump `VERSION`.
+
 ---
 
 ## Merging and triggering the build

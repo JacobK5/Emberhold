@@ -8,7 +8,9 @@ public static class Program
     public const int DesignWidth = 1280;
     public const int DesignHeight = 720;
 
-    /// <summary>Current build version, shown on the title screen.</summary>
+    /// <summary>Current build version, shown on the title screen. MUST mirror the
+    /// repo-root <c>VERSION</c> file, which is what the release pipeline reads for the
+    /// release tag/name — bump both together (see AGENTS.md).</summary>
     public const string Version = "0.34.0";
 
     public static int Main(string[] args)
