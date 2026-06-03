@@ -75,6 +75,7 @@ public sealed class RunSave
     public List<ExoticKind> Exotics { get; set; } = new();  // bought mega-upgrades (absent in old saves -> empty)
     public bool PhoenixUsed { get; set; }
     public int ArchetypeSalt { get; set; }  // keeps wave archetypes stable across a resume
+    public int Ascension { get; set; }      // run's chosen difficulty tier
 }
 
 /// <summary>
@@ -186,6 +187,7 @@ public static class RunStore
             Exotics = s.Exotics.ToList(),
             PhoenixUsed = s.PhoenixUsed,
             ArchetypeSalt = s.ArchetypeSalt,
+            Ascension = s.Ascension,
         };
         return save;
     }
@@ -265,6 +267,7 @@ public static class RunStore
         foreach (var e in save.Exotics) s.Exotics.Add(e);
         s.PhoenixUsed = save.PhoenixUsed;
         if (save.ArchetypeSalt != 0) s.ArchetypeSalt = save.ArchetypeSalt;
+        s.Ascension = save.Ascension;
 
         // Resume in the between-wave lull: no live enemies, shop available, next wave queued.
         s.Enemies.Clear();

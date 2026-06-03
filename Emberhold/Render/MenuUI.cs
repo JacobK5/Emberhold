@@ -113,18 +113,44 @@ public static class MenuUI
         return rects;
     }
 
-    /// <param name="current">When set, the hero already in play (in-game swap mode); marked CURRENT.</param>
-    /// <param name="cooldown">Switch cooldown remaining (in-game swap); shows a wait note.</param>
-    public static void DrawHeroSelect(string header, string footer, HeroKind? current = null, float cooldown = 0f)
+    private const int AscBtn = 34;
+
+    /// <summary>The [-] / [+] rects for the ascension selector on the hero-select screen.</summary>
+    public static (Rectangle Minus, Rectangle Plus) AscensionButtonRects()
     {
         int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        int y = h / 2 - HeroCardH - 58;
+        return (new Rectangle(w / 2 - 178, y, AscBtn, AscBtn),
+                new Rectangle(w / 2 + 178 - AscBtn, y, AscBtn, AscBtn));
+    }
+
+    /// <param name="current">When set, the hero already in play (in-game swap mode); marked CURRENT.</param>
+    /// <param name="cooldown">Switch cooldown remaining (in-game swap); shows a wait note.</param>
+    /// <param name="ascension">Selected ascension tier (>= 0 shows the selector); -1 hides it.</param>
+    /// <param name="maxAscension">Highest unlocked tier (selector only appears when > 0).</param>
+    public static void DrawHeroSelect(string header, string footer, HeroKind? current = null, float cooldown = 0f,
+        int ascension = -1, int maxAscension = 0)
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        var mouse = Raylib.GetMousePosition();
         Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 224));
 
         DrawCentered(header, 36, (int)(h / 2 - HeroCardH - 96), Palette.Hex("efd18a"));
 
+        // Ascension selector (start-of-run only, once a tier is unlocked).
+        if (ascension >= 0 && maxAscension > 0)
+        {
+            var (minus, plus) = AscensionButtonRects();
+            int sy = (int)minus.Y;
+            DrawCentered($"ASCENSION  {ascension} / {maxAscension}", 22, sy + 4,
+                ascension > 0 ? Palette.Hex("e0795a") : Palette.Hero);
+            DrawStepper(minus, "-", mouse);
+            DrawStepper(plus, "+", mouse);
+            DrawCentered(Ascensions.Summary(ascension), 14, sy + AscBtn + 6, Palette.PathEdge);
+        }
+
         var profiles = HeroProfile.All;
         var rects = HeroCardRects();
-        var mouse = Raylib.GetMousePosition();
         for (int i = 0; i < profiles.Length; i++)
         {
             bool isCurrent = current is HeroKind c && c == profiles[i].Kind;
@@ -167,6 +193,16 @@ public static class MenuUI
         // Signature + one-line role blurb.
         Raylib.DrawText($"> {HeroSkills.SignatureName(p.Kind)}", (int)r.X + 16, (int)r.Y + 162, 14, Palette.Gold);
         DrawWrapped(p.Blurb, (int)r.X + 16, (int)r.Y + 184, HeroCardW - 28, 13, Palette.PathEdge);
+    }
+
+    private static void DrawStepper(Rectangle r, string label, Vector2 mouse)
+    {
+        bool hov = Raylib.CheckCollisionPointRec(mouse, r);
+        Raylib.DrawRectangleRec(r, hov ? new Color(48, 64, 54, 255) : new Color(30, 40, 36, 255));
+        Raylib.DrawRectangleLinesEx(r, 1.5f, hov ? Palette.Gold : Palette.Hex("6a5c45"));
+        int tw = Raylib.MeasureText(label, 22);
+        Raylib.DrawText(label, (int)(r.X + r.Width / 2 - tw / 2), (int)(r.Y + r.Height / 2 - 11), 22,
+            hov ? Palette.Hex("efd18a") : Palette.Hero);
     }
 
     private static void StatBar(int x, int y, string label, float value, float min, float max, Color fill)

@@ -100,6 +100,11 @@ public sealed class GameState
     public int ArchetypeSalt = new Random().Next();
     public WaveArchetype ArchetypeOf(int wave) => WaveArchetypes.For(wave, ArchetypeSalt);
 
+    // Ascension difficulty tier chosen at run start (0 = none). Folds into spawns/keep/shop.
+    public int Ascension;
+    public float AscEnemyHpMult => Ascensions.EnemyHp(Ascension);
+    public float AscEnemySpeedMult => Ascensions.EnemySpeed(Ascension);
+
     // Overcharge: Artificer signature — a fort-wide tower frenzy while the timer runs.
     public float OverchargeTimer;
 

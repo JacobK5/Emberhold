@@ -10,6 +10,7 @@ public sealed record Profile
     public int Runs { get; init; }
     public int LifetimeKills { get; init; }
     public int BossesSlain { get; init; }
+    public int MaxAscension { get; init; }  // highest ascension tier unlocked
     public HashSet<string> DiscoveredSynergies { get; init; } = new();
 }
 

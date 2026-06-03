@@ -8,6 +8,14 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.31.0 — "Ascension"
+- **Ascension tiers** — a Hades-style difficulty ladder chosen at run start on the
+  hero-select screen ([-]/[+] selector, with a live rule summary). Each tier stacks
+  cumulative rules: +12% enemy HP/level, +6% shop prices/level, +5% enemy speed from
+  tier 3, and up to -20% keep HP. Clearing wave 10 (a boss) at your current ceiling
+  unlocks the next tier (persisted in the profile, capped at 5). The run's tier shows
+  on the HUD + game-over recap and persists in run saves.
+
 ### v0.30.0 — "Tempest"
 - **Wave archetypes** — from wave 10, about a third of non-boss waves take on a shape
   (telegraphed in the preview + a wave banner), reshaping composition and raider stats:
