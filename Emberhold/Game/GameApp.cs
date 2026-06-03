@@ -156,6 +156,9 @@ public sealed class GameApp
 
         if (Auto) { _draft.AutoAdvance(_state); return; }
 
+        // Bank this draft (X) for a double-pick next time — once per run.
+        if (Raylib.IsKeyPressed(KeyboardKey.X) && _draft.Veto(_state)) { _state.ViewingBase = false; return; }
+
         int picked = -1;
         if (Raylib.IsKeyPressed(KeyboardKey.One)) picked = 0;
         else if (Raylib.IsKeyPressed(KeyboardKey.Two)) picked = 1;

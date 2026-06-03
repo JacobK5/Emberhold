@@ -144,6 +144,11 @@ public sealed class GameState
     public bool ViewingBase;     // player hid the draft overlay to survey the map
     public bool NeedsAutosave;   // a wave cleared; checkpoint once the lull is stable
 
+    // Draft veto: once per run you can bank a draft (take no card) for a double-pick
+    // at the next draft instead.
+    public bool DraftVetoAvailable = true;
+    public bool DraftDoublePick;  // the next draft grants two picks
+
     // Entities
     public readonly List<Enemy> Enemies = new();
     public readonly List<Projectile> Projectiles = new();

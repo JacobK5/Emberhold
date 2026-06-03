@@ -63,6 +63,8 @@ public sealed class RunSave
     public float BetweenWaves { get; set; }
     public bool CodexAdept { get; set; }
     public bool[] ZoneFortified { get; set; } = new bool[4];
+    public bool DraftVetoAvailable { get; set; } = true;
+    public bool DraftDoublePick { get; set; }
     public string ModifierId { get; set; } = "none";
     public HeroSave Hero { get; set; } = new();
     public List<Structure> Structures { get; set; } = new();
@@ -141,6 +143,8 @@ public static class RunStore
             BetweenWaves = s.BetweenWaves,
             CodexAdept = s.CodexAdept,
             ZoneFortified = (bool[])s.ZoneFortified.Clone(),
+            DraftVetoAvailable = s.DraftVetoAvailable,
+            DraftDoublePick = s.DraftDoublePick,
             ModifierId = s.Modifier.Id,
             Hero = new HeroSave
             {
@@ -193,6 +197,8 @@ public static class RunStore
         s.CodexAdept = save.CodexAdept;
         if (save.ZoneFortified is { Length: 4 })
             for (int q = 0; q < 4; q++) s.ZoneFortified[q] = save.ZoneFortified[q];
+        s.DraftVetoAvailable = save.DraftVetoAvailable;
+        s.DraftDoublePick = save.DraftDoublePick;
         s.Modifier = RunModifier.Catalog.FirstOrDefault(m => m.Id == save.ModifierId) ?? RunModifier.None;
 
         var hs = save.Hero;
