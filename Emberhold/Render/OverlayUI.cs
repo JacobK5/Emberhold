@@ -519,4 +519,118 @@ public static class OverlayUI
         int w = Raylib.MeasureText(text, fontSize);
         Raylib.DrawText(text, Raylib.GetScreenWidth() / 2 - w / 2, y, fontSize, color);
     }
+
+    // ---- Balancing panel --------------------------------------------------
+
+    private const int BalPanelW = 920, BalPanelH = 560;
+    private const int BalPad = 28, BalColGap = 16, BalRowH = 44, BalBtn = 30;
+
+    private static int BalColWidth()
+        => (BalPanelW - BalPad * 2 - BalColGap * (BalanceConfig.Groups.Length - 1)) / BalanceConfig.Groups.Length;
+
+    /// <summary>Shared geometry for the balancing panel (draw + hit-test agree).</summary>
+    private static (Rectangle Panel, Rectangle[] Row, Rectangle[] Minus, Rectangle[] Plus, Rectangle[] Action) BalanceLayout()
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        int px = w / 2 - BalPanelW / 2, py = h / 2 - BalPanelH / 2;
+        var panel = new Rectangle(px, py, BalPanelW, BalPanelH);
+
+        int colW = BalColWidth();
+        int gridTop = py + 122;
+        var entries = BalanceConfig.Entries;
+        var rows = new Rectangle[entries.Length];
+        var minus = new Rectangle[entries.Length];
+        var plus = new Rectangle[entries.Length];
+        var rowInCol = new int[BalanceConfig.Groups.Length];
+        for (int i = 0; i < entries.Length; i++)
+        {
+            int col = Array.IndexOf(BalanceConfig.Groups, entries[i].Group);
+            int r = rowInCol[col]++;
+            int cx = px + BalPad + col * (colW + BalColGap);
+            int cy = gridTop + r * BalRowH;
+            rows[i] = new Rectangle(cx, cy, colW, BalRowH - 8);
+            plus[i] = new Rectangle(cx + colW - BalBtn, cy + 2, BalBtn, BalBtn);
+            minus[i] = new Rectangle(cx + colW - BalBtn * 2 - 6, cy + 2, BalBtn, BalBtn);
+        }
+
+        const int aw = 150, ag = 16, ah = 40;
+        int totalW = 4 * aw + 3 * ag;
+        int ax = w / 2 - totalW / 2, ay = py + BalPanelH - 54;
+        var action = new Rectangle[4];
+        for (int i = 0; i < 4; i++) action[i] = new Rectangle(ax + i * (aw + ag), ay, aw, ah);
+
+        return (panel, rows, minus, plus, action);
+    }
+
+    /// <summary>Per-entry [-] / [+] button rects, indexed like BalanceConfig.Entries.</summary>
+    public static (Rectangle Minus, Rectangle Plus)[] BalanceAdjustRects()
+    {
+        var l = BalanceLayout();
+        var arr = new (Rectangle, Rectangle)[l.Minus.Length];
+        for (int i = 0; i < arr.Length; i++) arr[i] = (l.Minus[i], l.Plus[i]);
+        return arr;
+    }
+
+    /// <summary>Action button rects: [0]=Reset [1]=Copy [2]=Paste [3]=Close.</summary>
+    public static Rectangle[] BalanceActionRects() => BalanceLayout().Action;
+
+    public static void DrawBalancePanel(bool fromPause)
+    {
+        var l = BalanceLayout();
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 232));
+        var p = l.Panel;
+        Raylib.DrawRectangleRec(p, new Color(18, 26, 24, 246));
+        Raylib.DrawRectangleLinesEx(p, 2f, Palette.Hex("c49a62"));
+        DrawCentered("BALANCING", 32, (int)p.Y + 16, Palette.Hex("efd18a"));
+        DrawCentered("tune live  ·  changes persist  ·  Copy / Paste shares a preset via clipboard",
+            15, (int)p.Y + 56, Palette.PathEdge);
+
+        var mouse = Raylib.GetMousePosition();
+        int colW = BalColWidth();
+        for (int c = 0; c < BalanceConfig.Groups.Length; c++)
+        {
+            int cx = (int)p.X + BalPad + c * (colW + BalColGap);
+            Raylib.DrawText(BalanceConfig.Groups[c].ToUpper(), cx, (int)p.Y + 94, 16, Palette.Hex("d6b46c"));
+            Raylib.DrawLine(cx, (int)p.Y + 116, cx + colW - 4, (int)p.Y + 116, Palette.Hex("3c4a44"));
+        }
+
+        var entries = BalanceConfig.Entries;
+        for (int i = 0; i < entries.Length; i++)
+        {
+            var e = entries[i];
+            var row = l.Row[i];
+            Raylib.DrawText(e.Label, (int)row.X + 2, (int)row.Y + 8, 15, Palette.Hero);
+            string val = BalanceConfig.Get(e.Field).ToString("0.##");
+            Color vcol = BalanceConfig.IsDefault(e.Field) ? Palette.Hex("9aa6a0") : Palette.Gold;
+            int vw = Raylib.MeasureText(val, 16);
+            Raylib.DrawText(val, (int)l.Minus[i].X - vw - 10, (int)row.Y + 7, 16, vcol);
+            DrawMiniButton(l.Minus[i], "-", mouse);
+            DrawMiniButton(l.Plus[i], "+", mouse);
+        }
+
+        string[] labels = { "Reset", "Copy", "Paste", fromPause ? "Resume" : "Back" };
+        for (int i = 0; i < l.Action.Length; i++)
+            DrawTextButton(l.Action[i], labels[i], mouse);
+    }
+
+    private static void DrawMiniButton(Rectangle r, string label, Vector2 mouse)
+    {
+        bool hov = Raylib.CheckCollisionPointRec(mouse, r);
+        Raylib.DrawRectangleRec(r, hov ? new Color(48, 64, 54, 255) : new Color(30, 40, 36, 255));
+        Raylib.DrawRectangleLinesEx(r, 1.5f, hov ? Palette.Gold : Palette.Hex("6a5c45"));
+        int tw = Raylib.MeasureText(label, 20);
+        Raylib.DrawText(label, (int)(r.X + r.Width / 2 - tw / 2), (int)(r.Y + r.Height / 2 - 10), 20,
+            hov ? Palette.Hex("efd18a") : Palette.Hero);
+    }
+
+    private static void DrawTextButton(Rectangle r, string label, Vector2 mouse)
+    {
+        bool hov = Raylib.CheckCollisionPointRec(mouse, r);
+        Raylib.DrawRectangleRec(r, hov ? new Color(40, 54, 46, 245) : new Color(24, 32, 30, 235));
+        Raylib.DrawRectangleLinesEx(r, hov ? 2.5f : 1.5f, hov ? Palette.Gold : Palette.Hex("6a5c45"));
+        int tw = Raylib.MeasureText(label, 18);
+        Raylib.DrawText(label, (int)(r.X + r.Width / 2 - tw / 2), (int)(r.Y + r.Height / 2 - 9), 18,
+            hov ? Palette.Hex("efd18a") : Palette.Hero);
+    }
 }

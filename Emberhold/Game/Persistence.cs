@@ -24,6 +24,9 @@ public static class Persistence
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Emberhold");
     private static readonly string FilePath = Path.Combine(Dir, "profile.json");
 
+    /// <summary>The Emberhold local-app-data folder (shared by other persisted files).</summary>
+    public static string DataDir => Dir;
+
     public static Profile Load()
     {
         try

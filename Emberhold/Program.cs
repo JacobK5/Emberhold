@@ -22,6 +22,7 @@ public static class Program
         Raylib.InitWindow(DesignWidth, DesignHeight, "Emberhold");
         Raylib.SetTargetFPS(60);
         Raylib.SetExitKey(KeyboardKey.Null);
+        Game.BalanceConfig.Load(); // apply any persisted balance tuning
 
         int startWave = 0;
         if (ParseStringArg(args, "--wave") is string ws && int.TryParse(ws, out int wv)) startWave = wv;
@@ -49,7 +50,8 @@ public static class Program
             paused: Array.IndexOf(args, "--pause") >= 0,
             skills: Array.IndexOf(args, "--skills") >= 0,
             startAtTitle: forceTitle || !debugStart,
-            heroSwap: Array.IndexOf(args, "--heroswap") >= 0);
+            heroSwap: Array.IndexOf(args, "--heroswap") >= 0,
+            balance: Array.IndexOf(args, "--balance") >= 0);
 
         int frame = 0;
         while (!Raylib.WindowShouldClose())

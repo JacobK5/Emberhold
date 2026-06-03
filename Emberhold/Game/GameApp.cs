@@ -39,6 +39,8 @@ public sealed class GameApp
     private Screen _screen = Screen.Playing;
     private HeroKind _heroChoice = HeroKind.Ranger; // hero picked on the select screen
     private bool _heroSwapOpen;                      // in-game (H) hero-swap overlay
+    private bool _balanceOpen;                       // balancing tuner overlay (title or pause)
+    private bool _balanceFromPause;                  // opened from a paused run (vs the title)
     private RunSave? _save;                          // cached checkpoint for the title's Resume
 
     /// <summary>Set when the player chooses Quit from the title menu; Program ends the loop.</summary>
@@ -48,8 +50,9 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false)
     {
+        _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
         _seed = seed;
         _startWave = startWave;
@@ -101,6 +104,7 @@ public sealed class GameApp
 
     public void Update(float dt)
     {
+        if (_balanceOpen) { UpdateBalance(); return; }
         if (_screen == Screen.Title) { UpdateTitle(); return; }
         if (_screen == Screen.HeroSelect) { UpdateHeroSelect(); return; }
 
@@ -136,20 +140,22 @@ public sealed class GameApp
         if (_screen == Screen.Title)
         {
             MenuUI.DrawTitle(_save is not null, _save, Program.Version);
-            return;
         }
-        if (_screen == Screen.HeroSelect)
+        else if (_screen == Screen.HeroSelect)
         {
             Raylib.ClearBackground(Palette.Grass);
             MenuUI.DrawHeroSelect("CHOOSE YOUR HERO", "click a hero to begin   ·   ESC back to menu");
-            return;
+        }
+        else
+        {
+            Renderer.Draw(_state, _draft, ShowIntro, _showCodex);
+            if (_skillsOpen && !_state.Over) OverlayUI.DrawSkillTree(_state);
+            if (_heroSwapOpen && !_state.Over)
+                MenuUI.DrawHeroSelect("SWITCH HERO", "click a hero to switch   ·   ESC / H cancel",
+                    _state.Hero.Kind, _state.Hero.SwitchCooldown);
         }
 
-        Renderer.Draw(_state, _draft, ShowIntro, _showCodex);
-        if (_skillsOpen && !_state.Over) OverlayUI.DrawSkillTree(_state);
-        if (_heroSwapOpen && !_state.Over)
-            MenuUI.DrawHeroSelect("SWITCH HERO", "click a hero to switch   ·   ESC / H cancel",
-                _state.Hero.Kind, _state.Hero.SwitchCooldown);
+        if (_balanceOpen) OverlayUI.DrawBalancePanel(_balanceFromPause);
     }
 
     // ---- title / hero-select screens ------------------------------------
@@ -182,11 +188,34 @@ public sealed class GameApp
                 _screen = Screen.HeroSelect;
                 break;
             case MenuAction.Settings:
-                break; // balance panel arrives in a later batch
+                _balanceOpen = true;
+                _balanceFromPause = false;
+                break;
             case MenuAction.Quit:
                 ShouldQuit = true;
                 break;
         }
+    }
+
+    /// <summary>Input for the balancing tuner overlay: nudge values, reset, clipboard, close.</summary>
+    private void UpdateBalance()
+    {
+        if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { _balanceOpen = false; return; }
+        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        var m = Raylib.GetMousePosition();
+
+        var adj = OverlayUI.BalanceAdjustRects();
+        for (int i = 0; i < adj.Length; i++)
+        {
+            if (Raylib.CheckCollisionPointRec(m, adj[i].Minus)) { BalanceConfig.Adjust(BalanceConfig.Entries[i], -1); return; }
+            if (Raylib.CheckCollisionPointRec(m, adj[i].Plus)) { BalanceConfig.Adjust(BalanceConfig.Entries[i], +1); return; }
+        }
+
+        var act = OverlayUI.BalanceActionRects();
+        if (Raylib.CheckCollisionPointRec(m, act[0])) { BalanceConfig.Reset(); return; }
+        if (Raylib.CheckCollisionPointRec(m, act[1])) { Raylib.SetClipboardText(BalanceConfig.Export()); return; }
+        if (Raylib.CheckCollisionPointRec(m, act[2])) { BalanceConfig.Import(Raylib.GetClipboardText_()); return; }
+        if (Raylib.CheckCollisionPointRec(m, act[3])) { _balanceOpen = false; return; }
     }
 
     private void UpdateHeroSelect()
@@ -274,6 +303,11 @@ public sealed class GameApp
         {
             if (_state.Shop.Open) CloseShop();
             else _state.Paused = !_state.Paused;
+        }
+        // While paused, B opens the balancing tuner (returns here on close).
+        if (_state.Paused && Raylib.IsKeyPressed(KeyboardKey.B))
+        {
+            _balanceOpen = true; _balanceFromPause = true; return;
         }
         if (_state.Paused) return;
 
