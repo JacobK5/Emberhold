@@ -17,13 +17,15 @@ public sealed class DraftController
 
     private readonly Random _rng = new();
 
-    /// <summary>Begin a new run: seed a free starter, then the opening draft.</summary>
-    public void StartRun(GameState s)
+    /// <summary>Begin a new run: seed free starters, then the opening draft.</summary>
+    public void StartRun(GameState s, bool bonusStarter = false)
     {
         ToPlace.Clear();
         // Free starters so the opening isn't a death sentence: a tower + a lane blocker.
         ToPlace.Enqueue(CardDb.Get("archer_post"));
         ToPlace.Enqueue(CardDb.Get("barricade"));
+        // Codex Adept meta-reward: an extra economy starter.
+        if (bonusStarter) ToPlace.Enqueue(CardDb.Get("gold_mine"));
         StartDraft(s);
     }
 

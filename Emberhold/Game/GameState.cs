@@ -50,6 +50,7 @@ public sealed class GameState
 
     // The per-run challenge modifier ("trial"). Set by GameApp at run start.
     public RunModifier Modifier = RunModifier.None;
+    public bool CodexAdept;  // lifetime synergy collection earned a bonus starter this run
 
     public float Elapsed;
     public int Kills;

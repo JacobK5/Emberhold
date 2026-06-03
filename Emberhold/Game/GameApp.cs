@@ -57,8 +57,9 @@ public sealed class GameApp
         ApplyRunModifier(); // roll the run's trial before previewing the first wave
         _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave);      // wave-1 preview
         _state.NextWaveKinds2 = WaveSystem.BuildComposition(_state, _state.Wave + 1); // wave-2 foresight
+        _state.CodexAdept = _profile.DiscoveredSynergies.Count >= 12; // lifetime collection perk
         if (_seed) _state.Phase = Phase.Combat;
-        else _draft.StartRun(_state);
+        else _draft.StartRun(_state, _state.CodexAdept);
         if (_lose) { _state.Phase = Phase.Combat; _state.KeepHealth = 0f; }
     }
 
