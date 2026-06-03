@@ -102,4 +102,34 @@ public class DraftTests
 
         Assert.False(draft.TryPlace(s, spot)); // overlaps existing pad
     }
+
+    [Fact]
+    public void Veto_BanksDraftForADoublePick()
+    {
+        var s = NewState();
+        var draft = new DraftController();
+        draft.StartDraft(s);
+
+        Assert.True(draft.Veto(s));
+        Assert.False(s.DraftVetoAvailable);  // spent (once per run)
+        Assert.True(s.DraftDoublePick);      // banked
+        Assert.Empty(draft.ToPlace);          // took no card
+        Assert.False(draft.Veto(s));          // can't veto again
+    }
+
+    [Fact]
+    public void DoublePick_GrantsTwoCardsNextDraft()
+    {
+        var s = NewState();
+        var draft = new DraftController();
+        draft.StartDraft(s);
+        draft.Veto(s);                        // bank it
+
+        draft.StartDraft(s);                  // next milestone draft
+        draft.Pick(s, 0);                     // first pick reopens the draft
+        Assert.Equal(Phase.Draft, s.Phase);
+        Assert.False(s.DraftDoublePick);      // consumed
+        draft.Pick(s, 0);                     // second pick proceeds to placement
+        Assert.Equal(2, draft.ToPlace.Count + (draft.Placing is null ? 0 : 1));
+    }
 }

@@ -45,7 +45,26 @@ public sealed class DraftController
         if (s.Phase != Phase.Draft || index < 0 || index >= Offer.Count) return;
         ToPlace.Enqueue(Offer[index]);
         Offer = new List<CardDef>();
+
+        // A banked veto grants a second pick: re-open the draft once, then place.
+        if (s.DraftDoublePick)
+        {
+            s.DraftDoublePick = false;
+            StartDraft(s);
+            return;
+        }
         BeginPlacement(s);
+    }
+
+    /// <summary>Bank the current draft (take nothing) for a double-pick next time.</summary>
+    public bool Veto(GameState s)
+    {
+        if (s.Phase != Phase.Draft || !s.DraftVetoAvailable || s.DraftDoublePick) return false;
+        s.DraftVetoAvailable = false;
+        s.DraftDoublePick = true;
+        Offer = new List<CardDef>();
+        BeginPlacement(s); // resolves to combat when nothing is queued
+        return true;
     }
 
     private void BeginPlacement(GameState s)

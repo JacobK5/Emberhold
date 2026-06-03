@@ -35,14 +35,18 @@ public static class OverlayUI
         }
 
         Raylib.DrawRectangle(0, 0, w, h, new Color(11, 17, 19, 180));
-        DrawCentered("CHOOSE A FRONTIER CARD", 34, h / 2 - 220, Palette.Hex("efd18a"));
+        DrawCentered(s.DraftDoublePick ? "DOUBLE PICK  -  CHOOSE A FRONTIER CARD" : "CHOOSE A FRONTIER CARD",
+            34, h / 2 - 220, s.DraftDoublePick ? Palette.Gold : Palette.Hex("efd18a"));
 
         bool ready = s.DraftReadyTimer <= 0f;
         DrawCentered(
             ready ? "one Attack  /  one Defend  /  one Support  -  pick one (1 / 2 / 3 or click)"
                   : $"Ready in  {s.DraftReadyTimer:0.0}s ...",
             18, h / 2 - 184, ready ? Palette.PathEdge : Palette.Hex("9aa6a0"));
-        DrawCentered("(C) synergy codex   /   (V) view base", 16, h / 2 - 160, Palette.PathEdge);
+        string vetoHint = s.DraftVetoAvailable && !s.DraftDoublePick
+            ? "(C) codex   /   (V) view base   /   (X) bank draft for a double-pick"
+            : "(C) synergy codex   /   (V) view base";
+        DrawCentered(vetoHint, 16, h / 2 - 160, Palette.PathEdge);
 
         // Preview the next two waves you'll face after placing, below the cards.
         string preview = WaveSystem.PreviewLine(s.NextWaveKinds);

@@ -8,6 +8,10 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.23.0 — "Tactician"
+- **Draft veto** — once per run, press X to bank a draft (take no card); the next
+  draft then grants a double-pick instead. A reward for passing on a weak offer.
+
 ### v0.22.0 — "Fortified Ground"
 - **Zone upgrades** — buy a "Fortify" improvement for any of the four buildable
   quadrants in the supply shop; every structure in that quadrant gets +15% output
