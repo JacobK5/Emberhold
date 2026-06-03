@@ -5,28 +5,145 @@ using Xunit;
 
 namespace Emberhold.Tests;
 
-/// <summary>Hero progression added in the Champions batch: passives + relic drops.</summary>
+/// <summary>Hero progression: per-kind levels, skill trees, signatures, relic drops.</summary>
 public class HeroTests
 {
-    [Theory]
-    [InlineData(1, false, false, false)]
-    [InlineData(3, true, false, false)]
-    [InlineData(5, true, true, false)]
-    [InlineData(7, true, true, true)]
-    public void Passives_UnlockAtLevels(int level, bool quickHands, bool signature, bool secondWind)
+    [Fact]
+    public void Passives_ComeFromSkillNodes_NotLevels()
     {
-        var h = new Hero { Level = level };
-        Assert.Equal(quickHands, h.QuickHands);
-        Assert.Equal(signature, h.Signature);
-        Assert.Equal(secondWind, h.SecondWind);
+        var h = new Hero();
+        Assert.False(h.QuickHands);
+        Assert.False(h.SecondWind);
+        h.Cur.Nodes.Add(HeroSkills.QuickHands);
+        h.Cur.Nodes.Add(HeroSkills.SecondWind);
+        Assert.True(h.QuickHands);
+        Assert.True(h.SecondWind);
     }
 
     [Fact]
-    public void QuickHands_WidensPickupRadius()
+    public void QuickHands_Node_WidensPickupRadius()
     {
-        var lo = new Hero { Level = 1 };
-        var hi = new Hero { Level = 3 };
-        Assert.True(hi.PickupRadius > lo.PickupRadius);
+        var h = new Hero();
+        float before = h.PickupRadius;
+        h.Cur.Nodes.Add(HeroSkills.QuickHands);
+        Assert.True(h.PickupRadius > before);
+    }
+
+    [Fact]
+    public void Progression_IsIndependentPerKind()
+    {
+        var h = new Hero();                 // active = Ranger
+        h.Level = 5;
+        h.Cur.Nodes.Add(HeroSkills.RRicochet);
+        Assert.Equal(5, h.Progress[HeroKind.Ranger].Level);
+        Assert.Equal(1, h.Progress[HeroKind.Warden].Level);   // untouched
+
+        h.Kind = HeroKind.Warden;
+        Assert.Equal(1, h.Level);            // delegate now reads Warden
+        Assert.False(h.Has(HeroSkills.RRicochet));
+    }
+
+    [Fact]
+    public void LevelUp_GrantsSkillPoint()
+    {
+        var s = new GameState(seedDebug: false);
+        int before = s.Hero.Cur.SkillPoints;
+        CombatSystem.GrantHeroXp(s, s.Hero.NextXp + 100); // force at least one level
+        Assert.True(s.Hero.Level > 1);
+        Assert.True(s.Hero.Cur.SkillPoints > before);
+    }
+
+    [Fact]
+    public void Unlock_RespectsPoints_AndPrerequisites()
+    {
+        var h = new Hero();
+        var pierce = HeroSkills.Find(HeroKind.Ranger, HeroSkills.RPierce)!;
+        var ricochet = HeroSkills.Find(HeroKind.Ranger, HeroSkills.RRicochet)!;
+
+        Assert.False(h.CanUnlock(ricochet));     // no points yet
+        h.Cur.SkillPoints = 2;
+        Assert.False(h.CanUnlock(pierce));        // prerequisite (ricochet) not owned
+        Assert.True(h.Unlock(ricochet));
+        Assert.Equal(1, h.Cur.SkillPoints);       // spent one
+        Assert.True(h.CanUnlock(pierce));         // prereq now satisfied
+        Assert.True(h.Unlock(pierce));
+        Assert.True(h.Has(HeroSkills.RPierce));
+    }
+
+    [Fact]
+    public void Vitality_Node_GrantsMaxHealthOnUnlock()
+    {
+        var h = new Hero { Level = 1 };
+        h.Cur.SkillPoints = 1;
+        float before = h.MaxHealth;
+        h.Unlock(HeroSkills.Find(HeroKind.Ranger, HeroSkills.Vitality)!);
+        Assert.True(h.MaxHealth > before);
+    }
+
+    [Fact]
+    public void Toughness_Node_ReducesDamageTaken()
+    {
+        var h = new Hero();
+        Assert.Equal(1f, h.DamageTakenMult, 3);
+        h.Cur.Nodes.Add(HeroSkills.Toughness);
+        Assert.True(h.DamageTakenMult < 1f);
+    }
+
+    [Fact]
+    public void Signature_Dispatches_PerHero()
+    {
+        // Artificer signature is Overcharge: it sets the fort-wide frenzy timer.
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Artificer;
+        s.Hero.AbilityCooldown = 0f;
+        CombatSystem.Signature(s);
+        Assert.True(s.OverchargeTimer > 0f);
+
+        // Warden signature is Ground Slam: it damages a nearby enemy.
+        var s2 = new GameState(seedDebug: false);
+        s2.Hero.Kind = HeroKind.Warden;
+        s2.Hero.Pos = Vector2.Zero;
+        s2.Hero.AbilityCooldown = 0f;
+        var e = new Enemy { Id = s2.NextId(), Health = 200, MaxHealth = 200, Radius = 11, Pos = new Vector2(20, 0) };
+        s2.Enemies.Add(e);
+        CombatSystem.Signature(s2);
+        Assert.True(e.Health < 200f);
+    }
+
+    [Fact]
+    public void ApplyToAll_ChangesEveryKind()
+    {
+        // Run-wide gear/upgrades apply to all kinds, so swapping keeps the bonus.
+        var h = new Hero();
+        h.ApplyToAll(p => p.Damage += 7f);
+        Assert.Equal(21f, h.Progress[HeroKind.Ranger].Damage, 2);
+        Assert.Equal(21f, h.Progress[HeroKind.Warden].Damage, 2);
+        Assert.Equal(21f, h.Progress[HeroKind.Artificer].Damage, 2);
+    }
+
+    [Fact]
+    public void Save_RoundTrips_PerKindProgressAndNodes()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Warden;          // resume as the Warden
+        s.Hero.Level = 7;                        // Warden's level
+        s.Hero.Cur.SkillPoints = 2;
+        s.Hero.Cur.Nodes.Add(HeroSkills.WCleave);
+        s.Hero.Progress[HeroKind.Ranger].Level = 4;
+        s.Hero.Progress[HeroKind.Ranger].Nodes.Add(HeroSkills.RRicochet);
+
+        var restored = RunStore.FromJson(RunStore.ToJson(RunStore.Capture(s)));
+        Assert.NotNull(restored);
+        var t = new GameState(seedDebug: false);
+        RunStore.Apply(t, restored!);
+
+        Assert.Equal(HeroKind.Warden, t.Hero.Kind);
+        Assert.Equal(7, t.Hero.Level);
+        Assert.Equal(2, t.Hero.Cur.SkillPoints);
+        Assert.True(t.Hero.Has(HeroSkills.WCleave));
+        // Inactive kind's independent progression survives too.
+        Assert.Equal(4, t.Hero.Progress[HeroKind.Ranger].Level);
+        Assert.Contains(HeroSkills.RRicochet, t.Hero.Progress[HeroKind.Ranger].Nodes);
     }
 
     [Fact]

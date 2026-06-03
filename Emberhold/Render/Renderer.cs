@@ -73,11 +73,12 @@ public static class Renderer
         int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
         int y = h - 64;
         int x0 = w / 2 - 218;
-        DrawAbilityPill(x0, y, "VOLLEY", "SPACE", hero.AbilityCooldown, hero.VolleyCooldown);
+        DrawAbilityPill(x0, y, HeroSkills.SignatureName(hero.Kind), "SPACE", hero.AbilityCooldown, hero.VolleyCooldown);
         DrawAbilityPill(x0 + 150, y, "DASH", "SHIFT", hero.DashCooldown, 2.4f);
         string rallyKey = s.Gold >= s.RallyCost ? $"F  {s.RallyCost}g" : $"need {s.RallyCost}g";
         DrawAbilityPill(x0 + 300, y, "RALLY", rallyKey, s.RallyCooldown, GameState.RallyMaxCooldown);
-        DrawCentered($"{hero.Profile.Name}   (H) switch hero", 16, y - 24, Palette.Hex("efd18a"));
+        string skillHint = hero.Cur.SkillPoints > 0 ? $"   (K) {hero.Cur.SkillPoints} skill pt" : "   (K) skills";
+        DrawCentered($"{hero.Profile.Name}   (H) switch{skillHint}", 16, y - 24, Palette.Hex("efd18a"));
         if (hero.Overdrive > 0f)
             DrawCentered($"OVERDRIVE {hero.Overdrive:0.0}s", 18, y - 46, Palette.Fire);
     }
@@ -205,12 +206,10 @@ public static class Renderer
             ($"   {s.Modifier.Desc}", Palette.PathEdge),
         };
 
-        var passives = new List<string>();
-        if (hero.QuickHands) passives.Add("Quick Hands");
-        if (hero.Signature) passives.Add(hero.Kind == HeroKind.Warden ? "Cleave" : hero.Kind == HeroKind.Artificer ? "Overclock" : "Ricochet");
-        if (hero.SecondWind) passives.Add("Second Wind");
-        lines.Add(($"HERO:  {hero.Profile.Name}   -   Lv {hero.Level}", Palette.Hero));
-        lines.Add(($"   Passives: {(passives.Count > 0 ? string.Join(", ", passives) : "none yet")}", Palette.Hex("9fd0ff")));
+        var skills = HeroSkills.Tree(hero.Kind).Where(n => hero.Has(n.Id)).Select(n => n.Name).ToList();
+        string pts = hero.Cur.SkillPoints > 0 ? $"   -   {hero.Cur.SkillPoints} skill pts (K)" : "";
+        lines.Add(($"HERO:  {hero.Profile.Name}   -   Lv {hero.Level}{pts}", Palette.Hero));
+        lines.Add(($"   Skills: {(skills.Count > 0 ? string.Join(", ", skills) : "none yet")}", Palette.Hex("9fd0ff")));
         if (hero.Relics.Count > 0)
             lines.Add(($"   Relics: {string.Join(", ", hero.Relics.Select(RelicName))}", Palette.Hex("d9b6ff")));
         if (s.HordeTier > 0)
@@ -785,13 +784,14 @@ public static class Renderer
         int sw = Raylib.GetScreenWidth();
         int x = sw - 220, y = 58;
 
-        var passives = new List<string>();
-        if (hero.QuickHands) passives.Add("QH");
-        if (hero.Signature) passives.Add(hero.Kind == HeroKind.Warden ? "CLV" : "RIC");
-        if (hero.SecondWind) passives.Add("SW");
-        if (passives.Count > 0)
+        int unlocked = hero.Cur.Nodes.Count;
+        string skillLine = unlocked > 0 ? $"SKILLS {unlocked}" : "";
+        if (hero.Cur.SkillPoints > 0)
+            skillLine += (skillLine.Length > 0 ? "  " : "") + $"+{hero.Cur.SkillPoints}pt (K)";
+        if (skillLine.Length > 0)
         {
-            Raylib.DrawText("PASSIVES " + string.Join(" ", passives), x, y, 12, Palette.Hex("9fd0ff"));
+            Raylib.DrawText(skillLine, x, y, 12,
+                hero.Cur.SkillPoints > 0 ? Palette.Gold : Palette.Hex("9fd0ff"));
             y += 16;
         }
 

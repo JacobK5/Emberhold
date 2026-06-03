@@ -30,12 +30,13 @@ public static class CombatSystem
         var aim = AimAhead(hero.Pos, target, HeroProjSpeed);
         var color = s.StreakTier > 0 ? Palette.Hex("ff9a4d")
                   : hero.Kind == HeroKind.Warden ? Palette.Hex("b9d9bd") : Palette.Hex("f7df9a");
-        // Signature passive (lv5): Ranger shots ricochet to a second target; Warden shots cleave.
-        int heroChains = hero.Signature && hero.Kind == HeroKind.Ranger ? 1 : 0;
-        float heroSplash = hero.Signature && hero.Kind == HeroKind.Warden ? 34f : 0f;
+        // Skill nodes: Ranger Ricochet chains a shot; Warden Cleave splashes; Ranger Piercing pierces.
+        int heroChains = hero.Has(HeroSkills.RRicochet) ? 1 : 0;
+        float heroSplash = hero.Has(HeroSkills.WCleave) ? 34f : 0f;
+        bool heroPierce = heroChains == 0 && hero.Has(HeroSkills.RPierce);
         FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult,
             speed: HeroProjSpeed, color: color, source: ProjectileSource.Hero,
-            splash: heroSplash, chains: heroChains, chainRange: heroChains > 0 ? 150f : 0f);
+            splash: heroSplash, chains: heroChains, chainRange: heroChains > 0 ? 150f : 0f, pierce: heroPierce);
 
         hero.Facing = MathUtils.Normalize(target.Pos - hero.Pos);
         hero.ShotTimer = (hero.FireRate / Balance.HeroFireSpeedMult) * profile.Rate * (hero.Overdrive > 0f ? 0.58f : 1f);
@@ -57,6 +58,7 @@ public static class CombatSystem
                 if (s.Glacier && p.Source == ProjectileSource.Cannon && e.SlowTimer > 0f) dmg *= 1.4f; // Glacier
                 DamageEnemy(s, e, dmg, p.Splash);
                 ApplyStatus(s, e, p);
+                if (p.Source == ProjectileSource.Hero) OnHeroHit(s, e, dmg);
 
                 if (p.ChainsLeft > 0)
                 {
@@ -168,13 +170,14 @@ public static class CombatSystem
         var relic = pool[(int)(s.Rand() * pool.Count) % pool.Count];
         hero.Relics.Add(relic);
 
+        // Relics are run-wide gear: apply to every hero kind so swapping keeps them.
         string name;
         switch (relic)
         {
-            case RelicKind.EmberRing:   hero.Damage *= 1.12f; name = "EMBER RING  +12% dmg"; break;
-            case RelicKind.SwiftBoots:  hero.Speed *= 1.14f; name = "SWIFT BOOTS  +14% speed"; break;
-            case RelicKind.WardenCloak: hero.MaxHealth += 30f; hero.Health += 30f; name = "WARDEN'S CLOAK  +30 HP"; break;
-            default:                    hero.Range += 36f; name = "HAWK EYE  +36 range"; break;
+            case RelicKind.EmberRing:   hero.ApplyToAll(p => p.Damage *= 1.12f); name = "EMBER RING  +12% dmg"; break;
+            case RelicKind.SwiftBoots:  hero.ApplyToAll(p => p.Speed *= 1.14f); name = "SWIFT BOOTS  +14% speed"; break;
+            case RelicKind.WardenCloak: hero.ApplyToAll(p => { p.MaxHealth += 30f; p.Health += 30f; }); name = "WARDEN'S CLOAK  +30 HP"; break;
+            default:                    hero.ApplyToAll(p => p.Range += 36f); name = "HAWK EYE  +36 range"; break;
         }
         s.AddParticles(at, Palette.Hex("c9a3ff"), 18, 80f);
         s.AddFloater(at + new Vector2(0, -10), name, Palette.Hex("d9b6ff"));
@@ -263,15 +266,35 @@ public static class CombatSystem
             hero.MaxHealth += 6f;
             hero.Health = MathF.Min(hero.MaxHealth, hero.Health + 12f);
             hero.FireRate = MathF.Max(0.22f, hero.FireRate - 0.012f);
+            hero.Cur.SkillPoints += 1; // each level grants a point to spend in the hero's tree
             s.AddParticles(hero.Pos, Palette.Hex("ffd36c"), 18, 75f);
+            s.AddFloater(hero.Pos + new Vector2(0, -34), "+1 SKILL POINT  (K)", Palette.Hex("b9e0ff"));
+            s.AddParticles(hero.Pos, Palette.Hex("bfe0ff"), 12, 66f);
+        }
+    }
 
-            // Announce a passive ability unlocked at this level.
-            string passive = Hero.PassiveName(hero.Level, hero.Kind);
-            if (passive.Length > 0)
-            {
-                s.AddFloater(hero.Pos + new Vector2(0, -34), $"{passive} UNLOCKED", Palette.Hex("b9e0ff"));
-                s.AddParticles(hero.Pos, Palette.Hex("bfe0ff"), 16, 70f);
-            }
+    /// <summary>Side-effects when a hero attack lands: Bloodthirst lifesteal + Rend slow.</summary>
+    private static void OnHeroHit(GameState s, Enemy e, float dmg)
+    {
+        var hero = s.Hero;
+        if (hero.Has(HeroSkills.WLifesteal) && hero.Health > 0f)
+            hero.Health = MathF.Min(hero.MaxHealth, hero.Health + dmg * 0.06f);
+        if (hero.Has(HeroSkills.WRend) && !e.StatusImmune && !e.Dead)
+        {
+            float factor = e.Boss ? 0.7f : 0.5f;
+            e.SlowFactor = e.SlowTimer <= 0f ? factor : MathF.Min(e.SlowFactor, factor);
+            e.SlowTimer = MathF.Max(e.SlowTimer, 1f);
+        }
+    }
+
+    /// <summary>Fire the active hero's signature ability (Space). Per-kind dispatch.</summary>
+    public static void Signature(GameState s)
+    {
+        switch (s.Hero.Kind)
+        {
+            case HeroKind.Warden: GroundSlam(s); break;
+            case HeroKind.Artificer: Overcharge(s); break;
+            default: ShootVolley(s); break;
         }
     }
 
@@ -282,8 +305,11 @@ public static class CombatSystem
         if (hero.AbilityCooldown > 0f || s.Over) return;
         hero.AbilityCooldown = hero.VolleyCooldown;
 
+        // Wide Volley node widens the fan to 9 arrows; Arrow Storm makes them splash.
+        int spread = hero.Has(HeroSkills.RWide) ? 4 : 3;
+        float storm = hero.Has(HeroSkills.RStorm) ? 40f : 0f;
         float baseAngle = MathF.Atan2(hero.Facing.Y, hero.Facing.X);
-        for (int i = -3; i <= 3; i++)
+        for (int i = -spread; i <= spread; i++)
         {
             float a = baseAngle + i * 0.16f;
             var dir = new Vector2(MathF.Cos(a), MathF.Sin(a));
@@ -291,10 +317,54 @@ public static class CombatSystem
                 damage: hero.Damage * hero.VolleyDamage * profile.Damage * s.StreakDamageMult * s.Modifier.HeroDamageMult,
                 speed: 470f, color: Palette.Hex("ffd46f"), source: ProjectileSource.Hero,
                 life: 1.45f, radius: 4f,
-                splash: s.VolleySplash ? 46f : 0f); // Ember Battery keystone
+                splash: MathF.Max(storm, s.VolleySplash ? 46f : 0f)); // Arrow Storm / Ember Battery keystone
         }
         s.AddParticles(hero.Pos, Palette.Hex("ffd46f"), 16, 62f);
         s.KickShake(4f);
+    }
+
+    /// <summary>Warden signature: a radial shockwave that damages, knocks back and slows.</summary>
+    public static void GroundSlam(GameState s)
+    {
+        var hero = s.Hero;
+        if (hero.AbilityCooldown > 0f || s.Over) return;
+        hero.AbilityCooldown = hero.VolleyCooldown;
+
+        const float radius = 120f;
+        float dmg = hero.Damage * 2.0f * hero.Profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult;
+        foreach (var e in s.Enemies)
+        {
+            if (e.Dead) continue;
+            float d = Vector2.Distance(e.Pos, hero.Pos);
+            if (d > radius + e.Radius) continue;
+            DamageEnemy(s, e, dmg);
+            OnHeroHit(s, e, dmg);
+            if (!e.StatusImmune && !e.Boss)
+            {
+                // Knock the enemy outward from the slam, and slow it briefly.
+                var push = MathUtils.Normalize(e.Pos - hero.Pos) * 34f;
+                e.Pos += push;
+                e.SlowFactor = e.SlowTimer <= 0f ? 0.45f : MathF.Min(e.SlowFactor, 0.45f);
+                e.SlowTimer = MathF.Max(e.SlowTimer, 1.6f);
+            }
+        }
+        s.AddParticles(hero.Pos, Palette.Hex("c8a37a"), 26, 150f);
+        s.AddFloater(hero.Pos + new Vector2(0, -24), "SLAM", Palette.Hex("e7c79a"));
+        s.KickShake(8f);
+    }
+
+    /// <summary>Artificer signature: a fort-wide tower frenzy for several seconds.</summary>
+    public static void Overcharge(GameState s)
+    {
+        var hero = s.Hero;
+        if (hero.AbilityCooldown > 0f || s.Over) return;
+        hero.AbilityCooldown = hero.VolleyCooldown;
+        s.OverchargeTimer = hero.Has(HeroSkills.ASurge) ? 8f : 5f;
+        s.AddParticles(hero.Pos, Palette.Hex("6fd0e0"), 24, 120f);
+        s.AddFloater(hero.Pos + new Vector2(0, -24), "OVERCHARGE", Palette.Hex("9fe6f2"));
+        s.BannerText = "TOWERS OVERCHARGED";
+        s.BannerTimer = 1.6f;
+        s.KickShake(5f);
     }
 
     public static void Dash(GameState s)
@@ -314,7 +384,9 @@ public static class CombatSystem
         {
             if (e.Dead) continue;
             if (Vector2.Distance(e.Pos, hero.Pos) > e.Radius + 34f) continue;
-            DamageEnemy(s, e, dmg * (e.SlowTimer > 0f ? 1.3f : 1f));
+            float strike = dmg * (e.SlowTimer > 0f ? 1.3f : 1f);
+            DamageEnemy(s, e, strike);
+            OnHeroHit(s, e, strike);
             hitAny = true;
         }
         if (hitAny)

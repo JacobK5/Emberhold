@@ -125,6 +125,106 @@ public static class OverlayUI
         }
     }
 
+    // ---- Skill tree UI ----------------------------------------------------
+
+    private const int SkillNodeW = 168, SkillNodeH = 58, SkillColGap = 26, SkillRowGap = 24;
+
+    /// <summary>Node rects for the active hero's tree, paired with their definitions.</summary>
+    public static (SkillNode Node, Rectangle Rect)[] SkillNodeRects(GameState s)
+    {
+        var tree = HeroSkills.Tree(s.Hero.Kind);
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        int gridW = 3 * SkillNodeW + 2 * SkillColGap;
+        int x0 = w / 2 - gridW / 2;
+        int y0 = h / 2 - 120;
+        var arr = new (SkillNode, Rectangle)[tree.Count];
+        for (int i = 0; i < tree.Count; i++)
+        {
+            var n = tree[i];
+            arr[i] = (n, new Rectangle(
+                x0 + n.Col * (SkillNodeW + SkillColGap),
+                y0 + n.Row * (SkillNodeH + SkillRowGap),
+                SkillNodeW, SkillNodeH));
+        }
+        return arr;
+    }
+
+    public static void DrawSkillTree(GameState s)
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        var hero = s.Hero;
+        Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 220));
+
+        var rects = SkillNodeRects(s);
+        var lookup = rects.ToDictionary(e => e.Node.Id, e => e.Rect);
+
+        // Header.
+        DrawCentered($"{hero.Profile.Name}   -   Lv {hero.Level}   SKILL TREE", 30, h / 2 - 244, Palette.Hex("efd18a"));
+        string ptStr = hero.Cur.SkillPoints > 0 ? $"{hero.Cur.SkillPoints} skill point{(hero.Cur.SkillPoints > 1 ? "s" : "")} to spend"
+                                                 : "no skill points - level up to earn more";
+        DrawCentered(ptStr, 20, h / 2 - 210, hero.Cur.SkillPoints > 0 ? Palette.Gold : Palette.Hex("9aa6a0"));
+        DrawCentered("click a node to unlock   /   (H) switch hero   /   (K / ESC) close", 15, h / 2 - 184, Palette.PathEdge);
+
+        // Column headers, anchored just above the grid.
+        for (int col = 0; col < 3; col++)
+        {
+            var anchor = rects.FirstOrDefault(e => e.Node.Col == col);
+            if (anchor.Rect.Width == 0) continue;
+            Raylib.DrawText(HeroSkills.Column(hero.Kind, col), (int)anchor.Rect.X, (int)anchor.Rect.Y - 22, 14,
+                col == 0 ? Palette.Hex("9fd0ff") : Palette.Hex("d6b46c"));
+        }
+
+        var mouse = Raylib.GetMousePosition();
+        foreach (var (node, r) in rects)
+        {
+            // Prerequisite link line (vertical, from the node above in the column).
+            if (node.Requires is not null && lookup.TryGetValue(node.Requires, out var pr))
+            {
+                var col = hero.Has(node.Requires) ? Palette.Gold : Palette.Hex("3c4642");
+                Raylib.DrawLineEx(new Vector2(pr.X + pr.Width / 2f, pr.Y + pr.Height),
+                                  new Vector2(r.X + r.Width / 2f, r.Y), 2f, col);
+            }
+
+            bool owned = hero.Has(node.Id);
+            bool can = hero.CanUnlock(node);
+            bool hovered = Raylib.CheckCollisionPointRec(mouse, r);
+
+            Color bg = owned ? new Color(52, 44, 20, 240)
+                     : can ? (hovered ? new Color(40, 54, 46, 245) : new Color(30, 40, 36, 235))
+                     : new Color(20, 26, 24, 220);
+            Color border = owned ? Palette.Gold
+                         : can ? (hovered ? Palette.Hero : Palette.Hex("7fae6f"))
+                         : Palette.Hex("3c4642");
+            Color nameCol = owned ? Palette.Hex("efd18a") : can ? Palette.Hero : Palette.Hex("6a7269");
+
+            Raylib.DrawRectangleRec(r, bg);
+            Raylib.DrawRectangleLinesEx(r, owned || (can && hovered) ? 2.5f : 1.5f, border);
+            Raylib.DrawText(node.Name, (int)r.X + 10, (int)r.Y + 8, 17, nameCol);
+            DrawWrapped(node.Desc, (int)r.X + 10, (int)r.Y + 30, SkillNodeW - 18, 12, Palette.PathEdge);
+            if (owned) Raylib.DrawText("OWNED", (int)(r.X + r.Width - 52), (int)r.Y + 8, 11, Palette.Hex("c9b074"));
+        }
+    }
+
+    /// <summary>Draw text wrapped to a pixel width (greedy word-wrap), two lines max.</summary>
+    private static void DrawWrapped(string text, int x, int y, int maxW, int fontSize, Color color)
+    {
+        var words = text.Split(' ');
+        string line = "";
+        int ly = y, lines = 0;
+        foreach (var word in words)
+        {
+            string trial = line.Length == 0 ? word : line + " " + word;
+            if (Raylib.MeasureText(trial, fontSize) > maxW && line.Length > 0)
+            {
+                Raylib.DrawText(line, x, ly, fontSize, color);
+                ly += fontSize + 2; line = word;
+                if (++lines >= 1) { /* allow one more line */ }
+            }
+            else line = trial;
+        }
+        if (line.Length > 0) Raylib.DrawText(line, x, ly, fontSize, color);
+    }
+
     public static void DrawPlacementWorld(GameState s, DraftController draft)
     {
         // Highlight legal zones / lanes for the current card.
@@ -341,7 +441,8 @@ public static class OverlayUI
         DrawCentered("SAVED RUN FOUND", 30, py + 22, Palette.Hex("efd18a"));
         string mod = save.ModifierId != "none" ? $"   -   Trial: {save.ModifierId}" : "";
         DrawCentered($"Wave {save.Wave}   -   Fort {save.Chapter}   -   {save.Gold}g{mod}", 18, py + 66, Palette.Hero);
-        DrawCentered($"Hero Lv {save.Hero.Level}   -   {save.Structures.Count} structures standing", 16, py + 92, Palette.PathEdge);
+        int heroLv = save.Hero.Progress.FirstOrDefault(p => p.Kind == save.Hero.Kind)?.Level ?? 1;
+        DrawCentered($"Hero Lv {heroLv}   -   {save.Structures.Count} structures standing", 16, py + 92, Palette.PathEdge);
 
         DrawCentered("[ENTER]  resume", 22, py + 130, Palette.Gold);
         DrawCentered("[N]  start a new run", 18, py + 160, Palette.Hex("a89878"));

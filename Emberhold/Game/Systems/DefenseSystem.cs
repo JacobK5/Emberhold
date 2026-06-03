@@ -52,11 +52,14 @@ public static class DefenseSystem
         // Artificer hero repairs nearby damaged structures while she's active.
         if (s.Hero.Kind == Emberhold.Data.HeroKind.Artificer)
         {
+            // Field Repair node doubles the rate; Broadcast node widens the radius.
+            float rate = s.Hero.Has(Emberhold.Data.HeroSkills.ARepair) ? 36f : 18f;
+            float reach = s.Hero.Has(Emberhold.Data.HeroSkills.AWideAura) ? 210f : 150f;
             foreach (var st in s.Structures)
             {
                 if (st.Role == StructureRole.HeroBuff || st.MaxHealth <= 0f || st.Health >= st.MaxHealth) continue;
-                if (Vector2.Distance(st.Pos, s.Hero.Pos) > 150f) continue;
-                st.Health = MathF.Min(st.MaxHealth, st.Health + 18f * dt);
+                if (Vector2.Distance(st.Pos, s.Hero.Pos) > reach) continue;
+                st.Health = MathF.Min(st.MaxHealth, st.Health + rate * dt);
             }
         }
 

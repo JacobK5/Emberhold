@@ -8,6 +8,24 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.17.0 — "Ascension"
+- **Per-hero progression** — each hero (Ranger / Warden / Artificer) now levels
+  independently with its own XP, skill points and skill tree. Switching (H) is still
+  free, but your alts are under-invested — so you naturally specialise into a main
+  while keeping tactical swaps as a real tradeoff. A short switch cooldown stops
+  panic-juggling.
+- **Skill trees** — spend a point each level in a tree of a shared "Foundations"
+  spine (Vitality / Quick Hands / Toughness / Second Wind, identical for all heroes)
+  plus two unique branches per hero. Opened with **K** (freezes the sim); click nodes
+  to unlock. Old level-gated passives are now tree nodes.
+- **Unique signature abilities** — Space now fires a hero-specific signature instead
+  of one shared volley: Ranger **Volley** (Wide/Arrow Storm nodes), Warden **Ground
+  Slam** (radial knockback + slow), Artificer **Overcharge** (fort-wide tower frenzy).
+- **Hero branch identities** — Ranger Precision/Barrage (ricochet, pierce, wide
+  volley, splash), Warden Cleave/Juggernaut (cleave, rend-slow, armor, lifesteal),
+  Artificer Overclock/Construct (stronger+wider aura, faster repair, longer surge).
+- Relics and gold-shop upgrades are now run-wide (apply to every hero kind).
+
 ### v0.16.2 — "Frontier Comforts" (QoL patch #2)
 - **Wealth-scaled threat** — enemy HP (and, at half rate, damage) now ramps with a run's
   total accumulated gold (held + spent), 1.0x→2.0x, so a snowballing economy stays dangerous.

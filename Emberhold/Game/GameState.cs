@@ -82,6 +82,9 @@ public sealed class GameState
     // Supply caches: a high-value cache periodically drops out on a lane mid-fight.
     public float CacheTimer = 14f;
 
+    // Overcharge: Artificer signature — a fort-wide tower frenzy while the timer runs.
+    public float OverchargeTimer;
+
     // Rally Horn: a gold-for-time clutch ability that slows the whole wave.
     public float RallyCooldown;
     public const float RallyMaxCooldown = 12f;
