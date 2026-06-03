@@ -229,4 +229,59 @@ public class HeroTests
         CombatSystem.DamageEnemy(s, e, 50f);
         Assert.DoesNotContain(s.Drops, d => d.Kind == DropKind.Relic);
     }
+
+    // ---- Bulwark (tank) -------------------------------------------------
+
+    [Fact]
+    public void Bulwark_HasHigherBaseHealth()
+    {
+        var h = new Hero();
+        Assert.True(h.Progress[HeroKind.Bulwark].MaxHealth > h.Progress[HeroKind.Ranger].MaxHealth);
+    }
+
+    [Fact]
+    public void BulwarkStance_ReducesDamageTaken()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Bulwark;
+        s.Hero.AbilityCooldown = 0f;
+        float before = s.Hero.DamageTakenMult;
+        CombatSystem.Signature(s);
+        Assert.True(s.Hero.StanceTimer > 0f);
+        Assert.True(s.Hero.DamageTakenMult < before);
+    }
+
+    [Fact]
+    public void Bulwark_TauntsNearbyEnemyTowardItself()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Bulwark;
+        s.Hero.Pos = new Vector2(0, 220);   // on the south lane (x=0), clear of walls
+        var e = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, Radius = 11, Speed = 40, Pos = new Vector2(0, 290) };
+        s.Enemies.Add(e);
+        float before = Vector2.Distance(e.Pos, s.Hero.Pos);
+        EnemySystem.Update(s, 0.2f);
+        Assert.True(Vector2.Distance(e.Pos, s.Hero.Pos) < before);
+    }
+
+    [Fact]
+    public void BulwarkThorns_ReflectDamageToAttacker()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Bulwark;
+        s.Hero.Pos = new Vector2(0, 220);
+        s.Hero.Cur.Nodes.Add(HeroSkills.BThorns);
+        var e = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, Radius = 11, Speed = 40, Damage = 10, AttackTimer = 0f, Pos = new Vector2(0, 222) };
+        s.Enemies.Add(e);
+        EnemySystem.Update(s, 0.1f);
+        Assert.True(e.Health < 100f);
+    }
+
+    [Fact]
+    public void NonBulwark_DoesNotTaunt()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Ranger;          // no taunt radius
+        Assert.Equal(0f, s.Hero.TauntRadius);
+    }
 }

@@ -45,6 +45,12 @@ public static class HeroSkills
     public const string ARepair    = "a_repair_fast";
     public const string ASurge     = "a_overcharge_long";
 
+    // ---- Bulwark node ids -----------------------------------------------
+    public const string BProvoke = "b_provoke";
+    public const string BThorns  = "b_thorns";
+    public const string BAegis   = "b_aegis";
+    public const string BAnchor  = "b_anchor";
+
     private static readonly SkillNode[] Foundations =
     {
         new(Vitality,   "Vitality",     "+30 max HP",                0, 0, null),
@@ -77,6 +83,14 @@ public static class HeroSkills
         new(ASurge,     "Power Surge","Overcharge lasts 8s (was 5s)",  2, 1, ARepair),
     };
 
+    private static readonly SkillNode[] BulwarkTree =
+    {
+        new(BProvoke, "Provoke",  "Wider taunt - blocks more enemies", 1, 0, null),
+        new(BThorns,  "Thorns",   "Attackers take reflected damage",   1, 1, BProvoke),
+        new(BAegis,   "Aegis",    "Take 18% less damage",              2, 0, null),
+        new(BAnchor,  "Anchor",   "Stance lasts 7s & slows attackers", 2, 1, BAegis),
+    };
+
     /// <summary>Every node a given hero can unlock: shared Foundations + its two branches.</summary>
     public static IReadOnlyList<SkillNode> Tree(HeroKind kind)
     {
@@ -84,6 +98,7 @@ public static class HeroSkills
         {
             HeroKind.Warden => WardenTree,
             HeroKind.Artificer => ArtificerTree,
+            HeroKind.Bulwark => BulwarkTree,
             _ => RangerTree,
         };
         return Foundations.Concat(unique).ToList();
@@ -97,6 +112,7 @@ public static class HeroSkills
     {
         HeroKind.Warden => "GROUND SLAM",
         HeroKind.Artificer => "OVERCHARGE",
+        HeroKind.Bulwark => "STANCE",
         _ => "VOLLEY",
     };
 
@@ -108,6 +124,7 @@ public static class HeroSkills
         {
             HeroKind.Warden => col == 1 ? "CLEAVE" : "JUGGERNAUT",
             HeroKind.Artificer => col == 1 ? "OVERCLOCK" : "CONSTRUCT",
+            HeroKind.Bulwark => col == 1 ? "WALL" : "GUARDIAN",
             _ => col == 1 ? "PRECISION" : "BARRAGE",
         };
     }

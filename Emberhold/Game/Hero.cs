@@ -58,6 +58,7 @@ public sealed class Hero
     public float DashCooldown;
     public float Overdrive;
     public float SwitchCooldown;  // gate on H so heroes can't be juggled every frame
+    public float StanceTimer;     // Bulwark signature: heavy damage reduction + taunt while > 0
 
     public HeroKind Kind = HeroKind.Ranger;
     public HeroProfile Profile => HeroProfile.Get(Kind);
@@ -74,7 +75,10 @@ public sealed class Hero
     public Hero()
     {
         foreach (HeroKind k in Enum.GetValues<HeroKind>())
-            Progress[k] = new HeroProgress();
+        {
+            float hp = HeroProfile.Get(k).BaseHealth;
+            Progress[k] = new HeroProgress { Health = hp, MaxHealth = hp };
+        }
     }
 
     /// <summary>Apply a stat change to every kind's progress (run-wide gear/upgrades).</summary>
@@ -133,7 +137,23 @@ public sealed class Hero
     public bool SecondWind => Has(HeroSkills.SecondWind);
     public float PickupRadius => BasePickupRadius + (QuickHands ? 14f : 0f);
 
-    /// <summary>Incoming-damage multiplier from defensive skill nodes (lower = tougher).</summary>
+    /// <summary>Incoming-damage multiplier from defensive skill nodes + Bulwark Stance.</summary>
     public float DamageTakenMult
-        => (Has(HeroSkills.Toughness) ? 0.88f : 1f) * (Has(HeroSkills.WArmor) ? 0.82f : 1f);
+        => (Has(HeroSkills.Toughness) ? 0.88f : 1f)
+         * (Has(HeroSkills.WArmor) ? 0.82f : 1f)
+         * (Has(HeroSkills.BAegis) ? 0.82f : 1f)
+         * (StanceTimer > 0f ? 0.3f : 1f);
+
+    /// <summary>Radius within which the Bulwark taunts/blocks enemies (0 = not blocking).</summary>
+    public float TauntRadius
+    {
+        get
+        {
+            if (Kind != HeroKind.Bulwark) return 0f;
+            float r = 74f;
+            if (Has(HeroSkills.BProvoke)) r += 42f;
+            if (StanceTimer > 0f) r += 90f;
+            return r;
+        }
+    }
 }

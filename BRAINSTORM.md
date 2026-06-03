@@ -8,6 +8,19 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.18.0 — "Bulwark"
+- **New hero: Bram, the Bulwark** — a tank. Starts with far more HP (230 vs 100),
+  hits a little softer and moves slower. A genuinely different playstyle built around
+  body-blocking instead of damage.
+- **Lane-blocking / taunt** — the Bulwark's body holds a lane: nearby enemies are
+  taunted off the keep and funnel onto him (the novel bit — enemies used to ignore the
+  hero entirely). Stand in a chokepoint to stem a push.
+- **Bulwark Stance (signature)** — brace for a few seconds: heavy damage reduction and
+  a much wider taunt that drags a whole pack onto your shield.
+- **Tank skill branches** — Wall (Provoke = wider taunt, Thorns = reflect to attackers)
+  and Guardian (Aegis = -18% damage taken, Anchor = longer stance that also slows
+  attackers). Plus the shared Foundations spine.
+
 ### v0.17.0 — "Ascension"
 - **Per-hero progression** — each hero (Ranger / Warden / Artificer) now levels
   independently with its own XP, skill points and skill tree. Switching (H) is still
