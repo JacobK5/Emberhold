@@ -46,6 +46,7 @@ public static class Renderer
         Raylib.EndMode2D();
 
         DrawEdgeIndicators(s);
+        DrawLastStandVignette(s);
         DrawHud(s);
         DrawAbilityBar(s);
         DrawWaveStatus(s);
@@ -69,6 +70,24 @@ public static class Renderer
         if (s.Shop.Open) OverlayUI.DrawShop(s);
         if (showCodex) OverlayUI.DrawCodex(s);
         OverlayUI.DrawStructureTooltip(s);
+    }
+
+    /// <summary>Pulsing red edge vignette while the keep is in its Last Stand (&lt; 30% HP).</summary>
+    private static void DrawLastStandVignette(GameState s)
+    {
+        if (s.Over || s.Phase != Phase.Combat || !LastStand.Active(s)) return;
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        float frac = s.KeepHealth / s.KeepMaxHealth;
+        float intensity = MathUtils.Clamp((LastStand.Threshold - frac) / LastStand.Threshold, 0f, 1f);
+        float pulse = 0.6f + 0.4f * MathF.Sin((float)Raylib.GetTime() * 5f);
+        byte a = (byte)(120 * intensity * pulse);
+        var red = new Color((byte)0xc0, (byte)0x2a, (byte)0x2a, a);
+        var clear = new Color((byte)0xc0, (byte)0x2a, (byte)0x2a, (byte)0);
+        int b = (int)(h * 0.16f), bx = (int)(w * 0.12f);
+        Raylib.DrawRectangleGradientV(0, 0, w, b, red, clear);
+        Raylib.DrawRectangleGradientV(0, h - b, w, b, clear, red);
+        Raylib.DrawRectangleGradientH(0, 0, bx, h, red, clear);
+        Raylib.DrawRectangleGradientH(w - bx, 0, bx, h, clear, red);
     }
 
     private static void DrawAbilityBar(GameState s)

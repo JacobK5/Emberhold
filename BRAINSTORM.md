@@ -8,6 +8,12 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.34.0 — "Last Stand"
+- **Keep Last Stand** — when the keep drops below 30% HP it rallies: every few seconds it
+  emits a defensive nova (area damage + knockback + slow around the keep, bosses resist)
+  and the screen edges pulse a danger-red vignette that deepens as the keep weakens. A
+  dramatic comeback beat that can buy a losing run a few more waves.
+
 ### v0.33.0 — "Champions"
 - **Champion mini-bosses** — from wave 14, one rank-and-file raider per non-boss wave is
   promoted into a named, crowned champion: far tankier, a guaranteed ember + bonus gold

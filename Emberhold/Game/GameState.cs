@@ -119,6 +119,10 @@ public sealed class GameState
     public Vector2 UltFxPos;        // where the last ultimate detonated
     public void GainFury(float amount) => Fury = Math.Clamp(Fury + amount, 0f, 1f);
 
+    // Last Stand: a critically-wounded keep (< 30% HP) pulses a defensive nova.
+    public float KeepPulseTimer;
+    public bool LastStandAnnounced;
+
     // Rally Horn: a gold-for-time clutch ability that slows the whole wave.
     public float RallyCooldown;
     public const float RallyMaxCooldown = 12f;
