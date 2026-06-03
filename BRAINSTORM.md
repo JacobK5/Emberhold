@@ -8,6 +8,11 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.25.0 — "Relics of Power"
+- **Legendary cards** — a draft slot is occasionally (10%) replaced by a Legendary: a
+  souped-up version of a base structure (Dragon's Maw, Tempest Coil, Aegis Wall, King's
+  Mint) at a much higher build cost, with gold styling and a pulsing halo on the map.
+
 ### v0.24.0 — "The General"
 - **Raider General** — a commander marches in behind the swarm on deep non-boss
   fifth waves (25, 35, …). Kill it and the whole wave is **routed** — every other

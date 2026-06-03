@@ -354,6 +354,13 @@ public static class Renderer
     {
         foreach (var st in s.Structures)
         {
+            // Legendary builds wear a slow-pulsing gold halo.
+            if (st.Legendary)
+            {
+                float t = (float)Raylib.GetTime();
+                Raylib.DrawCircleLinesV(st.Pos, st.Radius + 6f + MathF.Sin(t * 3f) * 1.5f,
+                    new Color((byte)0xff, (byte)0xd6, (byte)0x6b, (byte)150));
+            }
             switch (st.Role)
             {
                 case StructureRole.Tower: DrawTower(st); break;
