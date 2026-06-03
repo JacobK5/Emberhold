@@ -65,15 +65,16 @@ public static class OverlayUI
 
     private static void DrawCard(Rectangle r, CardDef def, int hotkey, bool hovered, ISet<StructureKind> owned, bool enabled = true)
     {
-        Color accent = CategoryColor(def.Category);
-        Raylib.DrawRectangleRec(r, new Color(28, 36, 34, 240));
-        Raylib.DrawRectangleLinesEx(r, hovered ? 3f : 2f, hovered ? Palette.Gold : accent);
+        Color accent = def.Legendary ? Palette.Gold : CategoryColor(def.Category);
+        Raylib.DrawRectangleRec(r, def.Legendary ? new Color(40, 36, 22, 244) : new Color(28, 36, 34, 240));
+        Raylib.DrawRectangleLinesEx(r, def.Legendary || hovered ? 3f : 2f, hovered ? Palette.Gold : accent);
 
         Raylib.DrawRectangleRec(new Rectangle(r.X, r.Y, r.Width, 34), accent);
-        Raylib.DrawText(def.Category.ToString().ToUpper(), (int)r.X + 12, (int)r.Y + 9, 18, new Color(20, 26, 24, 255));
+        Raylib.DrawText(def.Legendary ? "LEGENDARY" : def.Category.ToString().ToUpper(),
+            (int)r.X + 12, (int)r.Y + 9, 18, new Color(20, 26, 24, 255));
         Raylib.DrawText($"[{hotkey}]", (int)(r.X + r.Width - 36), (int)r.Y + 9, 18, new Color(20, 26, 24, 255));
 
-        Raylib.DrawText(def.Name, (int)r.X + 14, (int)r.Y + 56, 24, Palette.Hero);
+        Raylib.DrawText(def.Name, (int)r.X + 14, (int)r.Y + 56, 24, def.Legendary ? Palette.Hex("ffd66b") : Palette.Hero);
         Raylib.DrawText($"Cost {def.Cost}g", (int)r.X + 14, (int)r.Y + 88, 18, Palette.Gold);
 
         int ty = (int)r.Y + 124;

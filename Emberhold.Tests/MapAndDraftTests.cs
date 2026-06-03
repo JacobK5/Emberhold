@@ -118,6 +118,26 @@ public class DraftTests
     }
 
     [Fact]
+    public void Legendary_BuildsStrongerThanItsBase()
+    {
+        var s = NewState();
+        var normal = StructureFactory.Create(s, CardDb.Get("cannon"), new Vector2(80, -80));
+        var legend = StructureFactory.Create(s, CardDb.Get("dragons_maw"), new Vector2(-80, -80));
+        Assert.False(normal.Legendary);
+        Assert.True(legend.Legendary);
+        Assert.True(legend.Damage > normal.Damage);
+        Assert.True(legend.MaxHealth > normal.MaxHealth);
+    }
+
+    [Fact]
+    public void Legendaries_AreCategorised()
+    {
+        Assert.NotEmpty(CardDb.LegendariesIn(Category.Attack));
+        Assert.All(CardDb.Legendaries, c => Assert.True(c.Legendary));
+        Assert.Equal("Dragon's Maw", CardDb.Get("dragons_maw").Name); // resolvable by id
+    }
+
+    [Fact]
     public void DoublePick_GrantsTwoCardsNextDraft()
     {
         var s = NewState();

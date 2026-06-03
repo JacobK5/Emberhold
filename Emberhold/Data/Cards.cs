@@ -62,7 +62,8 @@ public sealed record CardDef(
     Category Category,
     StructureKind Kind,
     Tag Tags,
-    int Cost);
+    int Cost,
+    bool Legendary = false);
 
 public static class CardDb
 {
@@ -117,11 +118,31 @@ public static class CardDb
             Tag.Economy, 50),
     };
 
+    /// <summary>
+    /// Rare draft replacements: a normal slot is occasionally swapped for one of
+    /// these. Each is a souped-up version of a base structure (the factory applies
+    /// the legendary stat buff) at a much higher build cost.
+    /// </summary>
+    public static readonly IReadOnlyList<CardDef> Legendaries = new[]
+    {
+        new CardDef("dragons_maw", "Dragon's Maw", "DRGN", Category.Attack, StructureKind.Cannon,
+            Tag.Splash | Tag.Siege | Tag.Burn, 135, Legendary: true),
+        new CardDef("tempest_coil", "Tempest Coil", "TMPST", Category.Attack, StructureKind.ChainCoil,
+            Tag.Chain | Tag.Elemental | Tag.LongRange, 130, Legendary: true),
+        new CardDef("aegis_wall", "Aegis Wall", "AEGIS", Category.Defend, StructureKind.Bulwark,
+            Tag.Wall | Tag.Regen | Tag.Block, 120, Legendary: true),
+        new CardDef("kings_mint", "King's Mint", "MINT", Category.Support, StructureKind.TradingPost,
+            Tag.Economy, 120, Legendary: true),
+    };
+
     private static readonly Dictionary<string, CardDef> ById =
-        All.ToDictionary(c => c.Id);
+        All.Concat(Legendaries).ToDictionary(c => c.Id);
 
     public static CardDef Get(string id) => ById[id];
 
     public static IEnumerable<CardDef> ByCategory(Category category)
         => All.Where(c => c.Category == category);
+
+    public static IReadOnlyList<CardDef> LegendariesIn(Category category)
+        => Legendaries.Where(c => c.Category == category).ToList();
 }

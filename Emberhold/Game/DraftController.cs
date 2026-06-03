@@ -29,6 +29,8 @@ public sealed class DraftController
         StartDraft(s);
     }
 
+    public const float LegendaryChance = 0.10f;
+
     public void StartDraft(GameState s)
     {
         Offer = new List<CardDef>
@@ -37,6 +39,13 @@ public sealed class DraftController
             RandomOf(Category.Defend),
             RandomOf(Category.Support),
         };
+        // Rare legendary: swap one slot for a powerful unique of that category.
+        if (_rng.NextDouble() < LegendaryChance)
+        {
+            int slot = _rng.Next(Offer.Count);
+            var pool = CardDb.LegendariesIn(Offer[slot].Category);
+            if (pool.Count > 0) Offer[slot] = pool[_rng.Next(pool.Count)];
+        }
         s.Phase = Phase.Draft;
     }
 

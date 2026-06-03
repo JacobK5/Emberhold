@@ -40,6 +40,7 @@ public sealed class Structure
     public Vector2 Pos;
     public float Radius = 16f;
     public int Level = 1;
+    public bool Legendary;  // a rare, souped-up build (gold styling + buffed stats)
 
     // Upgrades (late-game gold sink): stand on a built structure to level it up.
     public const int MaxLevel = 3;
@@ -189,6 +190,42 @@ public static class StructureFactory
             };
             st.Health = st.MaxHealth;
         }
+
+        if (def.Legendary) ApplyLegendary(st);
         return st;
+    }
+
+    /// <summary>Soup up a structure built from a legendary card.</summary>
+    private static void ApplyLegendary(Structure st)
+    {
+        st.Legendary = true;
+        switch (st.Role)
+        {
+            case StructureRole.Tower:
+                st.Damage *= 1.7f;
+                st.Range += 45f;
+                st.Rate *= 0.82f;
+                if (st.Splash > 0f) st.Splash *= 1.35f;
+                if (st.ChainCount > 0) st.ChainCount += 2;
+                if (st.BurnDps > 0f) st.BurnDps *= 1.6f;
+                else { st.BurnDps = 8f; st.BurnDuration = 2f; } // legendary cannon ignites
+                break;
+            case StructureRole.Wall:
+                st.MaxHealth *= 2.2f; st.Health = st.MaxHealth; st.Regen = true; st.Radius += 2f;
+                break;
+            case StructureRole.GroundTrap:
+                st.TrapDps *= 1.7f; st.Radius += 8f;
+                if (st.TrapSlowFactor < 1f) st.TrapSlowFactor = MathF.Max(0.3f, st.TrapSlowFactor - 0.12f);
+                break;
+            case StructureRole.Mine:
+                st.Interval *= 0.6f;
+                break;
+            case StructureRole.Aura:
+                st.AuraRange += 50f;
+                break;
+        }
+        // Extra durability for the premium price.
+        st.MaxHealth *= 1.4f;
+        st.Health = st.MaxHealth;
     }
 }
