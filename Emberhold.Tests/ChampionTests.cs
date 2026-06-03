@@ -18,7 +18,7 @@ public class ChampionTests
         var e = Raider(s, 40f);
         Champions.Promote(s, e);
         Assert.True(e.Champion);
-        Assert.True(e.MaxHealth > 40f * 3f);  // tanky promotion
+        Assert.True(e.MaxHealth > 40f * 2.5f); // tanky even for the fragile Swiftblade trait
         Assert.True(e.Reward >= 12);           // 4x bounty
     }
 

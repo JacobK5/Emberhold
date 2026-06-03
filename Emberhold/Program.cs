@@ -9,7 +9,7 @@ public static class Program
     public const int DesignHeight = 720;
 
     /// <summary>Current build version, shown on the title screen.</summary>
-    public const string Version = "0.33.0";
+    public const string Version = "0.34.0";
 
     public static int Main(string[] args)
     {
@@ -57,7 +57,8 @@ public static class Program
             swarmWave: Array.IndexOf(args, "--swarm") >= 0,
             ascendDemo: Array.IndexOf(args, "--ascend") >= 0,
             furyDemo: Array.IndexOf(args, "--fury") >= 0,
-            champDemo: Array.IndexOf(args, "--champion") >= 0);
+            champDemo: Array.IndexOf(args, "--champion") >= 0,
+            lastStand: Array.IndexOf(args, "--laststand") >= 0);
 
         int frame = 0;
         while (!Raylib.WindowShouldClose())
