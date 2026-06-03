@@ -60,6 +60,19 @@ public class DraftTests
     }
 
     [Fact]
+    public void CodexAdept_AddsBonusStarter()
+    {
+        var s = NewState();
+        var plain = new DraftController();
+        plain.StartRun(s, bonusStarter: false);
+        var adept = new DraftController();
+        adept.StartRun(s, bonusStarter: true);
+
+        Assert.Equal(plain.ToPlace.Count + 1, adept.ToPlace.Count);
+        Assert.Contains(adept.ToPlace, c => c.Id == "gold_mine");
+    }
+
+    [Fact]
     public void TryPlace_RejectsInvalidThenAcceptsValid()
     {
         var s = NewState();

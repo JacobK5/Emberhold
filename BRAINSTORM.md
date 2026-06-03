@@ -8,6 +8,10 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.16.0 — "Codex Adept"
+- **Codex completion reward** — discover 12+ synergies across all runs to earn a
+  bonus free Gold Mine starter at the start of every future run.
+
 ### v0.15.0 — "Foresight"
 - **Two-wave preview** — the draft now shows the next two waves (exact), so you can plan
   around incoming bosses/threats.

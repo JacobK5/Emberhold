@@ -274,6 +274,8 @@ public static class Renderer
             DrawCentered($"TRIAL:  {s.Modifier.Name}", 24, h - 196, Palette.Hex("d6a6e0"));
             DrawCentered(s.Modifier.Desc, 17, h - 168, Palette.Hex("b489c4"));
         }
+        if (s.CodexAdept)
+            DrawCentered("CODEX ADEPT  -  bonus starter granted", 16, h - 218, Palette.Hex("c9b074"));
         DrawCentered("Collect gold, stand on pads to build. WASD / click to move.", 20, h - 150, Palette.Hero);
         DrawCentered("SPACE volley   /   SHIFT dash   /   F rally   /   H switch hero   /   S shop   /   C codex   /   P pause", 17, h - 124, Palette.PathEdge);
     }
