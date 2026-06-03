@@ -38,6 +38,8 @@ public sealed class GameApp
     private enum Screen { Title, HeroSelect, Playing }
     private Screen _screen = Screen.Playing;
     private HeroKind _heroChoice = HeroKind.Ranger; // hero picked on the select screen
+    private int _ascensionChoice;                    // ascension tier chosen on the select screen
+    private bool _ascendUnlocked;                     // this run already unlocked the next tier
     private bool _heroSwapOpen;                      // in-game (H) hero-swap overlay
     private bool _balanceOpen;                       // balancing tuner overlay (title or pause)
     private bool _balanceFromPause;                  // opened from a paused run (vs the title)
@@ -50,10 +52,18 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false, bool ascendDemo = false)
     {
         _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
+        if (ascendDemo)
+        {
+            // Debug: hero-select with the ascension selector unlocked, for screenshots.
+            _profile = _profile with { MaxAscension = Ascensions.Cap };
+            _ascensionChoice = 2;
+            _screen = Screen.HeroSelect;
+            return;
+        }
         _seed = seed;
         _startWave = startWave;
         _startChapter = startChapter;
@@ -120,6 +130,11 @@ public sealed class GameApp
         if (_startChapter > 0) _state.Chapter = _startChapter;
         if (_startWave > 0) _state.Wave = _startWave;
         _state.Hero.Kind = _heroChoice;
+        _state.Ascension = Ascensions.Clamp(_ascensionChoice);
+        _ascendUnlocked = false;
+        // Ascension scales the keep down (overwritten by a save on resume).
+        _state.KeepMaxHealth *= Ascensions.KeepMult(_state.Ascension);
+        _state.KeepHealth = _state.KeepMaxHealth;
         ApplyRunModifier(); // roll the run's trial before previewing the first wave
         _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave);      // wave-1 preview
         _state.NextWaveKinds2 = WaveSystem.BuildComposition(_state, _state.Wave + 1); // wave-2 foresight
@@ -171,7 +186,8 @@ public sealed class GameApp
         else if (_screen == Screen.HeroSelect)
         {
             Raylib.ClearBackground(Palette.Grass);
-            MenuUI.DrawHeroSelect("CHOOSE YOUR HERO", "click a hero to begin   ·   ESC back to menu");
+            MenuUI.DrawHeroSelect("CHOOSE YOUR HERO", "click a hero to begin   ·   ESC back to menu",
+                ascension: _ascensionChoice, maxAscension: _profile.MaxAscension);
         }
         else
         {
@@ -212,6 +228,7 @@ public sealed class GameApp
                 _screen = Screen.Playing;
                 break;
             case MenuAction.NewRun:
+                _ascensionChoice = _profile.MaxAscension; // default to your highest unlocked tier
                 _screen = Screen.HeroSelect;
                 break;
             case MenuAction.Settings:
@@ -249,8 +266,17 @@ public sealed class GameApp
     {
         if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { _screen = Screen.Title; return; }
         if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
-        var rects = MenuUI.HeroCardRects();
         var m = Raylib.GetMousePosition();
+
+        // Ascension tier selector (only once a tier is unlocked).
+        if (_profile.MaxAscension > 0)
+        {
+            var (minus, plus) = MenuUI.AscensionButtonRects();
+            if (Raylib.CheckCollisionPointRec(m, minus)) { _ascensionChoice = Math.Max(0, _ascensionChoice - 1); return; }
+            if (Raylib.CheckCollisionPointRec(m, plus)) { _ascensionChoice = Math.Min(_profile.MaxAscension, _ascensionChoice + 1); return; }
+        }
+
+        var rects = MenuUI.HeroCardRects();
         for (int i = 0; i < rects.Length; i++)
         {
             if (!Raylib.CheckCollisionPointRec(m, rects[i])) continue;
@@ -395,6 +421,18 @@ public sealed class GameApp
             return;
         }
 
+        // Ascension unlock: surviving to clear wave 10 (a boss) at your current ceiling
+        // opens the next tier for future runs.
+        if (!_ascendUnlocked && _state.Wave >= 11 && _state.Ascension >= _profile.MaxAscension
+            && _profile.MaxAscension < Ascensions.Cap)
+        {
+            _ascendUnlocked = true;
+            _profile = _profile with { MaxAscension = _profile.MaxAscension + 1 };
+            Persistence.Save(_profile);
+            _state.BannerText = $"ASCENSION {_profile.MaxAscension} UNLOCKED";
+            _state.BannerTimer = 3.2f;
+        }
+
         // Checkpoint once the post-wave lull is stable (after any draft/placement resolves).
         if (_state.NeedsAutosave && _state.Spawning is null && _state.BetweenWaves > 0f
             && !_state.PendingDraft && !_state.Shop.Open && _state.Enemies.TrueForAll(e => e.Dead))
@@ -465,7 +503,7 @@ public sealed class GameApp
             hero.Health = hero.MaxHealth;
             hero.FireRate = MathF.Max(0.22f, hero.FireRate - 0.012f * steps);
         }
-        _state.Shop.PriceMult = mod.ShopPriceMult;
+        _state.Shop.PriceMult = mod.ShopPriceMult * Ascensions.PriceMult(_state.Ascension);
     }
 
     /// <summary>Milestone wave cleared: open a card draft (no auto-expansion).</summary>

@@ -883,6 +883,8 @@ public static class Renderer
             $"{s.Hero.Profile.Initial} LV{s.Hero.Level}");
         DrawHeroLoadout(s);
 
+        if (s.Ascension > 0)
+            Raylib.DrawText($"ASCENSION {s.Ascension}", 16, Raylib.GetScreenHeight() - 66, 16, Palette.Hex("e0795a"));
         if (s.Modifier.Id != "none")
             Raylib.DrawText($"TRIAL  {s.Modifier.Name}", 16, Raylib.GetScreenHeight() - 48, 16, Palette.Hex("d6a6e0"));
         Raylib.DrawText($"{Raylib.GetFPS()} FPS", 16, Raylib.GetScreenHeight() - 28, 18, Palette.PathEdge);
@@ -894,7 +896,8 @@ public static class Renderer
             int cy = Raylib.GetScreenHeight() / 2;
             Raylib.DrawRectangle(0, 0, sw, Raylib.GetScreenHeight(), new Color(11, 17, 19, 180));
             DrawCentered("THE KEEP HAS FALLEN", 40, cy - 70, Palette.Hex("efd18a"));
-            DrawCentered($"Reached wave {s.Wave}   -   best wave {s.BestWave}", 24, cy - 22, Palette.Hero);
+            string ascSuffix = s.Ascension > 0 ? $"   -   ascension {s.Ascension}" : "";
+            DrawCentered($"Reached wave {s.Wave}   -   best wave {s.BestWave}{ascSuffix}", 24, cy - 22, Palette.Hero);
             DrawCentered($"{s.Kills} raiders defeated   /   {s.Structures.Count} structures standing   /   {s.SeenSynergies.Count} synergies discovered",
                 18, cy + 12, Palette.PathEdge);
             if (s.Profile is Profile p)

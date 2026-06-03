@@ -212,7 +212,7 @@ public static class WaveSystem
         // Wave archetype reshapes the rank-and-file (special units keep their identity).
         bool special = elite || kind is EnemyKind.Boss or EnemyKind.General;
         var am = special ? WaveArchetypes.Mods(WaveArchetype.Normal) : WaveArchetypes.Mods(s.ArchetypeOf(s.Wave));
-        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult * threat * am.Health;
+        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult * threat * am.Health * s.AscEnemyHpMult;
 
         s.Enemies.Add(new Enemy
         {
@@ -221,7 +221,7 @@ public static class WaveSystem
             Radius = profile.Radius * am.Radius,
             Health = hp,
             MaxHealth = hp,
-            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff * mod.EnemySpeedMult * am.Speed,
+            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff * mod.EnemySpeedMult * am.Speed * s.AscEnemySpeedMult,
             Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult * dmgThreat * am.Damage),
             Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult * mod.GoldMult * am.Reward),
             Kind = kind,
