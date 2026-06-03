@@ -404,4 +404,21 @@ public class HeroTests
         CombatSystem.Signature(s);
         Assert.True(s.Companions.Count(w => !w.Permanent) >= 3);
     }
+
+    [Fact]
+    public void HeroProfiles_AllKindsHaveSelectScreenFlavour()
+    {
+        // The hero-select grid renders one card per kind in enum order; every kind
+        // needs a profile with role + blurb so no card draws blank.
+        var kinds = Enum.GetValues<HeroKind>();
+        Assert.Equal(kinds.Length, HeroProfile.All.Length);
+        for (int i = 0; i < kinds.Length; i++)
+        {
+            var p = HeroProfile.All[i];
+            Assert.Equal(kinds[i], p.Kind);            // All[] is in enum order (drives card hit-testing)
+            Assert.False(string.IsNullOrWhiteSpace(p.Role));
+            Assert.False(string.IsNullOrWhiteSpace(p.Blurb));
+            Assert.DoesNotContain(',', p.FirstName);   // first name only, e.g. "ASH"
+        }
+    }
 }

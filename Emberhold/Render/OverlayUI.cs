@@ -439,27 +439,6 @@ public static class OverlayUI
         _ => Palette.Hex("8fbf7f"),
     };
 
-    /// <summary>Launch overlay offering to resume a saved run.</summary>
-    public static void DrawResumePrompt(RunSave save)
-    {
-        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
-        Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 220));
-
-        const int pw = 540, ph = 200;
-        int px = w / 2 - pw / 2, py = h / 2 - ph / 2;
-        Raylib.DrawRectangle(px, py, pw, ph, new Color(18, 26, 24, 245));
-        Raylib.DrawRectangleLinesEx(new Rectangle(px, py, pw, ph), 2f, Palette.Hex("c49a62"));
-
-        DrawCentered("SAVED RUN FOUND", 30, py + 22, Palette.Hex("efd18a"));
-        string mod = save.ModifierId != "none" ? $"   -   Trial: {save.ModifierId}" : "";
-        DrawCentered($"Wave {save.Wave}   -   Fort {save.Chapter}   -   {save.Gold}g{mod}", 18, py + 66, Palette.Hero);
-        int heroLv = save.Hero.Progress.FirstOrDefault(p => p.Kind == save.Hero.Kind)?.Level ?? 1;
-        DrawCentered($"Hero Lv {heroLv}   -   {save.Structures.Count} structures standing", 16, py + 92, Palette.PathEdge);
-
-        DrawCentered("[ENTER]  resume", 22, py + 130, Palette.Gold);
-        DrawCentered("[N]  start a new run", 18, py + 160, Palette.Hex("a89878"));
-    }
-
     public static void DrawStructureTooltip(GameState s)
     {
         if (s.Over || s.ViewingBase) return;

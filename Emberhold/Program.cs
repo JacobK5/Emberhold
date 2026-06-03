@@ -8,6 +8,9 @@ public static class Program
     public const int DesignWidth = 1280;
     public const int DesignHeight = 720;
 
+    /// <summary>Current build version, shown on the title screen.</summary>
+    public const string Version = "0.27.0";
+
     public static int Main(string[] args)
     {
         // Headless-ish smoke mode: run a fixed number of frames then exit.
@@ -26,6 +29,15 @@ public static class Program
         if (ParseStringArg(args, "--chapter") is string cs && int.TryParse(cs, out int cv)) startChapter = cv;
         int startHero = 0;
         if (ParseStringArg(args, "--hero") is string hs && int.TryParse(hs, out int hv)) startHero = hv;
+
+        // A clean launch (no smoke/debug flags) opens the title menu; any debug entry
+        // point jumps straight into a run so smoke/auto tooling is unchanged.
+        bool debugStart = smokeFrames is not null
+            || Array.IndexOf(args, "--auto") >= 0 || Array.IndexOf(args, "--seed") >= 0
+            || Array.IndexOf(args, "--lose") >= 0 || startWave > 0 || startChapter > 0
+            || Array.IndexOf(args, "--pause") >= 0 || Array.IndexOf(args, "--skills") >= 0;
+
+        bool forceTitle = Array.IndexOf(args, "--title") >= 0; // debug: screenshot the title menu
         var game = new GameApp(
             auto: Array.IndexOf(args, "--auto") >= 0,
             seed: Array.IndexOf(args, "--seed") >= 0,
@@ -35,13 +47,16 @@ public static class Program
             startChapter: startChapter,
             startHero: startHero,
             paused: Array.IndexOf(args, "--pause") >= 0,
-            skills: Array.IndexOf(args, "--skills") >= 0);
+            skills: Array.IndexOf(args, "--skills") >= 0,
+            startAtTitle: forceTitle || !debugStart,
+            heroSwap: Array.IndexOf(args, "--heroswap") >= 0);
 
         int frame = 0;
         while (!Raylib.WindowShouldClose())
         {
             float dt = MathF.Min(0.05f, Raylib.GetFrameTime());
             game.Update(dt);
+            if (game.ShouldQuit) break;
 
             Raylib.BeginDrawing();
             game.Draw();
