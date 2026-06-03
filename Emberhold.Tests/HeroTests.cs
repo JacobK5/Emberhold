@@ -284,4 +284,53 @@ public class HeroTests
         s.Hero.Kind = HeroKind.Ranger;          // no taunt radius
         Assert.Equal(0f, s.Hero.TauntRadius);
     }
+
+    // ---- Executioner (assassin) -----------------------------------------
+
+    [Fact]
+    public void Executioner_IsSquishierThanRanger()
+    {
+        var h = new Hero();
+        Assert.True(h.Progress[HeroKind.Executioner].MaxHealth < h.Progress[HeroKind.Ranger].MaxHealth);
+    }
+
+    [Fact]
+    public void Execute_FinishesLowHealthEnemy()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Executioner;
+        s.Hero.Pos = Vector2.Zero;
+        s.Hero.AbilityCooldown = 0f;
+        var e = new Enemy { Id = s.NextId(), Health = 10, MaxHealth = 100, Radius = 11, Pos = new Vector2(60, 0) };
+        s.Enemies.Add(e);
+        CombatSystem.Signature(s);
+        Assert.True(e.Dead);
+    }
+
+    [Fact]
+    public void Execute_DoesNotInstakillBoss_ButHurtsIt()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Executioner;
+        s.Hero.Pos = Vector2.Zero;
+        s.Hero.AbilityCooldown = 0f;
+        var boss = new Enemy { Id = s.NextId(), Health = 300, MaxHealth = 4000, Radius = 20, Boss = true, Pos = new Vector2(60, 0) };
+        s.Enemies.Add(boss);
+        CombatSystem.Signature(s);
+        Assert.False(boss.Dead);          // boss immune to the instakill
+        Assert.True(boss.Health < 300f);  // but still takes the burst
+    }
+
+    [Fact]
+    public void Execute_BlinksHeroAdjacentToTarget()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Executioner;
+        s.Hero.Pos = Vector2.Zero;
+        s.Hero.AbilityCooldown = 0f;
+        var e = new Enemy { Id = s.NextId(), Health = 500, MaxHealth = 500, Radius = 11, Pos = new Vector2(140, 0) };
+        s.Enemies.Add(e);
+        CombatSystem.Signature(s);
+        Assert.True(Vector2.Distance(s.Hero.Pos, e.Pos) < 60f);
+    }
 }

@@ -8,6 +8,16 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.19.0 — "Reaper"
+- **New hero: Vess, the Executioner** — a glass-cannon assassin: high damage, fast,
+  fragile (82 HP). Built around bursting down priority targets.
+- **Execute (signature)** — blink to the weakest enemy in reach and strike; finishes
+  off anything below the execute threshold instantly (bosses are immune to the
+  instakill but still take a heavy hit). A natural counter to elites/bosses.
+- **Assassin skill branches** — Reaping (Headsman = higher execute threshold, Reaping =
+  executes refund the cooldown and drop gold) and Shadow (Shadowstep = faster dash with
+  longer i-frames, Deathmark = +25% hero damage vs elites/bosses).
+
 ### v0.18.0 — "Bulwark"
 - **New hero: Bram, the Bulwark** — a tank. Starts with far more HP (230 vs 100),
   hits a little softer and moves slower. A genuinely different playstyle built around
