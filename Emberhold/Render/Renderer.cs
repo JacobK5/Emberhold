@@ -187,7 +187,7 @@ public static class Renderer
         if (sum.StructuresLost > 0)
             rows.Add(("Structures lost", sum.StructuresLost.ToString(), Palette.Hex("d2604f")));
 
-        string preview = WaveSystem.PreviewLine(s.NextWaveKinds);
+        string preview = WaveSystem.PreviewLine(s.NextWaveKinds, s.ArchetypeOf(s.Wave));
         bool hasPreview = preview.Length > 0;
 
         int ph = 44 + rows.Count * 22 + 12 + (hasPreview ? 42 : 0);
@@ -258,7 +258,7 @@ public static class Renderer
             var names = SynergyEngine.Catalog.Where(d => s.ActiveSynergies.Contains(d.Id)).Select(d => d.Name);
             lines.Add(($"SYNERGIES ({s.ActiveSynergies.Count}):  {string.Join(", ", names)}", Palette.Gold));
         }
-        string preview = WaveSystem.PreviewLine(s.NextWaveKinds);
+        string preview = WaveSystem.PreviewLine(s.NextWaveKinds, s.ArchetypeOf(s.Wave));
         if (preview.Length > 0)
             lines.Add(($"NEXT WAVE:  {preview}", Palette.Hex("c49a62")));
 

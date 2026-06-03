@@ -8,6 +8,16 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.30.0 — "Tempest"
+- **Wave archetypes** — from wave 10, about a third of non-boss waves take on a shape
+  (telegraphed in the preview + a wave banner), reshaping composition and raider stats:
+  - **Swarm** — a tide of weak, fast, small runners (≈1.85× count).
+  - **Juggernaut** — a few towering, armoured brutes/siege (huge HP, big bounty).
+  - **Air Raid** — a flock of wall-ignoring flyers.
+  - **Frenzy** — fast raiders with fat bounties.
+  The archetype is a pure function of (wave, per-run salt) so the preview always matches
+  the real spawn; the salt persists in run saves. Elites/bosses keep their identity.
+
 ### v0.29.0 — "Endless"
 - **Exotic mega-upgrades** — from wave 18 the supply shop offers one rare, expensive,
   one-time run-defining upgrade at a time (kept at the top of the list). A premium gold

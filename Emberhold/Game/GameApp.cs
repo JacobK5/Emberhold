@@ -50,7 +50,7 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false)
     {
         _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
@@ -99,6 +99,15 @@ public sealed class GameApp
             _state.Shop.Refresh(_state.Wave, _state.ZoneFortified, _state.OwnedKinds(), _state.Exotics);
             _state.Shop.CanOpen = true;
             _state.Shop.Open = true;
+        }
+        if (swarmWave)
+        {
+            // Debug: jump into a Swarm archetype wave for screenshots.
+            _state.Wave = 12;
+            for (int salt = 1; salt < 200000; salt++)
+                if (WaveArchetypes.For(12, salt) == WaveArchetype.Swarm) { _state.ArchetypeSalt = salt; break; }
+            _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave);
+            WaveSystem.StartWave(_state);
         }
     }
 

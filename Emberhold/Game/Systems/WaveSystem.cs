@@ -28,6 +28,14 @@ public static class WaveSystem
         if (kinds.Contains(EnemyKind.Boss)) { s.BossBannerTimer = 2.4f; s.BossIncoming = true; }
         else if (kinds.Contains(EnemyKind.Elite)) { s.BossBannerTimer = 1.8f; s.BossIncoming = false; }
 
+        // Telegraph a special wave archetype.
+        var arch = s.ArchetypeOf(s.Wave);
+        if (arch != WaveArchetype.Normal)
+        {
+            s.BannerText = $"{WaveArchetypes.Name(arch)} WAVE";
+            s.BannerTimer = 2.4f;
+        }
+
         MapEventSystem.Activate(s); // promote any telegraphed dynamic event for this wave
     }
 
@@ -35,10 +43,12 @@ public static class WaveSystem
     public static List<EnemyKind> BuildComposition(GameState s, int wave)
     {
         var stats = WaveStats.For(wave);
-        int count = Math.Max(1, (int)MathF.Round(stats.Count * Balance.EnemyCountMult * s.Modifier.EnemyCountMult));
+        var arch = s.ArchetypeOf(wave);
+        var amods = WaveArchetypes.Mods(arch);
+        int count = Math.Max(1, (int)MathF.Round(stats.Count * Balance.EnemyCountMult * s.Modifier.EnemyCountMult * amods.Count));
         var list = new List<EnemyKind>(count + 1);
         for (int i = 0; i < count; i++)
-            list.Add(PickKind(wave, s.Rand()));
+            list.Add(PickArchetypeKind(arch, wave, s.Rand()));
         // Every tenth wave is a chapter boss; other fifths are an elite raid.
         if (wave % 10 == 0) list.Add(EnemyKind.Boss);
         else if (stats.Elite) list.Add(EnemyKind.Elite);
@@ -52,6 +62,15 @@ public static class WaveSystem
     /// Counter-types unlock with depth and occupy the low end of the roll; basic
     /// raider/runner/brute fill the rest. Composition is the difficulty knob.
     /// </summary>
+    /// <summary>Composition shaped by the wave's archetype (Normal falls back to PickKind).</summary>
+    private static EnemyKind PickArchetypeKind(WaveArchetype a, int wave, float roll) => a switch
+    {
+        WaveArchetype.Swarm      => roll < 0.7f ? EnemyKind.Runner : EnemyKind.Raider,
+        WaveArchetype.Juggernaut => roll < 0.7f ? EnemyKind.Brute : EnemyKind.Siege,
+        WaveArchetype.Flight     => roll < 0.6f ? EnemyKind.Flyer : PickKind(wave, roll),
+        _                        => PickKind(wave, roll),
+    };
+
     private static EnemyKind PickKind(int wave, float roll)
         => wave >= 7 && roll < 0.07f ? EnemyKind.Siege
          : wave >= 9 && roll < 0.14f ? EnemyKind.Assassin
@@ -64,9 +83,10 @@ public static class WaveSystem
          : EnemyKind.Raider;
 
     /// <summary>Human-readable summary of a wave's composition for the preview UI.</summary>
-    public static string PreviewLine(IReadOnlyList<EnemyKind>? kinds)
+    public static string PreviewLine(IReadOnlyList<EnemyKind>? kinds, WaveArchetype arch = WaveArchetype.Normal)
     {
         if (kinds is null || kinds.Count == 0) return "";
+        string prefix = arch != WaveArchetype.Normal ? $"{WaveArchetypes.Name(arch)}  -  " : "";
         int boss = 0, siege = 0, elite = 0, healer = 0, shield = 0, flyer = 0, brute = 0, assassin = 0, wraith = 0, general = 0;
         foreach (var k in kinds)
             switch (k)
@@ -93,7 +113,7 @@ public static class WaveSystem
         if (shield > 0) parts.Add($"Shielded x{shield}");
         if (flyer > 0) parts.Add($"Flyer x{flyer}");
         if (brute > 0) parts.Add($"Brute x{brute}");
-        return string.Join("  -  ", parts);
+        return prefix + string.Join("  -  ", parts);
     }
 
     public static void Update(GameState s, float dt)
@@ -188,18 +208,22 @@ public static class WaveSystem
         // run stays dangerous without raiders one-shotting the hero).
         float threat = s.GoldThreat;
         float dmgThreat = 1f + (threat - 1f) * 0.5f;
-        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult * threat;
+
+        // Wave archetype reshapes the rank-and-file (special units keep their identity).
+        bool special = elite || kind is EnemyKind.Boss or EnemyKind.General;
+        var am = special ? WaveArchetypes.Mods(WaveArchetype.Normal) : WaveArchetypes.Mods(s.ArchetypeOf(s.Wave));
+        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult * threat * am.Health;
 
         s.Enemies.Add(new Enemy
         {
             Id = s.NextId(),
             Pos = Map.SpawnPoint(side, s.Chapter),
-            Radius = profile.Radius,
+            Radius = profile.Radius * am.Radius,
             Health = hp,
             MaxHealth = hp,
-            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff * mod.EnemySpeedMult,
-            Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult * dmgThreat),
-            Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult * mod.GoldMult),
+            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff * mod.EnemySpeedMult * am.Speed,
+            Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult * dmgThreat * am.Damage),
+            Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult * mod.GoldMult * am.Reward),
             Kind = kind,
             Elite = elite,
             Side = side,
