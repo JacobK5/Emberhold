@@ -692,6 +692,14 @@ public static class Renderer
             Raylib.DrawCircleV(gear, 4f, toolCol);
             Raylib.DrawCircleV(gear, 1.8f, new Color((byte)0x2b, (byte)0x35, (byte)0x33, al));
         }
+        else if (hero.Kind == HeroKind.Bulwark)
+        {
+            // A broad tower shield held forward.
+            var shieldCol = new Color((byte)0xc7, (byte)0xcf, (byte)0x9c, al);
+            Raylib.DrawTriangle(Rot(11, -7), Rot(11, 7), Rot(2, 9), shieldCol);
+            Raylib.DrawTriangle(Rot(11, -7), Rot(2, 9), Rot(2, -9), shieldCol);
+            Raylib.DrawCircleV(Rot(7, 0), 2f, new Color((byte)0x3a, (byte)0x42, (byte)0x2c, al));
+        }
         else
         {
             // Bow arc: centre at JS (9,-2) → Rot(2,9); spans ±92° facing outward.
@@ -713,7 +721,16 @@ public static class Renderer
 
         // Artificer tower-buff radius.
         if (hero.Kind == HeroKind.Artificer)
-            Raylib.DrawCircleLinesV(p, 165f, new Color(120, 195, 215, 45));
+            Raylib.DrawCircleLinesV(p, hero.Has(Data.HeroSkills.AWideAura) ? 225f : 165f, new Color(120, 195, 215, 45));
+
+        // Bulwark taunt radius (the lane it's holding); brighter + pulsing while braced.
+        if (hero.Kind == HeroKind.Bulwark && hero.TauntRadius > 0f)
+        {
+            byte ta = hero.StanceTimer > 0f ? (byte)90 : (byte)40;
+            Raylib.DrawCircleLinesV(p, hero.TauntRadius, new Color((byte)170, (byte)190, (byte)120, ta));
+            if (hero.StanceTimer > 0f)
+                Raylib.DrawCircleLinesV(p, 20f + MathF.Sin(now * 9f) * 3f, new Color(216, 224, 180, 180));
+        }
     }
 
     private static void DrawParticles(GameState s)

@@ -91,6 +91,31 @@ public static class EnemySystem
             {
                 UpdateSiege(s, e, speedScale, dt);
             }
+            else if (IsTaunted(s, e))
+            {
+                // Bulwark taunt: the tank's body holds the lane. Enemies funnel onto
+                // him and the global contact block (below) deals the hero damage.
+                float bodyReach = e.Radius + hero.Radius;
+                if (Vector2.Distance(e.Pos, hero.Pos) > bodyReach)
+                {
+                    var dir = MathUtils.Normalize(hero.Pos - e.Pos);
+                    var delta = dir * e.Speed * speedScale * dt;
+                    e.Pos = Geometry.MoveWithCollisions(e.Pos, e.Radius, delta, s.SolidRects());
+                }
+                else if (e.AttackTimer <= 0f)
+                {
+                    // Thorns / Stance reflect damage; Anchor slows attackers. Rate-limited
+                    // per enemy so a whole swarm pressing the tank each gets retaliated on.
+                    e.AttackTimer = 0.85f;
+                    bool reflect = hero.Has(HeroSkills.BThorns) || hero.StanceTimer > 0f;
+                    if (reflect) CombatSystem.DamageEnemy(s, e, 14f + hero.Damage * 0.4f);
+                    if (hero.StanceTimer > 0f && hero.Has(HeroSkills.BAnchor) && !e.StatusImmune)
+                    {
+                        e.SlowFactor = e.SlowTimer <= 0f ? 0.5f : MathF.Min(e.SlowFactor, 0.5f);
+                        e.SlowTimer = MathF.Max(e.SlowTimer, 1.5f);
+                    }
+                }
+            }
             else
             {
                 bool ignoresWalls = e.Flying || e.Phantom; // flyers and assassins bypass walls
@@ -131,6 +156,16 @@ public static class EnemySystem
         }
 
         if (summons is not null) s.Enemies.AddRange(summons);
+    }
+
+    /// <summary>Whether the Bulwark hero is body-blocking this enemy (in taunt range).</summary>
+    private static bool IsTaunted(GameState s, Enemy e)
+    {
+        var hero = s.Hero;
+        if (hero.Kind != HeroKind.Bulwark || hero.Health <= 0f) return false;
+        if (e.Flying || e.Phantom) return false; // can't body-block flyers / assassins
+        float r = hero.TauntRadius;
+        return r > 0f && Vector2.Distance(e.Pos, hero.Pos) <= r;
     }
 
     /// <summary>Two weakened raiders spawned beside a boss as it summons.</summary>

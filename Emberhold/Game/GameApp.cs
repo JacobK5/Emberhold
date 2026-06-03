@@ -79,7 +79,7 @@ public sealed class GameApp
         _skillsOpen = false;
         if (_startChapter > 0) _state.Chapter = _startChapter;
         if (_startWave > 0) _state.Wave = _startWave;
-        _state.Hero.Kind = (HeroKind)Math.Clamp(_startHero, 0, 2);
+        _state.Hero.Kind = (HeroKind)Math.Clamp(_startHero, 0, Enum.GetValues<HeroKind>().Length - 1);
         ApplyRunModifier(); // roll the run's trial before previewing the first wave
         _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave);      // wave-1 preview
         _state.NextWaveKinds2 = WaveSystem.BuildComposition(_state, _state.Wave + 1); // wave-2 foresight
@@ -207,6 +207,7 @@ public sealed class GameApp
         _state.RallyCooldown = MathF.Max(0f, _state.RallyCooldown - dt);
         _state.OverchargeTimer = MathF.Max(0f, _state.OverchargeTimer - dt);
         _state.Hero.SwitchCooldown = MathF.Max(0f, _state.Hero.SwitchCooldown - dt);
+        _state.Hero.StanceTimer = MathF.Max(0f, _state.Hero.StanceTimer - dt);
 
         // Shop toggle — available during the between-wave countdown. (B, not S — S is move-down.)
         if (Raylib.IsKeyPressed(KeyboardKey.B) && _state.Shop.CanOpen && !_state.PendingDraft)
@@ -425,12 +426,9 @@ public sealed class GameApp
     {
         var hero = _state.Hero;
         if (hero.SwitchCooldown > 0f) return; // brief gate so heroes can't be juggled
-        hero.Kind = hero.Kind switch
-        {
-            HeroKind.Ranger => HeroKind.Warden,
-            HeroKind.Warden => HeroKind.Artificer,
-            _ => HeroKind.Ranger,
-        };
+        // Cycle through every hero kind in enum order (auto-handles new heroes).
+        int count = Enum.GetValues<HeroKind>().Length;
+        hero.Kind = (HeroKind)(((int)hero.Kind + 1) % count);
         // A swapped-in hero starts its ability ready; reset transient combat timers.
         hero.SwitchCooldown = 4f;
         hero.ShotTimer = 0f;

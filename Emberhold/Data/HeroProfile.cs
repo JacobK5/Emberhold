@@ -3,11 +3,12 @@ using Emberhold.Render;
 
 namespace Emberhold.Data;
 
-public enum HeroKind { Ranger, Warden, Artificer }
+public enum HeroKind { Ranger, Warden, Artificer, Bulwark }
 
 /// <summary>
 /// Per-hero multipliers + identity. Ported from config.js HERO_PROFILES.
-/// Multipliers scale the hero's base stats; 1.0 = baseline (Ranger).
+/// Multipliers scale the hero's base stats; 1.0 = baseline (Ranger). BaseHealth
+/// seeds each kind's starting max HP (the tank starts far higher).
 /// </summary>
 public sealed record HeroProfile(
     HeroKind Kind,
@@ -17,7 +18,8 @@ public sealed record HeroProfile(
     float Rate,
     float Range,
     float Speed,
-    Color Cloak)
+    Color Cloak,
+    float BaseHealth = 100f)
 {
     public static readonly HeroProfile Ranger = new(
         HeroKind.Ranger, "ASH, RANGER", "A",
@@ -31,10 +33,16 @@ public sealed record HeroProfile(
         HeroKind.Artificer, "TILDA, ARTIFICER", "T",
         Damage: 0.7f, Rate: 1.15f, Range: 1.05f, Speed: 1f, Cloak: Palette.Hex("4a6b7a"));
 
+    public static readonly HeroProfile Bulwark = new(
+        HeroKind.Bulwark, "BRAM, BULWARK", "B",
+        Damage: 0.95f, Rate: 1.2f, Range: 0.78f, Speed: 0.82f, Cloak: Palette.Hex("5c6a4a"),
+        BaseHealth: 230f);
+
     public static HeroProfile Get(HeroKind kind) => kind switch
     {
         HeroKind.Warden => Warden,
         HeroKind.Artificer => Artificer,
+        HeroKind.Bulwark => Bulwark,
         _ => Ranger,
     };
 }

@@ -294,8 +294,22 @@ public static class CombatSystem
         {
             case HeroKind.Warden: GroundSlam(s); break;
             case HeroKind.Artificer: Overcharge(s); break;
+            case HeroKind.Bulwark: BulwarkStance(s); break;
             default: ShootVolley(s); break;
         }
+    }
+
+    /// <summary>Bulwark signature: brace — heavy damage reduction + a wide taunt that
+    /// pulls enemies onto your body, holding the lane.</summary>
+    public static void BulwarkStance(GameState s)
+    {
+        var hero = s.Hero;
+        if (hero.AbilityCooldown > 0f || s.Over) return;
+        hero.AbilityCooldown = hero.VolleyCooldown;
+        hero.StanceTimer = hero.Has(HeroSkills.BAnchor) ? 7f : 4f;
+        s.AddParticles(hero.Pos, Palette.Hex("aeb98c"), 24, 96f);
+        s.AddFloater(hero.Pos + new Vector2(0, -26), "BRACE!", Palette.Hex("d8e0b4"));
+        s.KickShake(6f);
     }
 
     public static void ShootVolley(GameState s)
