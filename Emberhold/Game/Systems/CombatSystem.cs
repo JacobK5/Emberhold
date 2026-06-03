@@ -222,6 +222,7 @@ public static class CombatSystem
         int reward = enemy.Reward;
         if (s.SpoilsActive && enemy.SlowTimer > 0f) reward += 1; // Spoils synergy
         reward += s.StreakBonusGold; // Hot Streak bonus gold
+        if (s.GoldRushActive) reward *= 2; // Gold Rush map event
         for (int i = 0; i < reward; i++)
             s.SpawnDrop(enemy.Pos + new Vector2(s.Rand(-9, 9), s.Rand(-9, 9)), 1);
         bool relicSpace = s.Hero.Relics.Count < Enum.GetValues<RelicKind>().Length;

@@ -81,6 +81,17 @@ public sealed class Companion
     public float Life;       // summoned wolves expire when this hits 0 (ignored if Permanent)
 }
 
+/// <summary>A falling meteor (Meteor Storm map event): telegraphs a ground target
+/// while it descends, then bursts for area damage on impact.</summary>
+public sealed class Meteor
+{
+    public Vector2 Target;
+    public float Fall;      // seconds until impact (counts down from MaxFall)
+    public float MaxFall;
+    public float Radius;
+    public float Damage;
+}
+
 public enum DropKind { Gold, Ember, Relic, Cache }
 
 public sealed class Drop

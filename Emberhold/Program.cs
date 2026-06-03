@@ -9,7 +9,7 @@ public static class Program
     public const int DesignHeight = 720;
 
     /// <summary>Current build version, shown on the title screen.</summary>
-    public const string Version = "0.27.0";
+    public const string Version = "0.28.0";
 
     public static int Main(string[] args)
     {
@@ -51,7 +51,8 @@ public static class Program
             skills: Array.IndexOf(args, "--skills") >= 0,
             startAtTitle: forceTitle || !debugStart,
             heroSwap: Array.IndexOf(args, "--heroswap") >= 0,
-            balance: Array.IndexOf(args, "--balance") >= 0);
+            balance: Array.IndexOf(args, "--balance") >= 0,
+            meteorEvent: Array.IndexOf(args, "--meteor") >= 0);
 
         int frame = 0;
         while (!Raylib.WindowShouldClose())

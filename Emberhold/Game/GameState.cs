@@ -82,6 +82,15 @@ public sealed class GameState
     // Supply caches: a high-value cache periodically drops out on a lane mid-fight.
     public float CacheTimer = 14f;
 
+    // Dynamic map events (late-game): a rolled event spices up some waves. The event
+    // is telegraphed during the lull (PendingEvent) then runs for the wave (ActiveEvent).
+    public MapEventKind PendingEvent = MapEventKind.None;
+    public MapEventKind ActiveEvent = MapEventKind.None;
+    public int WavesSinceEvent = 99;     // gap gate so events never stack back-to-back
+    public float MeteorTimer;            // next Meteor Storm spawn countdown
+    public readonly List<Meteor> Meteors = new();
+    public bool GoldRushActive;          // Gold Rush event: doubled bounties + mine yield
+
     // Overcharge: Artificer signature — a fort-wide tower frenzy while the timer runs.
     public float OverchargeTimer;
 
