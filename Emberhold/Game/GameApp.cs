@@ -50,7 +50,7 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false)
     {
         _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
@@ -90,6 +90,15 @@ public sealed class GameApp
             WaveSystem.StartWave(_state);
             _state.ActiveEvent = MapEventKind.MeteorShower;
             _state.MeteorTimer = 0.2f;
+        }
+        if (exoticShop)
+        {
+            // Debug: a deep-run supply shop (with an exotic on offer) for screenshots.
+            _state.Wave = 20;
+            _state.Gold = 9999;
+            _state.Shop.Refresh(_state.Wave, _state.ZoneFortified, _state.OwnedKinds(), _state.Exotics);
+            _state.Shop.CanOpen = true;
+            _state.Shop.Open = true;
         }
     }
 
@@ -364,6 +373,7 @@ public sealed class GameApp
         EffectsSystem.Update(_state, dt);
         UpdateSupplyCache(dt);
         MapEventSystem.Update(_state, dt);
+        UpdateExotics(dt);
         UpdateCamera(dt);
 
         if (_state.KeepHealth <= 0f || _state.Hero.Health <= 0f)
@@ -400,6 +410,29 @@ public sealed class GameApp
         _state.BannerText = "SUPPLY CACHE";
         _state.BannerTimer = 2.2f;
         _state.AddFloater(pos + new Vector2(0, -18), "SUPPLY", Palette.Gold);
+    }
+
+    /// <summary>Per-frame exotic effects: keep regen (Aegis) and the one-shot hero revive (Phoenix).</summary>
+    private void UpdateExotics(float dt)
+    {
+        // Aegis Matrix: the keep slowly mends itself.
+        if (_state.HasExotic(ExoticKind.AegisMatrix) && _state.KeepHealth > 0f && _state.KeepHealth < _state.KeepMaxHealth)
+            _state.KeepHealth = MathF.Min(_state.KeepMaxHealth, _state.KeepHealth + 3f * dt);
+
+        // Phoenix Heart: cheat death once per run (only a hero death, not a keep breach).
+        var hero = _state.Hero;
+        if (_state.HasExotic(ExoticKind.PhoenixHeart) && !_state.PhoenixUsed
+            && hero.Health <= 0f && _state.KeepHealth > 0f)
+        {
+            _state.PhoenixUsed = true;
+            hero.Health = hero.MaxHealth * 0.5f;
+            hero.Invulnerable = MathF.Max(hero.Invulnerable, 2f);
+            _state.AddParticles(hero.Pos, Palette.Hex("ffb064"), 30, 120f);
+            _state.AddFloater(hero.Pos + new Vector2(0, -36), "PHOENIX REVIVES!", Palette.Hex("ffd66b"));
+            _state.BannerText = "THE PHOENIX RISES";
+            _state.BannerTimer = 2.6f;
+            _state.KickShake(12f);
+        }
     }
 
     /// <summary>Roll the run's trial modifier and apply its start-of-run effects.</summary>
@@ -505,6 +538,18 @@ public sealed class GameApp
                 // (and any upgrades) with gold, like a drafted card.
                 _draft.ToPlace.Enqueue(item.Card);
                 _state.AddFloater(hero.Pos, item.Card.Name, Palette.Gold);
+                item.Purchased = true;
+                shop.OnPurchase();
+                return;
+
+            case ShopItemKind.Exotic:
+                cost = shop.ExoticCost(item.Exotic);
+                if (_state.Gold < cost) return;
+                _state.Gold -= cost;
+                _state.Exotics.Add(item.Exotic); // run-wide passive, read live by the systems
+                _state.AddFloater(hero.Pos + new Vector2(0, -32), ShopState.ExoticName(item.Exotic), Palette.Hex("ffd66b"));
+                _state.AddParticles(hero.Pos, Palette.Hex("ffd66b"), 20, 90f);
+                _state.KickShake(7f);
                 item.Purchased = true;
                 shop.OnPurchase();
                 return;

@@ -8,6 +8,14 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.29.0 — "Endless"
+- **Exotic mega-upgrades** — from wave 18 the supply shop offers one rare, expensive,
+  one-time run-defining upgrade at a time (kept at the top of the list). A premium gold
+  sink for the deep game: **Overdrive Core** (+25% tower fire rate), **Siege Breaker**
+  (+35% tower damage to bosses/elites/siege), **Aegis Matrix** (keep regenerates 3 HP/s),
+  **Mother Lode** (richer, faster mines), **Phoenix Heart** (revive once at 50% HP).
+  Owned exotics persist in run saves and show on the pause panel.
+
 ### v0.28.0 — "Upheaval"
 - **Dynamic map events** — from wave 8 on (never on boss waves, with a 3-wave gap), a
   battlefield event is telegraphed during the lull and runs through the next wave:
