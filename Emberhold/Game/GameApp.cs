@@ -515,7 +515,7 @@ public sealed class GameApp
         var desired = target is Vector2 p ? MathUtils.Normalize(p - hero.Pos) : Vector2.Zero;
         MoveHero(desired, dt);
 
-        if (hero.AbilityCooldown <= 0f && _state.Enemies.Count > 0) CombatSystem.ShootVolley(_state);
+        if (hero.AbilityCooldown <= 0f && _state.Enemies.Count > 0) CombatSystem.Signature(_state);
         if (_state.RallyCooldown <= 0f && _state.Gold >= _state.RallyCost && _state.Enemies.Count >= 6)
             _state.TryRally();
     }
