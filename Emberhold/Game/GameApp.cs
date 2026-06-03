@@ -34,23 +34,43 @@ public sealed class GameApp
     private const float ZoomMax = 2.0f;
     private const float ZoomStep = 0.12f;
 
-    // Resume-on-launch: when a checkpoint save exists, prompt before starting fresh.
-    private RunSave? _pendingSave;
-    private bool _resumePrompt;
+    // Front-of-house screens above the in-run phase machine.
+    private enum Screen { Title, HeroSelect, Playing }
+    private Screen _screen = Screen.Playing;
+    private HeroKind _heroChoice = HeroKind.Ranger; // hero picked on the select screen
+    private bool _heroSwapOpen;                      // in-game (H) hero-swap overlay
+    private bool _balanceOpen;                       // balancing tuner overlay (title or pause)
+    private bool _balanceFromPause;                  // opened from a paused run (vs the title)
+    private RunSave? _save;                          // cached checkpoint for the title's Resume
+
+    /// <summary>Set when the player chooses Quit from the title menu; Program ends the loop.</summary>
+    public bool ShouldQuit { get; private set; }
 
     /// <param name="auto">Auto-resolve draft/placement (smoke).</param>
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false)
     {
+        _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
         _seed = seed;
         _startWave = startWave;
         _startChapter = startChapter;
         _startHero = startHero;
+        _heroChoice = (HeroKind)Math.Clamp(startHero, 0, Enum.GetValues<HeroKind>().Length - 1);
         _showCodex = codex;
         _lose = lose;
+
+        // A clean launch (no smoke/debug flags) opens the title menu; the run begins
+        // only once the player picks New Run + a hero (or Resume).
+        if (startAtTitle)
+        {
+            _screen = Screen.Title;
+            if (RunStore.TryLoad(out var save)) _save = save;
+            return;
+        }
+
         NewRun();
         if (paused) _state.Paused = true;
         if (skills)
@@ -61,14 +81,7 @@ public sealed class GameApp
             _state.Hero.Cur.Nodes.Add(Data.HeroSkills.RRicochet);
             _skillsOpen = true;
         }
-
-        // Offer to resume a saved run (skip in smoke/debug-start modes).
-        bool debugStart = _seed || Auto || _lose || _startWave > 0 || _startChapter > 0;
-        if (!debugStart && RunStore.TryLoad(out var save))
-        {
-            _pendingSave = save;
-            _resumePrompt = true;
-        }
+        if (heroSwap) _heroSwapOpen = true; // debug: screenshot the in-game hero-swap overlay
     }
 
     private void NewRun()
@@ -79,7 +92,7 @@ public sealed class GameApp
         _skillsOpen = false;
         if (_startChapter > 0) _state.Chapter = _startChapter;
         if (_startWave > 0) _state.Wave = _startWave;
-        _state.Hero.Kind = (HeroKind)Math.Clamp(_startHero, 0, Enum.GetValues<HeroKind>().Length - 1);
+        _state.Hero.Kind = _heroChoice;
         ApplyRunModifier(); // roll the run's trial before previewing the first wave
         _state.NextWaveKinds = WaveSystem.BuildComposition(_state, _state.Wave);      // wave-1 preview
         _state.NextWaveKinds2 = WaveSystem.BuildComposition(_state, _state.Wave + 1); // wave-2 foresight
@@ -91,8 +104,11 @@ public sealed class GameApp
 
     public void Update(float dt)
     {
-        if (_resumePrompt) { HandleResumePrompt(); return; }
-        if (Raylib.IsKeyPressed(KeyboardKey.R) && _state.Over) { NewRun(); return; }
+        if (_balanceOpen) { UpdateBalance(); return; }
+        if (_screen == Screen.Title) { UpdateTitle(); return; }
+        if (_screen == Screen.HeroSelect) { UpdateHeroSelect(); return; }
+
+        if (Raylib.IsKeyPressed(KeyboardKey.R) && _state.Over) { _screen = Screen.Title; _save = null; return; }
 
         _state.Elapsed += dt;
         _introTimer -= dt;
@@ -121,26 +137,103 @@ public sealed class GameApp
 
     public void Draw()
     {
-        Renderer.Draw(_state, _draft, ShowIntro, _showCodex);
-        if (_skillsOpen && !_state.Over) OverlayUI.DrawSkillTree(_state);
-        if (_resumePrompt && _pendingSave is RunSave sv)
-            OverlayUI.DrawResumePrompt(sv);
+        if (_screen == Screen.Title)
+        {
+            MenuUI.DrawTitle(_save is not null, _save, Program.Version);
+        }
+        else if (_screen == Screen.HeroSelect)
+        {
+            Raylib.ClearBackground(Palette.Grass);
+            MenuUI.DrawHeroSelect("CHOOSE YOUR HERO", "click a hero to begin   ·   ESC back to menu");
+        }
+        else
+        {
+            Renderer.Draw(_state, _draft, ShowIntro, _showCodex);
+            if (_skillsOpen && !_state.Over) OverlayUI.DrawSkillTree(_state);
+            if (_heroSwapOpen && !_state.Over)
+                MenuUI.DrawHeroSelect("SWITCH HERO", "click a hero to switch   ·   ESC / H cancel",
+                    _state.Hero.Kind, _state.Hero.SwitchCooldown);
+        }
+
+        if (_balanceOpen) OverlayUI.DrawBalancePanel(_balanceFromPause);
     }
 
-    /// <summary>Title-screen resume choice: [Enter] continue the saved run, [N] start fresh.</summary>
-    private void HandleResumePrompt()
+    // ---- title / hero-select screens ------------------------------------
+
+    private void UpdateTitle()
     {
-        if (Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.KpEnter))
+        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        var items = MenuUI.TitleItems(_save is not null);
+        var rects = MenuUI.TitleItemRects(items.Count);
+        var m = Raylib.GetMousePosition();
+        for (int i = 0; i < items.Count; i++)
         {
-            if (_pendingSave is RunSave save) RunStore.Apply(_state, save);
-            _resumePrompt = false;
-            _pendingSave = null;
+            if (!Raylib.CheckCollisionPointRec(m, rects[i])) continue;
+            DoMenuAction(items[i].Action);
+            break;
         }
-        else if (Raylib.IsKeyPressed(KeyboardKey.N))
+    }
+
+    private void DoMenuAction(MenuAction action)
+    {
+        switch (action)
         {
-            RunStore.Delete();
-            _resumePrompt = false;
-            _pendingSave = null;
+            case MenuAction.Resume:
+                NewRun();
+                if (_save is RunSave sv) RunStore.Apply(_state, sv);
+                _introTimer = 0f; // resuming mid-run; skip the opening hint crawl
+                _screen = Screen.Playing;
+                break;
+            case MenuAction.NewRun:
+                _screen = Screen.HeroSelect;
+                break;
+            case MenuAction.Settings:
+                _balanceOpen = true;
+                _balanceFromPause = false;
+                break;
+            case MenuAction.Quit:
+                ShouldQuit = true;
+                break;
+        }
+    }
+
+    /// <summary>Input for the balancing tuner overlay: nudge values, reset, clipboard, close.</summary>
+    private void UpdateBalance()
+    {
+        if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { _balanceOpen = false; return; }
+        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        var m = Raylib.GetMousePosition();
+
+        var adj = OverlayUI.BalanceAdjustRects();
+        for (int i = 0; i < adj.Length; i++)
+        {
+            if (Raylib.CheckCollisionPointRec(m, adj[i].Minus)) { BalanceConfig.Adjust(BalanceConfig.Entries[i], -1); return; }
+            if (Raylib.CheckCollisionPointRec(m, adj[i].Plus)) { BalanceConfig.Adjust(BalanceConfig.Entries[i], +1); return; }
+        }
+
+        var act = OverlayUI.BalanceActionRects();
+        if (Raylib.CheckCollisionPointRec(m, act[0])) { BalanceConfig.Reset(); return; }
+        if (Raylib.CheckCollisionPointRec(m, act[1])) { Raylib.SetClipboardText(BalanceConfig.Export()); return; }
+        if (Raylib.CheckCollisionPointRec(m, act[2])) { BalanceConfig.Import(Raylib.GetClipboardText_()); return; }
+        if (Raylib.CheckCollisionPointRec(m, act[3])) { _balanceOpen = false; return; }
+    }
+
+    private void UpdateHeroSelect()
+    {
+        if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { _screen = Screen.Title; return; }
+        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        var rects = MenuUI.HeroCardRects();
+        var m = Raylib.GetMousePosition();
+        for (int i = 0; i < rects.Length; i++)
+        {
+            if (!Raylib.CheckCollisionPointRec(m, rects[i])) continue;
+            _heroChoice = Data.HeroProfile.All[i].Kind;
+            RunStore.Delete();   // beginning a fresh run; drop any stale checkpoint
+            _save = null;
+            NewRun();
+            _introTimer = 8f;
+            _screen = Screen.Playing;
+            break;
         }
     }
 
@@ -193,8 +286,16 @@ public sealed class GameApp
         if (_skillsOpen)
         {
             if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { _skillsOpen = false; return; }
-            if (Raylib.IsKeyPressed(KeyboardKey.H)) { _state.Hero.SwitchCooldown = 0f; SwitchHero(); }
+            if (Raylib.IsKeyPressed(KeyboardKey.H)) { _skillsOpen = false; _heroSwapOpen = true; return; }
             if (Raylib.IsMouseButtonPressed(MouseButton.Left)) HandleSkillTreeClick();
+            return;
+        }
+
+        // Hero-swap overlay — opens with H, freezes the sim like the skill tree.
+        if (_heroSwapOpen)
+        {
+            if (Raylib.IsKeyPressed(KeyboardKey.Escape) || Raylib.IsKeyPressed(KeyboardKey.H)) { _heroSwapOpen = false; return; }
+            if (Raylib.IsMouseButtonPressed(MouseButton.Left)) HandleHeroSwapClick();
             return;
         }
 
@@ -202,6 +303,11 @@ public sealed class GameApp
         {
             if (_state.Shop.Open) CloseShop();
             else _state.Paused = !_state.Paused;
+        }
+        // While paused, B opens the balancing tuner (returns here on close).
+        if (_state.Paused && Raylib.IsKeyPressed(KeyboardKey.B))
+        {
+            _balanceOpen = true; _balanceFromPause = true; return;
         }
         if (_state.Paused) return;
 
@@ -434,16 +540,30 @@ public sealed class GameApp
         if (Raylib.IsKeyPressed(KeyboardKey.LeftShift) || Raylib.IsKeyPressed(KeyboardKey.RightShift))
             CombatSystem.Dash(_state);
         if (Raylib.IsKeyPressed(KeyboardKey.F)) _state.TryRally();
-        if (Raylib.IsKeyPressed(KeyboardKey.H)) SwitchHero();
+        if (Raylib.IsKeyPressed(KeyboardKey.H)) _heroSwapOpen = true;
     }
 
-    private void SwitchHero()
+    /// <summary>Pick the hero card under the cursor in the in-game swap overlay.</summary>
+    private void HandleHeroSwapClick()
+    {
+        var rects = MenuUI.HeroCardRects();
+        var m = Raylib.GetMousePosition();
+        for (int i = 0; i < rects.Length; i++)
+        {
+            if (!Raylib.CheckCollisionPointRec(m, rects[i])) continue;
+            var kind = Data.HeroProfile.All[i].Kind;
+            if (kind != _state.Hero.Kind) SwitchHeroTo(kind);
+            _heroSwapOpen = false;
+            break;
+        }
+    }
+
+    /// <summary>Switch to a specific hero kind, gated by the brief switch cooldown.</summary>
+    private void SwitchHeroTo(HeroKind kind)
     {
         var hero = _state.Hero;
         if (hero.SwitchCooldown > 0f) return; // brief gate so heroes can't be juggled
-        // Cycle through every hero kind in enum order (auto-handles new heroes).
-        int count = Enum.GetValues<HeroKind>().Length;
-        hero.Kind = (HeroKind)(((int)hero.Kind + 1) % count);
+        hero.Kind = kind;
         // A swapped-in hero starts its ability ready; reset transient combat timers.
         hero.SwitchCooldown = 4f;
         hero.ShotTimer = 0f;
@@ -560,7 +680,8 @@ public sealed class GameApp
     }
 
     public string Report()
-        => $"wave={_state.Wave} fort={_state.Chapter} keep={_state.KeepHealth:0}/{_state.KeepMaxHealth:0} "
+        => _state is null ? "screen=menu"
+         : $"wave={_state.Wave} fort={_state.Chapter} keep={_state.KeepHealth:0}/{_state.KeepMaxHealth:0} "
          + $"gold={_state.Gold} structures={_state.Structures.Count} pads={_state.Pads.Count} "
          + $"kills={_state.Kills} synergies={_state.SeenSynergies.Count} over={_state.Over} heroLv={_state.Hero.Level} "
          + $"enemies={_state.Enemies.Count} relics={_state.Hero.Relics.Count}";

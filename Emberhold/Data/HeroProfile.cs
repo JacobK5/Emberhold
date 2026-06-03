@@ -8,7 +8,8 @@ public enum HeroKind { Ranger, Warden, Artificer, Bulwark, Executioner, Elementa
 /// <summary>
 /// Per-hero multipliers + identity. Ported from config.js HERO_PROFILES.
 /// Multipliers scale the hero's base stats; 1.0 = baseline (Ranger). BaseHealth
-/// seeds each kind's starting max HP (the tank starts far higher).
+/// seeds each kind's starting max HP (the tank starts far higher). Role/Blurb are
+/// flavour shown on the hero-select screen.
 /// </summary>
 public sealed record HeroProfile(
     HeroKind Kind,
@@ -19,39 +20,55 @@ public sealed record HeroProfile(
     float Range,
     float Speed,
     Color Cloak,
-    float BaseHealth = 100f)
+    float BaseHealth = 100f,
+    string Role = "",
+    string Blurb = "")
 {
     public static readonly HeroProfile Ranger = new(
         HeroKind.Ranger, "ASH, RANGER", "A",
-        Damage: 1f, Rate: 1f, Range: 1f, Speed: 1f, Cloak: Palette.HeroCloak);
+        Damage: 1f, Rate: 1f, Range: 1f, Speed: 1f, Cloak: Palette.HeroCloak,
+        Role: "Marksman", Blurb: "Reliable ranged damage and a balanced all-rounder.");
 
     public static readonly HeroProfile Warden = new(
         HeroKind.Warden, "MIRA, WARDEN", "M",
-        Damage: 1.48f, Rate: 1.28f, Range: 0.86f, Speed: 0.92f, Cloak: Palette.Hex("765348"));
+        Damage: 1.48f, Rate: 1.28f, Range: 0.86f, Speed: 0.92f, Cloak: Palette.Hex("765348"),
+        Role: "Vanguard", Blurb: "Heavy, hard-hitting swings that cleave through packs.");
 
     public static readonly HeroProfile Artificer = new(
         HeroKind.Artificer, "TILDA, ARTIFICER", "T",
-        Damage: 0.7f, Rate: 1.15f, Range: 1.05f, Speed: 1f, Cloak: Palette.Hex("4a6b7a"));
+        Damage: 0.7f, Rate: 1.15f, Range: 1.05f, Speed: 1f, Cloak: Palette.Hex("4a6b7a"),
+        Role: "Engineer", Blurb: "Overclocks and repairs your towers instead of fighting.");
 
     public static readonly HeroProfile Bulwark = new(
         HeroKind.Bulwark, "BRAM, BULWARK", "B",
         Damage: 0.95f, Rate: 1.2f, Range: 0.78f, Speed: 0.82f, Cloak: Palette.Hex("5c6a4a"),
-        BaseHealth: 230f);
+        BaseHealth: 230f,
+        Role: "Tank", Blurb: "Body-blocks lanes and soaks the horde with huge HP.");
 
     public static readonly HeroProfile Executioner = new(
         HeroKind.Executioner, "VESS, EXECUTIONER", "V",
         Damage: 1.4f, Rate: 0.92f, Range: 0.95f, Speed: 1.18f, Cloak: Palette.Hex("7a2f3a"),
-        BaseHealth: 82f);
+        BaseHealth: 82f,
+        Role: "Assassin", Blurb: "Fragile glass cannon that blinks in to finish targets.");
 
     public static readonly HeroProfile Elementalist = new(
         HeroKind.Elementalist, "NIVA, ELEMENTALIST", "N",
         Damage: 0.92f, Rate: 1.1f, Range: 1.12f, Speed: 0.96f, Cloak: Palette.Hex("4a7a8c"),
-        BaseHealth: 90f);
+        BaseHealth: 90f,
+        Role: "Frost Mage", Blurb: "Chills everything she hits; control over raw power.");
 
     public static readonly HeroProfile Beastmaster = new(
         HeroKind.Beastmaster, "RURIK, BEASTMASTER", "R",
         Damage: 0.85f, Rate: 1.05f, Range: 1f, Speed: 1.05f, Cloak: Palette.Hex("6a5a3a"),
-        BaseHealth: 110f);
+        BaseHealth: 110f,
+        Role: "Summoner", Blurb: "Fights alongside loyal wolves that harry the horde.");
+
+    /// <summary>The hero's first name only (e.g. "ASH"), parsed from <see cref="Name"/>.</summary>
+    public string FirstName => Name.Split(',')[0];
+
+    /// <summary>All hero profiles in enum order.</summary>
+    public static readonly HeroProfile[] All =
+        { Ranger, Warden, Artificer, Bulwark, Executioner, Elementalist, Beastmaster };
 
     public static HeroProfile Get(HeroKind kind) => kind switch
     {

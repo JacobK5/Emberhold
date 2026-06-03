@@ -238,7 +238,7 @@ public static class Renderer
             Raylib.DrawText(text, px + 24, ly, 16, col);
             ly += 26;
         }
-        DrawCenteredAt("P / ESC to resume", 15, px, pw, py + ph - 26, Palette.PathEdge);
+        DrawCenteredAt("P / ESC resume     ·     B balancing", 15, px, pw, py + ph - 26, Palette.PathEdge);
     }
 
     /// <summary>Animated banner the first time a synergy triggers in a run.</summary>
