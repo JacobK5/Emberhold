@@ -250,6 +250,19 @@ public static class CombatSystem
             if (relicSpace) s.SpawnRelic(enemy.Pos + new Vector2(s.Rand(-14, 14), s.Rand(-14, 14)));
         }
 
+        if (enemy.Champion)
+        {
+            // Champion bounty: guaranteed ember + a burst of gold + extra Fury.
+            s.SpawnEmber(enemy.Pos);
+            for (int i = 0; i < 6; i++)
+                s.SpawnDrop(enemy.Pos + new Vector2(s.Rand(-16, 16), s.Rand(-16, 16)), 1, fromMine: true);
+            s.GainFury(0.2f);
+            s.BannerText = "CHAMPION SLAIN";
+            s.BannerTimer = 2.2f;
+            s.AddFloater(enemy.Pos + new Vector2(0, -34), "CHAMPION SLAIN", Palette.Gold);
+            s.KickShake(8f);
+        }
+
         if (enemy.General) RoutWave(s, enemy);
 
         // Announce a freshly reached streak tier.

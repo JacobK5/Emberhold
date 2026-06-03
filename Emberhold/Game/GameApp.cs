@@ -52,7 +52,7 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false, bool ascendDemo = false, bool furyDemo = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false, bool ascendDemo = false, bool furyDemo = false, bool champDemo = false)
     {
         _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
@@ -132,6 +132,19 @@ public sealed class GameApp
             }
             _state.Fury = 1f;
             CombatSystem.Ultimate(_state);
+        }
+        if (champDemo)
+        {
+            // Debug: a champion mini-boss next to the hero for screenshots.
+            _state.Phase = Phase.Combat;
+            var e = new Enemy
+            {
+                Id = _state.NextId(), Pos = _state.Hero.Pos + new Vector2(74, -48),
+                Radius = 12, Health = 600, MaxHealth = 600, Speed = 30, SlowFactor = 1f,
+                Kind = Data.EnemyKind.Brute, Damage = 10, Reward = 5,
+            };
+            _state.Enemies.Add(e);
+            Champions.Promote(_state, e);
         }
     }
 

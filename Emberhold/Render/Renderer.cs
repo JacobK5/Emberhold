@@ -655,6 +655,27 @@ public static class Renderer
                 Raylib.DrawTriangle(poleTop, poleTop + new Vector2(0, 9f), poleTop + new Vector2(13f, 4.5f), Palette.Hex("b23a3a"));
             }
 
+            // Champion mini-boss: a trait-tinted menace ring, a gold crown, and a name tag.
+            if (e.Champion)
+            {
+                float t = (float)Raylib.GetTime();
+                Color cc = e.Trait switch
+                {
+                    ChampionTrait.Ironhide => Palette.Hex("9fb0c4"),
+                    ChampionTrait.Warbringer => Palette.Hex("e0584a"),
+                    _ => Palette.Hex("ffd66b"),
+                };
+                Raylib.DrawCircleLinesV(e.Pos, e.Radius + 5f + MathF.Sin(t * 4f) * 1.5f, new Color(cc.R, cc.G, cc.B, (byte)210));
+                for (int i = 0; i < 7; i++)
+                {
+                    float a = i / 7f * MathUtils.Tau + t * 0.5f;
+                    Raylib.DrawCircleV(e.Pos + new Vector2(MathF.Cos(a), MathF.Sin(a)) * (e.Radius + 9f), 2.8f, Palette.Hex("ffd66b"));
+                }
+                string nm = Champions.Name(e.Trait);
+                int nw = Raylib.MeasureText(nm, 11);
+                Raylib.DrawText(nm, (int)(e.Pos.X - nw / 2f), (int)(e.Pos.Y - e.Radius - 24), 11, Palette.Hex("ffe08a"));
+            }
+
             if (e.ShieldPerHit > 0f)
                 Raylib.DrawCircleLinesV(e.Pos, e.Radius + 4f, new Color(170, 200, 230, 200));
             if (e.Healer)

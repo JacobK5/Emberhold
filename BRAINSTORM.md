@@ -8,6 +8,13 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.33.0 — "Champions"
+- **Champion mini-bosses** — from wave 14, one rank-and-file raider per non-boss wave is
+  promoted into a named, crowned champion: far tankier, a guaranteed ember + bonus gold
+  and Fury on death — a high-value priority target between bosses. Each has a trait:
+  **Ironhide** (heavily armoured, slow), **Warbringer** (enrages — speeds up as it loses
+  HP), **Swiftblade** (fragile but blindingly fast). Telegraphed by a spawn banner.
+
 ### v0.32.0 — "Cataclysm"
 - **Fury ultimate** — a kill-charged meter (under the ability bar) that fills as you slay
   raiders (tougher foes charge it faster). At full, press **Q** to unleash the Cataclysm:
