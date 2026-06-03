@@ -34,7 +34,8 @@ public static class Program
             lose: Array.IndexOf(args, "--lose") >= 0,
             startChapter: startChapter,
             startHero: startHero,
-            paused: Array.IndexOf(args, "--pause") >= 0);
+            paused: Array.IndexOf(args, "--pause") >= 0,
+            skills: Array.IndexOf(args, "--skills") >= 0);
 
         int frame = 0;
         while (!Raylib.WindowShouldClose())

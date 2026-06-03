@@ -109,6 +109,25 @@ public sealed class Hero
     /// <summary>True if the active hero has unlocked the given skill node.</summary>
     public bool Has(string nodeId) => Cur.Nodes.Contains(nodeId);
 
+    /// <summary>Whether the active hero can spend a point on this node right now.</summary>
+    public bool CanUnlock(SkillNode n)
+        => Cur.SkillPoints > 0 && !Cur.Nodes.Contains(n.Id)
+           && (n.Requires is null || Cur.Nodes.Contains(n.Requires));
+
+    /// <summary>Spend a point to unlock a node (and apply any immediate stat grant).</summary>
+    public bool Unlock(SkillNode n)
+    {
+        if (!CanUnlock(n)) return false;
+        Cur.Nodes.Add(n.Id);
+        Cur.SkillPoints--;
+        if (n.Id == HeroSkills.Vitality)
+        {
+            MaxHealth += 30f;
+            Health = MathF.Min(MaxHealth, Health + 30f);
+        }
+        return true;
+    }
+
     // Node-backed passives (shared Foundations spine).
     public bool QuickHands => Has(HeroSkills.QuickHands);
     public bool SecondWind => Has(HeroSkills.SecondWind);

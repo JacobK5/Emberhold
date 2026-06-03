@@ -26,6 +26,7 @@ public sealed class GameApp
     private readonly bool _lose;
     private float _introTimer = 8f;
     private bool _showCodex;
+    private bool _skillsOpen;
     private Profile _profile = Persistence.Load();
     private readonly Random _rng = new();
     private float _targetZoom = 1f;
@@ -41,7 +42,7 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false)
     {
         Auto = auto;
         _seed = seed;
@@ -52,6 +53,14 @@ public sealed class GameApp
         _lose = lose;
         NewRun();
         if (paused) _state.Paused = true;
+        if (skills)
+        {
+            // Debug: open the skill tree with points + a few owned nodes to screenshot all states.
+            _state.Hero.Cur.SkillPoints = 3;
+            _state.Hero.Cur.Nodes.Add(Data.HeroSkills.Vitality);
+            _state.Hero.Cur.Nodes.Add(Data.HeroSkills.RRicochet);
+            _skillsOpen = true;
+        }
 
         // Offer to resume a saved run (skip in smoke/debug-start modes).
         bool debugStart = _seed || Auto || _lose || _startWave > 0 || _startChapter > 0;
@@ -67,6 +76,7 @@ public sealed class GameApp
         _state = new GameState(seedDebug: _seed) { BestWave = _profile.BestWave };
         _draft = new DraftController();
         _pointerTarget = null;
+        _skillsOpen = false;
         if (_startChapter > 0) _state.Chapter = _startChapter;
         if (_startWave > 0) _state.Wave = _startWave;
         _state.Hero.Kind = (HeroKind)Math.Clamp(_startHero, 0, 2);
@@ -112,6 +122,7 @@ public sealed class GameApp
     public void Draw()
     {
         Renderer.Draw(_state, _draft, ShowIntro, _showCodex);
+        if (_skillsOpen && !_state.Over) OverlayUI.DrawSkillTree(_state);
         if (_resumePrompt && _pendingSave is RunSave sv)
             OverlayUI.DrawResumePrompt(sv);
     }
@@ -173,6 +184,17 @@ public sealed class GameApp
 
     private void UpdateCombat(float dt)
     {
+        // Skill tree overlay — toggles with K, freezes the sim while open (like the shop).
+        if (Raylib.IsKeyPressed(KeyboardKey.K) && !_state.Shop.Open && !_state.PendingDraft)
+            _skillsOpen = !_skillsOpen;
+        if (_skillsOpen)
+        {
+            if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { _skillsOpen = false; return; }
+            if (Raylib.IsKeyPressed(KeyboardKey.H)) { _state.Hero.SwitchCooldown = 0f; SwitchHero(); }
+            if (Raylib.IsMouseButtonPressed(MouseButton.Left)) HandleSkillTreeClick();
+            return;
+        }
+
         if (Raylib.IsKeyPressed(KeyboardKey.P) || Raylib.IsKeyPressed(KeyboardKey.Escape))
         {
             if (_state.Shop.Open) CloseShop();
@@ -415,6 +437,22 @@ public sealed class GameApp
         hero.Invulnerable = MathF.Max(hero.Invulnerable, 0.3f);
         _state.AddParticles(hero.Pos, Palette.Hex("f3c878"), 16, 72f);
         _state.AddFloater(hero.Pos + new Vector2(0, -34), hero.Profile.Name, Palette.Hex("efd18a"));
+    }
+
+    /// <summary>Spend a skill point on a clicked node in the skill-tree overlay.</summary>
+    private void HandleSkillTreeClick()
+    {
+        var mouse = Raylib.GetMousePosition();
+        foreach (var (node, rect) in OverlayUI.SkillNodeRects(_state))
+        {
+            if (!Raylib.CheckCollisionPointRec(mouse, rect)) continue;
+            if (_state.Hero.Unlock(node))
+            {
+                _state.AddFloater(_state.Hero.Pos + new Vector2(0, -30), node.Name, Palette.Hex("efd18a"));
+                _state.AddParticles(_state.Hero.Pos, Palette.Hex("bfe0ff"), 14, 70f);
+            }
+            break;
+        }
     }
 
     private void UpdateCameraOffset()

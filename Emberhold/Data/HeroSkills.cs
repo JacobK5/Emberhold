@@ -99,4 +99,16 @@ public static class HeroSkills
         HeroKind.Artificer => "OVERCHARGE",
         _ => "VOLLEY",
     };
+
+    /// <summary>Title for a skill-tree column: 0 = shared spine, 1-2 = the hero's branches.</summary>
+    public static string Column(HeroKind kind, int col)
+    {
+        if (col == 0) return "FOUNDATIONS";
+        return kind switch
+        {
+            HeroKind.Warden => col == 1 ? "CLEAVE" : "JUGGERNAUT",
+            HeroKind.Artificer => col == 1 ? "OVERCLOCK" : "CONSTRUCT",
+            _ => col == 1 ? "PRECISION" : "BARRAGE",
+        };
+    }
 }

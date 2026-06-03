@@ -73,11 +73,12 @@ public static class Renderer
         int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
         int y = h - 64;
         int x0 = w / 2 - 218;
-        DrawAbilityPill(x0, y, "VOLLEY", "SPACE", hero.AbilityCooldown, hero.VolleyCooldown);
+        DrawAbilityPill(x0, y, HeroSkills.SignatureName(hero.Kind), "SPACE", hero.AbilityCooldown, hero.VolleyCooldown);
         DrawAbilityPill(x0 + 150, y, "DASH", "SHIFT", hero.DashCooldown, 2.4f);
         string rallyKey = s.Gold >= s.RallyCost ? $"F  {s.RallyCost}g" : $"need {s.RallyCost}g";
         DrawAbilityPill(x0 + 300, y, "RALLY", rallyKey, s.RallyCooldown, GameState.RallyMaxCooldown);
-        DrawCentered($"{hero.Profile.Name}   (H) switch hero", 16, y - 24, Palette.Hex("efd18a"));
+        string skillHint = hero.Cur.SkillPoints > 0 ? $"   (K) {hero.Cur.SkillPoints} skill pt" : "   (K) skills";
+        DrawCentered($"{hero.Profile.Name}   (H) switch{skillHint}", 16, y - 24, Palette.Hex("efd18a"));
         if (hero.Overdrive > 0f)
             DrawCentered($"OVERDRIVE {hero.Overdrive:0.0}s", 18, y - 46, Palette.Fire);
     }
