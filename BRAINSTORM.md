@@ -8,6 +8,13 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.24.0 — "The General"
+- **Raider General** — a commander marches in behind the swarm on deep non-boss
+  fifth waves (25, 35, …). Kill it and the whole wave is **routed** — every other
+  raider on the field is cut down (you still collect their bounty). Let it break
+  through to the keep and it lands a heavy blow and **rallies the horde** (a permanent
+  War Drums escalation). High-stakes priority target.
+
 ### v0.23.0 — "Tactician"
 - **Draft veto** — once per run, press X to bank a draft (take no card); the next
   draft then grants a double-pick instead. A reward for passing on a weak offer.

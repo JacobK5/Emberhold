@@ -246,6 +246,8 @@ public static class CombatSystem
             if (relicSpace) s.SpawnRelic(enemy.Pos + new Vector2(s.Rand(-14, 14), s.Rand(-14, 14)));
         }
 
+        if (enemy.General) RoutWave(s, enemy);
+
         // Announce a freshly reached streak tier.
         if (tierUp && s.StreakTier > 0)
         {
@@ -259,6 +261,22 @@ public static class CombatSystem
                 s.AddFloater(s.Hero.Pos + new Vector2(0, -34), "OVERDRIVE!", Palette.Hex("ffb064"));
             }
         }
+    }
+
+    /// <summary>Killing the Raider General shatters the wave's morale: every other
+    /// non-boss raider on the field is cut down (you still collect their bounty).</summary>
+    private static void RoutWave(GameState s, Enemy general)
+    {
+        s.BannerText = "WAVE ROUTED";
+        s.BannerTimer = 2.4f;
+        s.AddFloater(general.Pos + new Vector2(0, -34), "ROUTED!", Palette.Gold);
+        s.KickShake(8f);
+        // Snapshot the current foes so the cascade of deaths doesn't re-enter mid-loop.
+        var routed = new List<Enemy>();
+        foreach (var e in s.Enemies)
+            if (e != general && !e.Dead && !e.Boss && !e.General) routed.Add(e);
+        foreach (var e in routed)
+            DamageEnemy(s, e, e.Health + 9999f, mitigable: false);
     }
 
     public static void GrantHeroXp(GameState s, int amount)

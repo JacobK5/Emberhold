@@ -40,6 +40,9 @@ public static class WaveSystem
         // Every tenth wave is a chapter boss; other fifths are an elite raid.
         if (wave % 10 == 0) list.Add(EnemyKind.Boss);
         else if (stats.Elite) list.Add(EnemyKind.Elite);
+        // Late-game: a Raider General marches in behind the swarm on deep non-boss
+        // fifths (wave 25, 35, …). Spawns last so it trails the wave.
+        if (wave >= 25 && wave % 5 == 0 && wave % 10 != 0) list.Add(EnemyKind.General);
         return list;
     }
 
@@ -62,10 +65,11 @@ public static class WaveSystem
     public static string PreviewLine(IReadOnlyList<EnemyKind>? kinds)
     {
         if (kinds is null || kinds.Count == 0) return "";
-        int boss = 0, siege = 0, elite = 0, healer = 0, shield = 0, flyer = 0, brute = 0, assassin = 0, wraith = 0;
+        int boss = 0, siege = 0, elite = 0, healer = 0, shield = 0, flyer = 0, brute = 0, assassin = 0, wraith = 0, general = 0;
         foreach (var k in kinds)
             switch (k)
             {
+                case EnemyKind.General: general++; break;
                 case EnemyKind.Boss: boss++; break;
                 case EnemyKind.Siege: siege++; break;
                 case EnemyKind.Elite: elite++; break;
@@ -77,6 +81,7 @@ public static class WaveSystem
                 case EnemyKind.Wraith: wraith++; break;
             }
         var parts = new List<string> { $"{kinds.Count} incoming" };
+        if (general > 0) parts.Add("GENERAL");
         if (boss > 0) parts.Add("BOSS");
         if (elite > 0) parts.Add($"Elite x{elite}");
         if (siege > 0) parts.Add($"Siege x{siege}");
@@ -205,6 +210,8 @@ public static class WaveSystem
             Phantom = kind == EnemyKind.Assassin,
             BlinkTimer = kind == EnemyKind.Assassin ? 1.6f : 0f,
             StatusImmune = kind == EnemyKind.Wraith,
+            General = kind == EnemyKind.General,
         });
+        if (kind == EnemyKind.General) { s.BossBannerTimer = 2.2f; s.BossIncoming = false; }
     }
 }

@@ -124,7 +124,8 @@ public static class EnemySystem
 
                 if (Vector2.Distance(e.Pos, Map.KeepPos) <= reach)
                 {
-                    AttackKeep(s, e);
+                    if (e.General) GeneralBreakthrough(s, e);
+                    else AttackKeep(s, e);
                 }
                 else if (blockingWall is not null)
                 {
@@ -191,6 +192,19 @@ public static class EnemySystem
                 SlowFactor = 1f,
             };
         }
+    }
+
+    /// <summary>The Raider General reached the keep: a heavy blow that rallies the
+    /// horde (permanent escalation), then it breaks off. The cost of not killing it.</summary>
+    private static void GeneralBreakthrough(GameState s, Enemy e)
+    {
+        e.Dead = true; // it slips away after landing the blow (no rout reward)
+        s.KeepHealth -= e.Damage * 2.5f;
+        s.HordeTier += 1;
+        s.BannerText = "THE GENERAL RALLIES THE HORDE";
+        s.BannerTimer = 2.6f;
+        s.AddParticles(Map.KeepPos, Palette.Hex("d37455"), 20, 80f);
+        s.KickShake(12f);
     }
 
     private static void AttackKeep(GameState s, Enemy e)
