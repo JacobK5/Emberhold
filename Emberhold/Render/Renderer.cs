@@ -567,6 +567,16 @@ public static class Renderer
                 }
             }
 
+            // Raider General: a command ring + a banner flying on a pole.
+            if (e.General)
+            {
+                float t = (float)Raylib.GetTime();
+                Raylib.DrawCircleLinesV(e.Pos, e.Radius + 4f + MathF.Sin(t * 3f) * 1.2f, new Color((byte)0xd8, (byte)0xb0, (byte)0x55, (byte)190));
+                var poleTop = e.Pos + new Vector2(0, -e.Radius - 16f);
+                Raylib.DrawLineEx(e.Pos + new Vector2(0, -e.Radius), poleTop, 2f, Palette.Hex("6b543a"));
+                Raylib.DrawTriangle(poleTop, poleTop + new Vector2(0, 9f), poleTop + new Vector2(13f, 4.5f), Palette.Hex("b23a3a"));
+            }
+
             if (e.ShieldPerHit > 0f)
                 Raylib.DrawCircleLinesV(e.Pos, e.Radius + 4f, new Color(170, 200, 230, 200));
             if (e.Healer)
@@ -604,6 +614,7 @@ public static class Renderer
         EnemyKind.Boss => Palette.Hex("9c3b46"),
         EnemyKind.Assassin => Palette.Hex("8a5aa0"),
         EnemyKind.Wraith => Palette.Hex("7fb6ad"),
+        EnemyKind.General => Palette.Hex("a83f46"),
         _ => e.Elite ? Palette.Elite : Palette.Enemy,
     };
 

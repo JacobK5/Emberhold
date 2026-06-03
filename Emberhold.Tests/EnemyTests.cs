@@ -121,4 +121,42 @@ public class EnemyTests
         Assert.Equal(tier0 + 1, s.HordeTier);
         Assert.Contains(s.Drops, d => d.Kind == DropKind.Relic);
     }
+
+    [Fact]
+    public void General_MarchesInOnDeepFifthWaves()
+    {
+        var s = new GameState(seedDebug: false);
+        Assert.Contains(EnemyKind.General, WaveSystem.BuildComposition(s, 25));
+        Assert.DoesNotContain(EnemyKind.General, WaveSystem.BuildComposition(s, 24));
+        Assert.DoesNotContain(EnemyKind.General, WaveSystem.BuildComposition(s, 30)); // boss wave instead
+    }
+
+    [Fact]
+    public void KillingGeneral_RoutsTheRestOfTheWave()
+    {
+        var s = new GameState(seedDebug: false);
+        var general = new Enemy { Id = s.NextId(), Health = 1, MaxHealth = 100, General = true, Reward = 12, Radius = 18, Pos = Vector2.Zero };
+        var grunt1 = new Enemy { Id = s.NextId(), Health = 80, MaxHealth = 80, Radius = 11, Pos = new Vector2(120, 0) };
+        var grunt2 = new Enemy { Id = s.NextId(), Health = 80, MaxHealth = 80, Radius = 11, Pos = new Vector2(-120, 40) };
+        s.Enemies.Add(general); s.Enemies.Add(grunt1); s.Enemies.Add(grunt2);
+
+        CombatSystem.DamageEnemy(s, general, 50f);
+        Assert.True(grunt1.Dead);
+        Assert.True(grunt2.Dead);
+    }
+
+    [Fact]
+    public void GeneralBreakthrough_RalliesHordeAndHurtsKeep()
+    {
+        var s = new GameState(seedDebug: false);
+        int tier0 = s.HordeTier;
+        float keep0 = s.KeepHealth;
+        var general = new Enemy { Id = s.NextId(), Health = 100, MaxHealth = 100, General = true, Damage = 20, Radius = 18, Pos = Map.KeepPos };
+        s.Enemies.Add(general);
+
+        EnemySystem.Update(s, 0.1f);
+        Assert.True(general.Dead);              // it breaks off after the blow
+        Assert.Equal(tier0 + 1, s.HordeTier);   // and rallies the horde
+        Assert.True(s.KeepHealth < keep0);
+    }
 }

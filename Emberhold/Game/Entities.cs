@@ -39,6 +39,7 @@ public sealed class Enemy
     public bool Phantom;        // assassin: ignores walls/traps, blinks toward the keep
     public float BlinkTimer;
     public bool StatusImmune;   // wraith: immune to burn + slow
+    public bool General;        // late-game commander: routs the wave if killed, rallies the horde if it breaks through
 }
 
 public enum ProjectileSource { Hero, Tower, Cannon, Ballista, Chain, Flame }
