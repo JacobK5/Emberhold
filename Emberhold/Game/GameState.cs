@@ -96,6 +96,10 @@ public sealed class GameState
     public bool PhoenixUsed;             // Phoenix Heart one-shot revive already spent
     public bool HasExotic(ExoticKind k) => Exotics.Contains(k);
 
+    // Per-run salt so a wave's archetype is deterministic (preview == actual spawn).
+    public int ArchetypeSalt = new Random().Next();
+    public WaveArchetype ArchetypeOf(int wave) => WaveArchetypes.For(wave, ArchetypeSalt);
+
     // Overcharge: Artificer signature — a fort-wide tower frenzy while the timer runs.
     public float OverchargeTimer;
 

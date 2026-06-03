@@ -49,10 +49,10 @@ public static class OverlayUI
         DrawCentered(vetoHint, 16, h / 2 - 160, Palette.PathEdge);
 
         // Preview the next two waves you'll face after placing, below the cards.
-        string preview = WaveSystem.PreviewLine(s.NextWaveKinds);
+        string preview = WaveSystem.PreviewLine(s.NextWaveKinds, s.ArchetypeOf(s.Wave));
         if (preview.Length > 0)
             DrawCentered($"Next wave:  {preview}", 17, h / 2 + 170, Palette.Hex("c49a62"));
-        string preview2 = WaveSystem.PreviewLine(s.NextWaveKinds2);
+        string preview2 = WaveSystem.PreviewLine(s.NextWaveKinds2, s.ArchetypeOf(s.Wave + 1));
         if (preview2.Length > 0)
             DrawCentered($"Then:  {preview2}", 15, h / 2 + 196, Palette.Hex("8a7350"));
 
