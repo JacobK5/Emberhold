@@ -135,8 +135,22 @@ public static class CardDb
             Tag.Economy, 120, Legendary: true),
     };
 
+    /// <summary>
+    /// Card fusions: own both component structures and a merged card (a legendary-grade
+    /// build) is offered in the shop. Reuses the legendary buff + styling.
+    /// </summary>
+    public static readonly IReadOnlyList<(StructureKind A, StructureKind B, CardDef Result)> Fusions = new[]
+    {
+        (StructureKind.Barricade, StructureKind.Bulwark, new CardDef("fortress_wall", "Fortress Wall", "FRTRS",
+            Category.Defend, StructureKind.Bulwark, Tag.Wall | Tag.Block | Tag.Regen, 140, Legendary: true)),
+        (StructureKind.ArcherPost, StructureKind.Cannon, new CardDef("siege_battery", "Siege Battery", "SIEGE",
+            Category.Attack, StructureKind.Cannon, Tag.Splash | Tag.Siege | Tag.Rapid, 150, Legendary: true)),
+        (StructureKind.GoldMine, StructureKind.Workshop, new CardDef("grand_exchange", "Grand Exchange", "EXCHG",
+            Category.Support, StructureKind.TradingPost, Tag.Economy, 135, Legendary: true)),
+    };
+
     private static readonly Dictionary<string, CardDef> ById =
-        All.Concat(Legendaries).ToDictionary(c => c.Id);
+        All.Concat(Legendaries).Concat(Fusions.Select(f => f.Result)).ToDictionary(c => c.Id);
 
     public static CardDef Get(string id) => ById[id];
 

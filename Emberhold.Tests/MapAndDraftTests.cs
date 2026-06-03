@@ -138,6 +138,19 @@ public class DraftTests
     }
 
     [Fact]
+    public void Fusion_OfferedOnlyWhenBothHalvesOwned()
+    {
+        var shop = new ShopState();
+        var fusion = CardDb.Fusions[0]; // Barricade + Bulwark -> Fortress Wall
+
+        shop.Refresh(5, null, new HashSet<StructureKind> { fusion.A }); // only one half
+        Assert.DoesNotContain(shop.Items, i => i.Card?.Id == fusion.Result.Id);
+
+        shop.Refresh(5, null, new HashSet<StructureKind> { fusion.A, fusion.B }); // both halves
+        Assert.Contains(shop.Items, i => i.Card?.Id == fusion.Result.Id);
+    }
+
+    [Fact]
     public void DoublePick_GrantsTwoCardsNextDraft()
     {
         var s = NewState();

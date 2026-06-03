@@ -128,7 +128,7 @@ public static class WaveSystem
                     s.SpawnDrop(new Vector2(s.Rand(-12, 13), 46f + s.Rand(-8, 8)), 1, fromMine: true);
 
                 // Refresh the shop for the new between-wave window.
-                s.Shop.Refresh(s.Wave, s.ZoneFortified);
+                s.Shop.Refresh(s.Wave, s.ZoneFortified, s.OwnedKinds());
                 s.Shop.CanOpen = true;
 
                 // Checkpoint the run once the post-wave lull settles (after any draft).

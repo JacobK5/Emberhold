@@ -369,8 +369,9 @@ public static class OverlayUI
                     DrawItemCost(r, cost, canAfford);
                     break;
                 case ShopItemKind.StructureCard when item.Card is not null:
-                    Raylib.DrawText(item.Card.Name, tx, ty, 18, CategoryColor(item.Card.Category));
-                    Raylib.DrawText($"{item.Card.Category} structure (place + fund)", tx, ty + 24, 13, Palette.PathEdge);
+                    Raylib.DrawText(item.Card.Name, tx, ty, 18, item.Card.Legendary ? Palette.Hex("ffd66b") : CategoryColor(item.Card.Category));
+                    Raylib.DrawText(item.Card.Legendary ? "Legendary build (place + fund)" : $"{item.Card.Category} structure (place + fund)",
+                        tx, ty + 24, 13, Palette.PathEdge);
                     DrawItemCost(r, cost, canAfford);
                     break;
             }
