@@ -30,6 +30,7 @@ public static class Renderer
         DrawWalls(s);
         DrawGroundTraps(s);
         DrawKeep(s);
+        DrawFortifiedZones(s);
         DrawStructures(s);
         DrawPads(s);
         DrawDrops(s);
@@ -334,6 +335,18 @@ public static class Renderer
                     float a = i / 6f * MathUtils.Tau;
                     Raylib.DrawCircleV(st.Pos + new Vector2(MathF.Cos(a), MathF.Sin(a)) * st.Radius * 0.55f, 2.5f, new Color(200, 200, 205, 200));
                 }
+        }
+    }
+
+    /// <summary>Faint gold wash over any buildable quadrant the player has fortified.</summary>
+    private static void DrawFortifiedZones(GameState s)
+    {
+        foreach (var zone in Map.BuildZones(s.Chapter))
+        {
+            int q = GameState.ZoneOf(new Vector2(zone.X + zone.Width / 2f, zone.Y + zone.Height / 2f));
+            if (!s.ZoneFortified[q]) continue;
+            Raylib.DrawRectangleRec(zone, new Color((byte)0xf2, (byte)0xc7, (byte)0x66, (byte)26));
+            Raylib.DrawRectangleLinesEx(zone, 1.5f, new Color((byte)0xf2, (byte)0xc7, (byte)0x66, (byte)90));
         }
     }
 

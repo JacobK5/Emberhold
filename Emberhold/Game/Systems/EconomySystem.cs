@@ -141,7 +141,8 @@ public static class EconomySystem
             if (m.Timer > 0f) continue;
             m.Timer = m.Interval / Balance.MineSpeedMult;
             int drops = s.SupplyLines ? 3 : 2; // Supply Lines keystone
-            int value = s.BoomTown ? 3 : 2;    // Boom Town rune: richer gold
+            int value = (s.BoomTown ? 3 : 2)   // Boom Town rune: richer gold
+                      + (s.ZoneFortified[GameState.ZoneOf(m.Pos)] ? 1 : 0); // Fortified Ground
             for (int i = 0; i < drops; i++)
                 s.SpawnDrop(m.Pos + new Vector2(s.Rand(-15, 15), 10f + i * 10f), value, fromMine: true);
             s.AddParticles(m.Pos + new Vector2(0, 10), Palette.Gold, 6, 30f);

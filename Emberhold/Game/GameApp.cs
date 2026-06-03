@@ -366,6 +366,17 @@ public sealed class GameApp
                 shop.OnPurchase();
                 return;
 
+            case ShopItemKind.ZoneUpgrade:
+                cost = shop.ZoneCost(_state.Chapter);
+                if (_state.Gold < cost) return;
+                _state.Gold -= cost;
+                _state.ZoneFortified[item.Zone] = true;
+                _state.AddFloater(Vector2.Zero, $"{GameState.ZoneName(item.Zone)} FORTIFIED", Palette.Hex("efd18a"));
+                _state.KickShake(6f);
+                item.Purchased = true;
+                shop.OnPurchase();
+                return;
+
             case ShopItemKind.StructureCard:
                 if (item.Card is null) return;
                 cost = shop.CardCost;

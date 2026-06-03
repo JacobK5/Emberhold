@@ -112,6 +112,19 @@ public sealed class GameState
     public bool VolatilePact;           // Anti-synergy (Cannon + Storm Spire: those -dmg, all towers +rate)
     public readonly HashSet<string> ActiveSynergies = new();
 
+    // Fortified Ground: each of the four buildable quadrants can be permanently
+    // upgraded (bought in the shop) to boost the output of structures sitting in it.
+    public readonly bool[] ZoneFortified = new bool[4];
+    public const float ZoneOutputBonus = 1.15f; // +15% to tower dmg / trap dps / mine yield
+
+    /// <summary>Quadrant index (0=NW,1=NE,2=SW,3=SE) for a world position relative to the keep.</summary>
+    public static int ZoneOf(Vector2 p) => (p.X >= 0f ? 1 : 0) + (p.Y >= 0f ? 2 : 0);
+
+    /// <summary>Output multiplier for a structure at this position (1.0 unless its quadrant is fortified).</summary>
+    public float ZoneBonus(Vector2 p) => ZoneFortified[ZoneOf(p)] ? ZoneOutputBonus : 1f;
+
+    public static string ZoneName(int q) => q switch { 0 => "NW", 1 => "NE", 2 => "SW", _ => "SE" };
+
     // Keep
     public float KeepHealth = 260f;
     public float KeepMaxHealth = 260f;

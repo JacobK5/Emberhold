@@ -62,6 +62,7 @@ public sealed class RunSave
     public int HordeTier { get; set; }
     public float BetweenWaves { get; set; }
     public bool CodexAdept { get; set; }
+    public bool[] ZoneFortified { get; set; } = new bool[4];
     public string ModifierId { get; set; } = "none";
     public HeroSave Hero { get; set; } = new();
     public List<Structure> Structures { get; set; } = new();
@@ -139,6 +140,7 @@ public static class RunStore
             HordeTier = s.HordeTier,
             BetweenWaves = s.BetweenWaves,
             CodexAdept = s.CodexAdept,
+            ZoneFortified = (bool[])s.ZoneFortified.Clone(),
             ModifierId = s.Modifier.Id,
             Hero = new HeroSave
             {
@@ -189,6 +191,8 @@ public static class RunStore
         s.KeepMaxHealth = save.KeepMaxHealth;
         s.HordeTier = save.HordeTier;
         s.CodexAdept = save.CodexAdept;
+        if (save.ZoneFortified is { Length: 4 })
+            for (int q = 0; q < 4; q++) s.ZoneFortified[q] = save.ZoneFortified[q];
         s.Modifier = RunModifier.Catalog.FirstOrDefault(m => m.Id == save.ModifierId) ?? RunModifier.None;
 
         var hs = save.Hero;
@@ -257,7 +261,7 @@ public static class RunStore
         s.Paused = false;
         s.Phase = Phase.Combat;
         s.BetweenWaves = MathF.Max(4f, save.BetweenWaves);
-        s.Shop.Refresh(s.Wave);
+        s.Shop.Refresh(s.Wave, s.ZoneFortified);
         s.Shop.CanOpen = true;
         s.Shop.Open = false;
     }
