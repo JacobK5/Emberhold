@@ -124,7 +124,7 @@ public static class EnemySystem
 
             if (Vector2.Distance(e.Pos, hero.Pos) < e.Radius + hero.Radius && hero.Invulnerable <= 0f)
             {
-                hero.Health -= MathF.Max(4f, e.Damage * 0.65f);
+                hero.Health -= MathF.Max(4f, e.Damage * 0.65f) * hero.DamageTakenMult;
                 hero.Invulnerable = 0.75f;
                 s.AddParticles(hero.Pos, Palette.Hex("d9795c"), 8, 58f);
             }

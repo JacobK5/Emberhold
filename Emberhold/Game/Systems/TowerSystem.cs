@@ -23,12 +23,18 @@ public static class TowerSystem
             var (dmgMult, rateMult, rangeBonus) = Aura(s, t);
 
             // Artificer hero: nearby towers get a personal overclock while she's active.
-            if (s.Hero.Kind == Data.HeroKind.Artificer
-                && System.Numerics.Vector2.Distance(t.Pos, s.Hero.Pos) <= 165f)
+            if (s.Hero.Kind == Data.HeroKind.Artificer)
             {
-                dmgMult *= s.Hero.Signature ? 1.5f : 1.35f; // Overclock passive (lv5) is stronger
-                rateMult *= 0.85f;
+                float auraR = s.Hero.Has(Data.HeroSkills.AWideAura) ? 225f : 165f; // Broadcast node widens it
+                if (System.Numerics.Vector2.Distance(t.Pos, s.Hero.Pos) <= auraR)
+                {
+                    dmgMult *= s.Hero.Has(Data.HeroSkills.AOverclock) ? 1.5f : 1.35f; // Overclock node is stronger
+                    rateMult *= 0.85f;
+                }
             }
+
+            // Overcharge signature: every tower in the fort frenzies for a few seconds.
+            if (s.OverchargeTimer > 0f) { dmgMult *= 1.5f; rateMult *= 0.7f; }
 
             if (s.VolatilePact) rateMult *= 0.85f; // anti-synergy: fort-wide fire-rate boost
 
