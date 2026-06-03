@@ -8,6 +8,15 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.20.0 — "Frostweaver"
+- **New hero: Niva, the Elementalist** — a frost mage. Her bolts chill (slow) every
+  enemy they hit, leaning into the existing slow / Glacier / Frostfire systems.
+- **Frost Nova (signature)** — a radial burst that damages and deeply slows everything
+  around her.
+- **Frost / Storm skill branches** — Frost (Deep Freeze = stronger/longer Nova slow,
+  Shatter = +35% hero damage to slowed foes) and Storm (Arc = bolts chain to a second
+  enemy, Emberwind = Frost Nova also ignites).
+
 ### v0.19.0 — "Reaper"
 - **New hero: Vess, the Executioner** — a glass-cannon assassin: high damage, fast,
   fragile (82 HP). Built around bursting down priority targets.

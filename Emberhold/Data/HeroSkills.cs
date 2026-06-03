@@ -57,6 +57,12 @@ public static class HeroSkills
     public const string XSwift    = "x_swift";
     public const string XMark     = "x_mark";
 
+    // ---- Elementalist node ids ------------------------------------------
+    public const string EDeepFreeze = "e_deepfreeze";
+    public const string EShatter    = "e_shatter";
+    public const string EArc        = "e_arc";
+    public const string EEmber      = "e_ember";
+
     private static readonly SkillNode[] Foundations =
     {
         new(Vitality,   "Vitality",     "+30 max HP",                0, 0, null),
@@ -105,6 +111,14 @@ public static class HeroSkills
         new(XMark,     "Deathmark","+25% hero damage vs elites/bosses",2, 1, XSwift),
     };
 
+    private static readonly SkillNode[] ElementalistTree =
+    {
+        new(EDeepFreeze, "Deep Freeze","Frost Nova slows harder & longer", 1, 0, null),
+        new(EShatter,    "Shatter",    "+35% hero damage to slowed foes",  1, 1, EDeepFreeze),
+        new(EArc,        "Arc",        "Hero bolts chain to a 2nd foe",    2, 0, null),
+        new(EEmber,      "Emberwind",  "Frost Nova also ignites enemies",  2, 1, EArc),
+    };
+
     /// <summary>Every node a given hero can unlock: shared Foundations + its two branches.</summary>
     public static IReadOnlyList<SkillNode> Tree(HeroKind kind)
     {
@@ -114,6 +128,7 @@ public static class HeroSkills
             HeroKind.Artificer => ArtificerTree,
             HeroKind.Bulwark => BulwarkTree,
             HeroKind.Executioner => ExecutionerTree,
+            HeroKind.Elementalist => ElementalistTree,
             _ => RangerTree,
         };
         return Foundations.Concat(unique).ToList();
@@ -129,6 +144,7 @@ public static class HeroSkills
         HeroKind.Artificer => "OVERCHARGE",
         HeroKind.Bulwark => "STANCE",
         HeroKind.Executioner => "EXECUTE",
+        HeroKind.Elementalist => "FROST NOVA",
         _ => "VOLLEY",
     };
 
@@ -142,6 +158,7 @@ public static class HeroSkills
             HeroKind.Artificer => col == 1 ? "OVERCLOCK" : "CONSTRUCT",
             HeroKind.Bulwark => col == 1 ? "WALL" : "GUARDIAN",
             HeroKind.Executioner => col == 1 ? "REAPING" : "SHADOW",
+            HeroKind.Elementalist => col == 1 ? "FROST" : "STORM",
             _ => col == 1 ? "PRECISION" : "BARRAGE",
         };
     }

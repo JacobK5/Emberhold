@@ -29,16 +29,22 @@ public static class CombatSystem
 
         var aim = AimAhead(hero.Pos, target, HeroProjSpeed);
         var color = s.StreakTier > 0 ? Palette.Hex("ff9a4d")
-                  : hero.Kind == HeroKind.Warden ? Palette.Hex("b9d9bd") : Palette.Hex("f7df9a");
-        // Skill nodes: Ranger Ricochet chains a shot; Warden Cleave splashes; Ranger Piercing pierces.
-        int heroChains = hero.Has(HeroSkills.RRicochet) ? 1 : 0;
+                  : hero.Kind == HeroKind.Warden ? Palette.Hex("b9d9bd")
+                  : hero.Kind == HeroKind.Elementalist ? Palette.Hex("8fd6e8")
+                  : Palette.Hex("f7df9a");
+        // Skill nodes: Ranger Ricochet / Elementalist Arc chain; Warden Cleave splashes; Ranger Piercing pierces.
+        int heroChains = hero.Has(HeroSkills.RRicochet) || hero.Has(HeroSkills.EArc) ? 1 : 0;
         float heroSplash = hero.Has(HeroSkills.WCleave) ? 34f : 0f;
         bool heroPierce = heroChains == 0 && hero.Has(HeroSkills.RPierce);
         // Executioner Deathmark: hero shots hit elites/bosses harder.
         float markMult = hero.Has(HeroSkills.XMark) && (target.Elite || target.Boss) ? 1.25f : 1f;
-        FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult * markMult,
+        // Elementalist: bolts chill (slow) on hit; Shatter rewards hitting already-slowed foes.
+        bool frost = hero.Kind == HeroKind.Elementalist;
+        float shatterMult = hero.Has(HeroSkills.EShatter) && target.SlowTimer > 0f ? 1.35f : 1f;
+        FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult * markMult * shatterMult,
             speed: HeroProjSpeed, color: color, source: ProjectileSource.Hero,
-            splash: heroSplash, chains: heroChains, chainRange: heroChains > 0 ? 150f : 0f, pierce: heroPierce);
+            splash: heroSplash, chains: heroChains, chainRange: heroChains > 0 ? 150f : 0f, pierce: heroPierce,
+            slowFactor: frost ? 0.65f : 1f, slowDuration: frost ? 1.6f : 0f);
 
         hero.Facing = MathUtils.Normalize(target.Pos - hero.Pos);
         hero.ShotTimer = (hero.FireRate / Balance.HeroFireSpeedMult) * profile.Rate * (hero.Overdrive > 0f ? 0.58f : 1f);
@@ -298,8 +304,41 @@ public static class CombatSystem
             case HeroKind.Artificer: Overcharge(s); break;
             case HeroKind.Bulwark: BulwarkStance(s); break;
             case HeroKind.Executioner: Execute(s); break;
+            case HeroKind.Elementalist: FrostNova(s); break;
             default: ShootVolley(s); break;
         }
+    }
+
+    /// <summary>Elementalist signature: a radial burst that damages and deeply chills
+    /// all enemies around the hero (Deep Freeze deepens the slow; Emberwind ignites).</summary>
+    public static void FrostNova(GameState s)
+    {
+        var hero = s.Hero;
+        if (hero.AbilityCooldown > 0f || s.Over) return;
+        hero.AbilityCooldown = hero.VolleyCooldown;
+
+        const float radius = 135f;
+        bool deep = hero.Has(HeroSkills.EDeepFreeze);
+        float dmg = hero.Damage * 1.5f * hero.Profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult;
+        foreach (var e in s.Enemies)
+        {
+            if (e.Dead) continue;
+            if (Vector2.Distance(e.Pos, hero.Pos) > radius + e.Radius) continue;
+            DamageEnemy(s, e, dmg);
+            if (e.StatusImmune) continue; // wraiths shrug off frost/burn
+            float factor = deep ? 0.25f : 0.45f;
+            float dur = deep ? 3.2f : 2.2f;
+            e.SlowFactor = e.SlowTimer <= 0f ? factor : MathF.Min(e.SlowFactor, factor);
+            e.SlowTimer = MathF.Max(e.SlowTimer, dur);
+            if (hero.Has(HeroSkills.EEmber))
+            {
+                e.BurnTimer = MathF.Max(e.BurnTimer, 2.2f);
+                e.BurnDps = MathF.Max(e.BurnDps, 9f);
+            }
+        }
+        s.AddParticles(hero.Pos, Palette.Hex("9fe0ee"), 28, 150f);
+        s.AddFloater(hero.Pos + new Vector2(0, -24), "FROST NOVA", Palette.Hex("bfeefa"));
+        s.KickShake(5f);
     }
 
     /// <summary>Executioner signature: blink to the weakest enemy in reach and strike;

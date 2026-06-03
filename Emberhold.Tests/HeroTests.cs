@@ -333,4 +333,36 @@ public class HeroTests
         CombatSystem.Signature(s);
         Assert.True(Vector2.Distance(s.Hero.Pos, e.Pos) < 60f);
     }
+
+    // ---- Elementalist (frost mage) --------------------------------------
+
+    [Fact]
+    public void Elementalist_BoltsChillEnemies()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Elementalist;
+        s.Hero.Pos = Vector2.Zero;
+        s.Hero.ShotTimer = 0f;
+        // Speed 0 → AimAhead doesn't lead, so the bolt flies straight at the enemy.
+        var e = new Enemy { Id = s.NextId(), Health = 200, MaxHealth = 200, Radius = 11, Speed = 0, Pos = new Vector2(60, 0) };
+        s.Enemies.Add(e);
+        CombatSystem.UpdateHeroCombat(s, 0.016f);   // fires a frost bolt
+        for (int i = 0; i < 20 && e.SlowTimer <= 0f; i++)
+            CombatSystem.UpdateProjectiles(s, 0.02f); // step it into the enemy
+        Assert.True(e.SlowTimer > 0f);
+    }
+
+    [Fact]
+    public void FrostNova_DamagesAndSlowsAround()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Hero.Kind = HeroKind.Elementalist;
+        s.Hero.Pos = Vector2.Zero;
+        s.Hero.AbilityCooldown = 0f;
+        var e = new Enemy { Id = s.NextId(), Health = 200, MaxHealth = 200, Radius = 11, Pos = new Vector2(40, 0) };
+        s.Enemies.Add(e);
+        CombatSystem.Signature(s);
+        Assert.True(e.Health < 200f);
+        Assert.True(e.SlowTimer > 0f);
+    }
 }

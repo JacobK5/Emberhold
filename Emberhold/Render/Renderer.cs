@@ -707,6 +707,14 @@ public static class Renderer
             Raylib.DrawLineEx(Rot(2, 6), Rot(10, 9), 3f, bladeCol);
             Raylib.DrawLineEx(Rot(2, -6), Rot(10, -9), 3f, bladeCol);
         }
+        else if (hero.Kind == HeroKind.Elementalist)
+        {
+            // A staff with a glowing icy orb at the tip.
+            var staffCol = new Color((byte)0x6b, (byte)0x54, (byte)0x3a, al);
+            var orbCol = new Color((byte)0x9f, (byte)0xe0, (byte)0xee, al);
+            Raylib.DrawLineEx(Rot(-2, 7), Rot(11, 9), 2.5f, staffCol);
+            Raylib.DrawCircleV(Rot(12, 9), 3.5f, orbCol);
+        }
         else
         {
             // Bow arc: centre at JS (9,-2) → Rot(2,9); spans ±92° facing outward.
