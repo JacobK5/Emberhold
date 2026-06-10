@@ -149,6 +149,21 @@ public static class MenuUI
     }
 
     private const int AscBtn = 34;
+    private const int CapeSwatch = 30, CapeGap = 10;
+
+    /// <summary>Swatch rects for the cape-regalia picker along the bottom of hero select.</summary>
+    public static Rectangle[] CapeSwatchRects()
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        int n = Capes.All.Length;
+        int total = n * CapeSwatch + (n - 1) * CapeGap;
+        int x0 = w / 2 - total / 2;
+        int y = h - 52;
+        var rects = new Rectangle[n];
+        for (int i = 0; i < n; i++)
+            rects[i] = new Rectangle(x0 + i * (CapeSwatch + CapeGap), y, CapeSwatch, CapeSwatch);
+        return rects;
+    }
 
     /// <summary>The [-] / [+] rects for the ascension selector on the hero-select screen.</summary>
     public static (Rectangle Minus, Rectangle Plus) AscensionButtonRects()
@@ -164,7 +179,7 @@ public static class MenuUI
     /// <param name="ascension">Selected ascension tier (>= 0 shows the selector); -1 hides it.</param>
     /// <param name="maxAscension">Highest unlocked tier (selector only appears when > 0).</param>
     public static void DrawHeroSelect(string header, string footer, HeroKind? current = null, float cooldown = 0f,
-        int ascension = -1, int maxAscension = 0)
+        int ascension = -1, int maxAscension = 0, Profile? capeProfile = null)
     {
         int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
         var mouse = Raylib.GetMousePosition();
@@ -196,6 +211,34 @@ public static class MenuUI
         if (cooldown > 0f)
             DrawCentered($"switch ready in {cooldown:0.0}s", 16, (int)(h / 2 + HeroCardH + 24), Palette.Hex("d2604f"));
         DrawCentered(footer, 17, (int)(h / 2 + HeroCardH + (cooldown > 0f ? 48 : 28)), Palette.PathEdge);
+
+        // Cape regalia picker (run start only): trophy-gated cosmetic cloak colours.
+        if (capeProfile is Profile prof)
+        {
+            var swatches = CapeSwatchRects();
+            int selected = Capes.Unlocked(prof, prof.CapeChoice) ? prof.CapeChoice : 0;
+            string label = $"CAPE:  {Capes.All[selected].Name}";
+            Raylib.DrawText(label, (int)swatches[0].X - Raylib.MeasureText(label, 15) - 18, (int)swatches[0].Y + 8, 15, Palette.Hex("c9b074"));
+            for (int i = 0; i < swatches.Length; i++)
+            {
+                var r = swatches[i];
+                bool unlocked = Capes.Unlocked(prof, i);
+                bool hovered = Raylib.CheckCollisionPointRec(mouse, r);
+                Color fill = i == 0 ? Palette.HeroCloak : Capes.All[i].Color;
+                if (!unlocked) fill = new Color(fill.R, fill.G, fill.B, (byte)70);
+                Raylib.DrawRectangleRec(r, fill);
+                Raylib.DrawRectangleLinesEx(r, i == selected ? 3f : hovered ? 2f : 1.5f,
+                    i == selected ? Palette.Gold : unlocked ? Palette.Hex("8a9088") : Palette.Hex("3c4642"));
+                if (!unlocked)
+                {
+                    string need = Capes.All[i].TrophiesNeeded.ToString();
+                    Raylib.DrawText(need, (int)(r.X + r.Width / 2 - Raylib.MeasureText(need, 13) / 2f),
+                        (int)r.Y + 9, 13, Palette.Hex("c9b074"));
+                }
+            }
+            string hint = "trophies unlock new capes";
+            Raylib.DrawText(hint, (int)(swatches[^1].X + swatches[^1].Width) + 18, (int)swatches[0].Y + 8, 13, Palette.Hex("6a7269"));
+        }
     }
 
     private static void DrawHeroCard(Rectangle r, HeroProfile p, bool current, bool hovered)

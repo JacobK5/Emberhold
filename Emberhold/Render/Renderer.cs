@@ -843,9 +843,10 @@ public static class Renderer
         // Drop shadow (fixed light direction, independent of facing).
         Raylib.DrawCircleV(p + new Vector2(2f, 7f), 11f, new Color(15, 24, 23, 70));
 
-        // Cape — wider trailing triangle: tip forward, base trailing.
+        // Cape — wider trailing triangle: tip forward, base trailing. Trophy
+        // regalia (CapeOverride) recolours it; otherwise the hero's own cloak.
         // JS points: (0,-11)→Rot(11,0), (12,14)→Rot(-14,12), (-12,14)→Rot(-14,-12)
-        Raylib.DrawTriangle(Rot(11, 0), Rot(-14, 12), Rot(-14, -12), Tint(hero.Profile.Cloak));
+        Raylib.DrawTriangle(Rot(11, 0), Rot(-14, 12), Rot(-14, -12), Tint(hero.CapeOverride ?? hero.Profile.Cloak));
 
         // Body circle, offset 4 units forward (matches JS body at local (0,-4)).
         var bodyPos = Rot(4, 0);
