@@ -292,4 +292,55 @@ public class EconomyTests
 
         Assert.True(withLines > withoutLines);
     }
+
+    [Fact]
+    public void Workshop_SpeedsBuildsInItsAura()
+    {
+        var s = new GameState(seedDebug: false);
+        var ws = StructureFactory.Create(s, CardDb.Get("workshop"), new Vector2(100, -100));
+        s.Structures.Add(ws);
+
+        Assert.Equal(ws.AuraMagnitude, EconomySystem.BuildRateMult(s, ws.Pos + new Vector2(40, 0)), 3);
+        Assert.Equal(1f, EconomySystem.BuildRateMult(s, ws.Pos + new Vector2(500, 0)), 3); // out of range
+
+        s.AurasGlobal = true; // Network amplifier: aura projects fort-wide
+        Assert.Equal(ws.AuraMagnitude, EconomySystem.BuildRateMult(s, ws.Pos + new Vector2(500, 0)), 3);
+    }
+
+    [Fact]
+    public void Workshop_RepairsDamagedStructuresInRange()
+    {
+        var s = new GameState(seedDebug: false);
+        var ws = StructureFactory.Create(s, CardDb.Get("workshop"), new Vector2(100, -100));
+        var tower = StructureFactory.Create(s, CardDb.Get("archer_post"), ws.Pos + new Vector2(60, 0));
+        var far = StructureFactory.Create(s, CardDb.Get("archer_post"), ws.Pos + new Vector2(400, 0));
+        s.Structures.Add(ws); s.Structures.Add(tower); s.Structures.Add(far);
+        tower.Health = tower.MaxHealth * 0.4f;
+        far.Health = far.MaxHealth * 0.4f;
+
+        float hurt = tower.Health;
+        DefenseSystem.Update(s, 1f);
+        Assert.True(tower.Health > hurt, "workshop should mend the nearby tower");
+        Assert.Equal(far.MaxHealth * 0.4f, far.Health, 1); // out of range: untouched
+    }
+
+    [Fact]
+    public void EmberShrine_OnlyImprovesVolley_AndAppliesRunWide()
+    {
+        var s = new GameState(seedDebug: false);
+        // Shop volley upgrades already earned a faster cooldown than the shrine grants.
+        s.Hero.ApplyToAll(p => p.VolleyCooldown = 5.0f);
+        s.Structures.Add(StructureFactory.Create(s, CardDb.Get("ember_shrine"), new Vector2(90, 90)));
+
+        Assert.Equal(5.0f, s.Hero.VolleyCooldown, 2);   // not regressed to 5.8
+        Assert.Equal(1.55f, s.Hero.VolleyDamage, 2);    // damage buff applied
+        // Run-wide: an alt hero kind gets the buff too (was active-kind only).
+        Assert.Equal(5.0f, s.Hero.Progress[HeroKind.Warden].VolleyCooldown, 2);
+        Assert.Equal(1.55f, s.Hero.Progress[HeroKind.Warden].VolleyDamage, 2);
+
+        // A fresh hero (no shop upgrades) gets the shrine's full grant.
+        var s2 = new GameState(seedDebug: false);
+        s2.Structures.Add(StructureFactory.Create(s2, CardDb.Get("ember_shrine"), new Vector2(90, 90)));
+        Assert.Equal(5.8f, s2.Hero.VolleyCooldown, 2);
+    }
 }

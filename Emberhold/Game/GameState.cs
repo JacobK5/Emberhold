@@ -72,6 +72,7 @@ public sealed class GameState
     // recently cleared wave for the between-wave stat card.
     public WaveSummary Live;
     public WaveSummary? LastSummary;
+    public float DamageCarry; // fractional damage awaiting tally (per-frame DoT ticks)
 
     // Kill-streak ("Hot Streak"): consecutive kills within StreakWindow keep the
     // chain alive. Higher tiers buff hero damage and bonus gold per kill.

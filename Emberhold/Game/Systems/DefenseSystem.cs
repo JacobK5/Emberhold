@@ -49,6 +49,21 @@ public static class DefenseSystem
             }
         }
 
+        // Workshops slowly mend damaged structures inside their aura (fort-wide
+        // under the Network amplifier).
+        foreach (var w in s.Structures)
+        {
+            if (w.Kind != Emberhold.Data.StructureKind.Workshop) continue;
+            float wreach = s.AurasGlobal ? float.PositiveInfinity : w.AuraRange;
+            foreach (var st in s.Structures)
+            {
+                if (ReferenceEquals(st, w) || st.Role == StructureRole.HeroBuff
+                    || st.MaxHealth <= 0f || st.Health >= st.MaxHealth || st.Health <= 0f) continue;
+                if (Vector2.Distance(st.Pos, w.Pos) > wreach) continue;
+                st.Health = MathF.Min(st.MaxHealth, st.Health + 3f * dt);
+            }
+        }
+
         // Artificer hero repairs nearby damaged structures while she's active.
         if (s.Hero.Kind == Emberhold.Data.HeroKind.Artificer)
         {

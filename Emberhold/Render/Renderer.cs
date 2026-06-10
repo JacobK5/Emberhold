@@ -714,6 +714,16 @@ public static class Renderer
             if (e.SlowTimer > 0f)
                 Raylib.DrawCircleLinesV(e.Pos, e.Radius + 3f, new Color(150, 200, 235, 150));
 
+            // Burning: a flickering ember licking up from the body.
+            if (e.BurnTimer > 0f)
+            {
+                float ft = (float)Raylib.GetTime() * 13f + e.Id;
+                float lick = 2f + MathF.Sin(ft) * 1.5f;
+                var fp = e.Pos + new Vector2(MathF.Sin(ft * 0.7f) * 2f, -e.Radius - 3f);
+                Raylib.DrawCircleV(fp, 3f + lick * 0.4f, new Color((byte)0xed, (byte)0x74, (byte)0x43, (byte)200));
+                Raylib.DrawCircleV(fp + new Vector2(0, -2.5f), 1.8f, new Color((byte)0xff, (byte)0xd6, (byte)0x6b, (byte)220));
+            }
+
             if (e.Elite || e.Health < e.MaxHealth)
             {
                 float frac = MathUtils.Clamp(e.Health / e.MaxHealth, 0f, 1f);
