@@ -110,8 +110,10 @@ public static class EconomySystem
         switch (st.Role)
         {
             case StructureRole.Tower:
-                st.Damage *= 1.6f;
-                st.Rate *= 0.85f;
+                // Gentler vertical scaling than the original x1.6/x0.85 (~x1.88 DPS
+                // per level) — maxed attack towers alone were carrying whole runs.
+                st.Damage *= 1.45f;
+                st.Rate *= 0.88f;
                 st.Range += 15f;
                 if (st.Splash > 0f) st.Splash *= 1.2f;
                 if (st.BurnDps > 0f) st.BurnDps *= 1.5f;
@@ -119,23 +121,23 @@ public static class EconomySystem
                 if (st.ChainCount > 0) st.ChainCount += 1;
                 break;
             case StructureRole.Wall:
-                st.MaxHealth *= 1.5f;
+                st.MaxHealth *= 1.6f;
                 st.Health = st.MaxHealth;
                 break;
             case StructureRole.GroundTrap:
-                if (st.TrapDps > 0f) st.TrapDps *= 1.5f;
-                if (st.TrapSlowFactor < 1f) st.TrapSlowFactor = MathF.Max(0.3f, st.TrapSlowFactor - 0.1f);
-                st.Radius += 4f;
+                if (st.TrapDps > 0f) st.TrapDps *= 1.7f;
+                if (st.TrapSlowFactor < 1f) st.TrapSlowFactor = MathF.Max(0.3f, st.TrapSlowFactor - 0.12f);
+                st.Radius += 6f;
                 break;
             case StructureRole.Mine:
-                st.Interval *= 0.78f;
+                st.Interval *= 0.7f;
                 break;
             case StructureRole.Aura:
-                st.AuraRange += 25f;
+                st.AuraRange += 30f;
                 st.AuraMagnitude = st.AuraKind switch
                 {
-                    AuraKind.Damage => st.AuraMagnitude + 0.18f,  // stronger damage buff
-                    AuraKind.Rate => MathF.Max(0.6f, st.AuraMagnitude - 0.06f), // faster (lower is better)
+                    AuraKind.Damage => st.AuraMagnitude + 0.22f,  // stronger damage buff
+                    AuraKind.Rate => MathF.Max(0.6f, st.AuraMagnitude - 0.07f), // faster (lower is better)
                     AuraKind.Range => st.AuraMagnitude + 25f,
                     AuraKind.Economy => st.AuraMagnitude + 0.2f,  // faster deposits (Workshop)
                     _ => st.AuraMagnitude,

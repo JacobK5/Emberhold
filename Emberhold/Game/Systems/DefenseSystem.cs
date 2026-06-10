@@ -24,7 +24,7 @@ public static class DefenseSystem
                 foreach (var e in s.Enemies)
                 {
                     if (e.Dead) continue;
-                    if (e.Phantom) continue; // assassins phase over ground traps
+                    if (e.Phantom || e.Flying) continue; // assassins phase over, flyers fly over
                     if (Vector2.Distance(e.Pos, st.Pos) > radius + e.Radius) continue;
 
                     if (st.TrapSlowFactor < 1f && !e.StatusImmune)

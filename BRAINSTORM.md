@@ -8,6 +8,29 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.35.0 — "Counterweight" (balance pass)
+- **Attack-tower nerf** — tower upgrades now scale ×1.45 damage / ×0.88 rate per level
+  (was ×1.6 / ×0.85 ≈ ×1.88 DPS per level): maxing a couple of attack towers alone no
+  longer carries a whole run. Stacked fire-rate buffs (Forge/Artificer/Overcharge/
+  Volatile Pact/Overdrive Core) now floor at a 0.15s interval.
+- **Everything-else buff** — traps hit harder at base (Spike 24 / Caltrops 17 / Moat 13
+  DPS) and upgrade better (×1.7 DPS, −0.12 slow, +6 radius); mine upgrades tick ×0.7
+  interval (was ×0.78); aura upgrades grant more (+0.22 damage, −0.07 rate, +30 aura
+  radius); wall upgrades give ×1.6 HP.
+- **Walls mend between waves** — standing walls recover 40% of missing HP at each wave
+  clear, so defend investment stops bleeding out run-long.
+- **Flyers now truly ignore ground traps** (they always ignored walls; traps damaging
+  airborne units was a bug) — air raids genuinely punish trap-only forts.
+
+### v0.34.1 — bug-fix patch
+- Fixed the recurring screen flash: Last Stand novas no longer fire on an empty field
+  between waves, and the danger vignette only pulses while a wave is live.
+- Resume now restores shop pricing from the saved trial + ascension; Ember Shrine no
+  longer overwrites upgraded volley stats (now run-wide, only improves); the Workshop
+  card actually speeds nearby builds + repairs structures; deep-run supply shops fit
+  on screen (adaptive columns); DoT no longer floods particles every frame (burning
+  foes get a flame marker); game-over recap is no longer drawn over by HUD/banners.
+
 ### v0.34.0 — "Last Stand"
 - **Keep Last Stand** — when the keep drops below 30% HP it rallies: every few seconds it
   emits a defensive nova (area damage + knockback + slow around the keep, bosses resist)
