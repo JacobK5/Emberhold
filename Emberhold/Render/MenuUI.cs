@@ -6,7 +6,7 @@ using Raylib_cs;
 namespace Emberhold.Render;
 
 /// <summary>An action chosen from the title-screen menu.</summary>
-public enum MenuAction { NewRun, Resume, Settings, Quit }
+public enum MenuAction { NewRun, Resume, Settings, Trophies, Quit }
 
 /// <summary>
 /// Front-of-house screens drawn before/around a run: the title menu and the
@@ -23,6 +23,7 @@ public static class MenuUI
         var items = new List<(string, MenuAction)>();
         if (hasSave) items.Add(("Resume Run", MenuAction.Resume));
         items.Add((hasSave ? "New Run" : "Begin Run", MenuAction.NewRun));
+        items.Add(("Trophies", MenuAction.Trophies));
         items.Add(("Balancing", MenuAction.Settings));
         items.Add(("Quit", MenuAction.Quit));
         return items;
@@ -83,6 +84,40 @@ public static class MenuUI
         Raylib.DrawText($"v{version}", 14, h - 26, 15, Palette.Hex("6a7269"));
         string credit = "procedural · code-only";
         Raylib.DrawText(credit, w - Raylib.MeasureText(credit, 15) - 14, h - 26, 15, Palette.Hex("6a7269"));
+    }
+
+    // ---- Trophy hall --------------------------------------------------------
+
+    /// <summary>Full-screen overlay listing every trophy with earned/unearned styling.</summary>
+    public static void DrawTrophies(Profile profile)
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 228));
+
+        int earned = Trophies.Catalog.Count(t => profile.Trophies.Contains(t.Id));
+        DrawCentered("TROPHY HALL", 34, 46, Palette.Hex("efd18a"));
+        DrawCentered($"{earned} / {Trophies.Catalog.Count} earned   ·   click or ESC to close", 16, 88, Palette.PathEdge);
+
+        // Two centred columns of medal rows.
+        const int rowH = 52, colW = 420, colGap = 40;
+        int rows = (Trophies.Catalog.Count + 1) / 2;
+        int x0 = w / 2 - colW - colGap / 2;
+        int y0 = Math.Max(124, h / 2 - rows * rowH / 2 + 30);
+        for (int i = 0; i < Trophies.Catalog.Count; i++)
+        {
+            var t = Trophies.Catalog[i];
+            bool got = profile.Trophies.Contains(t.Id);
+            int cx = x0 + (i / rows) * (colW + colGap);
+            int cy = y0 + (i % rows) * rowH;
+
+            var medal = new Vector2(cx + 18, cy + rowH / 2f - 6);
+            Raylib.DrawCircleV(medal, 12f, got ? Palette.Gold : new Color(40, 48, 45, 255));
+            Raylib.DrawCircleLinesV(medal, 12f, got ? Palette.Hex("ffe08a") : Palette.Hex("3c4642"));
+            if (got) Raylib.DrawCircleV(medal, 5f, Palette.Hex("8a5a1e"));
+
+            Raylib.DrawText(t.Name, cx + 44, cy + 4, 19, got ? Palette.Hex("efd18a") : Palette.Hex("8a9088"));
+            Raylib.DrawText(t.Desc, cx + 44, cy + 25, 13, got ? Palette.Hero : Palette.Hex("5d665f"));
+        }
     }
 
     // ---- Hero select grid -------------------------------------------------

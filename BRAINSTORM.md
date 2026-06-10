@@ -8,6 +8,16 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.39.0 — "Trophies"
+- **Trophy hall** — 12 lifetime achievements persisted on the profile, from "Hold the
+  Line" (reach wave 6) through "Deep Frontier" (wave 25), single-run feats (all four
+  relics, 3 exotics, 3 doctrines, 5 synergies in one run) and lifetime grinds
+  (1,000 kills, 10 runs, ascension 3, codex 12). Viewable from a new title-menu entry
+  (two-column medal list, earned in gold); the death recap calls out newly earned
+  trophies and shows the lifetime trophy count. `--trophies` debug flag.
+- **Quartermaster's Favor perk** — earning the wave-15 trophy permanently raises
+  starting gold from 20 to 30 on future runs (the first trophy with teeth).
+
 ### v0.38.0 — "Drums of War" (adaptive music)
 - **Adaptive battle drums** — an 8-step percussion sequencer (kick/tom/hat synthesized
   like everything else; zero assets) that plays only while a wave is live: a sparse

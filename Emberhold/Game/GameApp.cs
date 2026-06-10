@@ -43,6 +43,7 @@ public sealed class GameApp
     private bool _heroSwapOpen;                      // in-game (H) hero-swap overlay
     private bool _balanceOpen;                       // balancing tuner overlay (title or pause)
     private bool _balanceFromPause;                  // opened from a paused run (vs the title)
+    private bool _trophiesOpen;                      // trophy hall overlay (title screen)
     private RunSave? _save;                          // cached checkpoint for the title's Resume
 
     /// <summary>Set when the player chooses Quit from the title menu; Program ends the loop.</summary>
@@ -52,7 +53,7 @@ public sealed class GameApp
     /// <param name="seed">Seed debug structures and start straight in combat (smoke).</param>
     /// <param name="startWave">Debug: begin at this wave (to exercise late-game content).</param>
     /// <param name="lose">Debug: force a game-over on the first combat frame.</param>
-    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false, bool ascendDemo = false, bool furyDemo = false, bool champDemo = false, bool lastStand = false)
+    public GameApp(bool auto = false, bool seed = false, int startWave = 0, bool codex = false, bool lose = false, int startChapter = 0, int startHero = 0, bool paused = false, bool skills = false, bool startAtTitle = false, bool heroSwap = false, bool balance = false, bool meteorEvent = false, bool exoticShop = false, bool swarmWave = false, bool ascendDemo = false, bool furyDemo = false, bool champDemo = false, bool lastStand = false, bool trophyHall = false)
     {
         _balanceOpen = balance; // debug: screenshot the balancing panel over the title/run
         Auto = auto;
@@ -77,6 +78,7 @@ public sealed class GameApp
         if (startAtTitle)
         {
             _screen = Screen.Title;
+            _trophiesOpen = trophyHall; // debug: screenshot the trophy hall
             if (RunStore.TryLoad(out var save)) _save = save;
             return;
         }
@@ -165,6 +167,9 @@ public sealed class GameApp
     private void NewRun()
     {
         _state = new GameState(seedDebug: _seed) { BestWave = _profile.BestWave };
+        // Quartermaster's Favor trophy perk: veterans muster with a fatter purse.
+        _state.Gold = Trophies.StartingGold(_profile);
+        _state.GoldAccrued = _state.Gold;
         _draft = new DraftController();
         _pointerTarget = null;
         _skillsOpen = false;
@@ -240,6 +245,7 @@ public sealed class GameApp
         if (_screen == Screen.Title)
         {
             MenuUI.DrawTitle(_save is not null, _save, Program.Version);
+            if (_trophiesOpen) MenuUI.DrawTrophies(_profile);
         }
         else if (_screen == Screen.HeroSelect)
         {
@@ -263,6 +269,12 @@ public sealed class GameApp
 
     private void UpdateTitle()
     {
+        if (_trophiesOpen)
+        {
+            if (Raylib.IsKeyPressed(KeyboardKey.Escape) || Raylib.IsMouseButtonPressed(MouseButton.Left))
+                _trophiesOpen = false;
+            return;
+        }
         if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
         var items = MenuUI.TitleItems(_save is not null);
         var rects = MenuUI.TitleItemRects(items.Count);
@@ -293,6 +305,9 @@ public sealed class GameApp
             case MenuAction.Settings:
                 _balanceOpen = true;
                 _balanceFromPause = false;
+                break;
+            case MenuAction.Trophies:
+                _trophiesOpen = true;
                 break;
             case MenuAction.Quit:
                 ShouldQuit = true;
@@ -484,6 +499,19 @@ public sealed class GameApp
             Audio.Play(SfxId.GameOver, 0.75f);
             RunStore.Delete(); // the run is finished; don't resume a dead keep
             _profile = Persistence.Record(_profile, _state.Wave, _state.Kills, _state.BossKills, _state.SeenSynergies);
+
+            // Award any freshly earned trophies (lifetime + this-run feats).
+            var fresh = Trophies.EvaluateNew(_profile, _state);
+            if (fresh.Count > 0)
+            {
+                var merged = new HashSet<string>(_profile.Trophies);
+                foreach (var t in fresh) merged.Add(t.Id);
+                _profile = _profile with { Trophies = merged };
+                Persistence.Save(_profile);
+                _state.NewTrophies.AddRange(fresh.Select(t => t.Name));
+                Audio.Play(SfxId.Synergy, 0.7f, 0.9f);
+            }
+
             _state.BestWave = _profile.BestWave;
             _state.Profile = _profile;
             return;

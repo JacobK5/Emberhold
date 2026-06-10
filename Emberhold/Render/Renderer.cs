@@ -1014,9 +1014,20 @@ public static class Renderer
             if (s.Profile is Profile p)
             {
                 DrawCentered(
-                    $"Lifetime:  {p.Runs} runs  -  {p.LifetimeKills} kills  -  {p.BossesSlain} bosses slain  -  codex {p.DiscoveredSynergies.Count}/{SynergyEngine.Catalog.Count}",
+                    $"Lifetime:  {p.Runs} runs  -  {p.LifetimeKills} kills  -  {p.BossesSlain} bosses slain  -  codex {p.DiscoveredSynergies.Count}/{SynergyEngine.Catalog.Count}  -  trophies {p.Trophies.Count}/{Trophies.Catalog.Count}",
                     16, cy + 42, Palette.Hex("c9b074"));
-                DrawCentered("press R to begin again", 20, cy + 74, Palette.Gold);
+                int ty = cy + 70;
+                foreach (var name in s.NewTrophies.Take(3))
+                {
+                    DrawCentered($"NEW TROPHY  -  {name}", 17, ty, Palette.Gold);
+                    ty += 22;
+                }
+                if (s.NewTrophies.Count > 3)
+                {
+                    DrawCentered($"+ {s.NewTrophies.Count - 3} more in the trophy hall", 14, ty, Palette.Hex("c9b074"));
+                    ty += 20;
+                }
+                DrawCentered("press R to begin again", 20, ty + 4, Palette.Gold);
             }
             else DrawCentered("press R to begin again", 20, cy + 48, Palette.Gold);
         }

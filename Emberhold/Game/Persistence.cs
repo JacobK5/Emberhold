@@ -12,6 +12,7 @@ public sealed record Profile
     public int BossesSlain { get; init; }
     public int MaxAscension { get; init; }  // highest ascension tier unlocked
     public HashSet<string> DiscoveredSynergies { get; init; } = new();
+    public HashSet<string> Trophies { get; init; } = new(); // earned trophy ids (absent in old saves -> empty)
 }
 
 /// <summary>
