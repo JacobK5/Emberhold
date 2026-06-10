@@ -76,6 +76,7 @@ public sealed class RunSave
     public bool PhoenixUsed { get; set; }
     public int ArchetypeSalt { get; set; }  // keeps wave archetypes stable across a resume
     public int Ascension { get; set; }      // run's chosen difficulty tier
+    public List<DoctrineKind> Doctrines { get; set; } = new(); // horde war doctrines (absent in old saves -> empty)
 }
 
 /// <summary>
@@ -188,6 +189,7 @@ public static class RunStore
             PhoenixUsed = s.PhoenixUsed,
             ArchetypeSalt = s.ArchetypeSalt,
             Ascension = s.Ascension,
+            Doctrines = s.Doctrines.ToList(),
         };
         return save;
     }
@@ -268,6 +270,8 @@ public static class RunStore
         s.PhoenixUsed = save.PhoenixUsed;
         if (save.ArchetypeSalt != 0) s.ArchetypeSalt = save.ArchetypeSalt;
         s.Ascension = save.Ascension;
+        s.Doctrines.Clear();
+        if (save.Doctrines is not null) s.Doctrines.AddRange(save.Doctrines);
 
         // Resume in the between-wave lull: no live enemies, shop available, next wave queued.
         s.Enemies.Clear();

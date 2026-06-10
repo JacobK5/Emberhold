@@ -70,6 +70,7 @@ public static class EnemySystem
                 speedScale = e.SlowFactor;
                 if (e.SlowTimer <= 0f) e.SlowFactor = 1f;
             }
+            speedScale = Doctrines.ApplySlowResist(s.Doctrines, speedScale); // Frost Ward doctrine
             speedScale *= Champions.EnrageSpeed(e); // Warbringer champion speeds up as it's hurt
 
             if (!e.Inside && MathF.Abs(e.Pos.X) < s.FortHalfSize && MathF.Abs(e.Pos.Y) < s.FortHalfSize)
@@ -137,7 +138,8 @@ public static class EnemySystem
                     if (e.AttackTimer <= 0f)
                     {
                         e.AttackTimer = 0.85f;
-                        float wallDamage = e.Damage * (s.Fortified ? 0.65f : 1f); // Fortified amplifier
+                        float wallDamage = e.Damage * (s.Fortified ? 0.65f : 1f) // Fortified amplifier
+                                         * Doctrines.StructureDamageMult(s.Doctrines);
                         blockingWall.Health -= wallDamage;
                         s.KickShake(4f);
                         Audio.Play(SfxId.KeepHit, 0.22f, 1.5f);
@@ -257,7 +259,7 @@ public static class EnemySystem
     {
         if (e.AttackTimer > 0f) return;
         e.AttackTimer = 1.0f;
-        float dmg = e.Damage * 2.2f; // heavy structural damage
+        float dmg = e.Damage * 2.2f * Doctrines.StructureDamageMult(s.Doctrines); // heavy structural damage
         if (st.Role == StructureRole.Wall && s.Fortified) dmg *= 0.65f;
         st.Health -= dmg;
         s.KickShake(5f);

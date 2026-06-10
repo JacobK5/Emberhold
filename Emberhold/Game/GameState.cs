@@ -105,6 +105,9 @@ public sealed class GameState
     public bool ChampionPending;   // this wave is eligible to field a champion
     public bool ChampionSpawned;   // one has already been promoted this wave
 
+    // War Doctrines: permanent horde buffs adopted after each chapter boss falls.
+    public readonly List<DoctrineKind> Doctrines = new();
+
     // Ascension difficulty tier chosen at run start (0 = none). Folds into spawns/keep/shop.
     public int Ascension;
     public float AscEnemyHpMult => Ascensions.EnemyHp(Ascension);
