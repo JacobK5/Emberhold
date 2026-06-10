@@ -98,14 +98,16 @@ jobs:
             chmod +x "$app/Contents/MacOS/Emberhold"
             sed "s/__VERSION__/$ver/g" packaging/mac/Info.plist.in > "$app/Contents/Info.plist"
 
-            # Ad-hoc sign EVERY file, inner-to-outer, then seal the bundle.
+            # Ad-hoc sign EVERY file except the apphost, then seal the bundle
+            # (which signs the apphost as the bundle's main executable).
             # codesign classifies the managed .dlls (PE) and the extensionless
-            # createdump (Mach-O) as nested code, so signing only dylibs makes
-            # the bundle seal fail with "code object is not signed at all".
-            # Non-Mach-O signatures land in extended attributes. No hardened
-            # runtime (the .NET JIT needs entitlements under it, and ad-hoc
-            # can't notarize anyway).
-            find "$app/Contents/MacOS" -type f -print0 | xargs -0 -n1 codesign --force --sign -
+            # createdump (Mach-O) as nested code, so they must be signed before
+            # the seal or it fails with "code object is not signed at all".
+            # The apphost must NOT be signed mid-stream: signing the main
+            # executable of a bundle triggers bundle-style signing while
+            # later-ordered dlls are still unsigned. No hardened runtime (the
+            # .NET JIT needs entitlements under it; ad-hoc can't notarize).
+            find "$app/Contents/MacOS" -type f ! -name 'Emberhold' -print0 | xargs -0 -n1 codesign --force --sign -
             codesign --force --sign - "$app"
 
             cp packaging/mac/README-FIRST.txt "$stage/"
