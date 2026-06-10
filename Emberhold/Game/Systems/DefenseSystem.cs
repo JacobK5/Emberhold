@@ -18,9 +18,12 @@ public static class DefenseSystem
         {
             if (st.Role == StructureRole.GroundTrap)
             {
+                st.ComboBurnTimer = MathF.Max(0f, st.ComboBurnTimer - dt); // dash-ignite combo burns out
                 // Minefield rune enlarges and sharpens every trap.
                 float radius = st.Radius * (s.Minefield ? 1.4f : 1f);
                 float dpsMult = s.Minefield ? 1.5f : 1f;
+                // The trap sets enemies ablaze under Backdraft, or while combo-ignited.
+                float burnDps = MathF.Max(st.SynTrapBurnDps, st.ComboBurnTimer > 0f ? 12f : 0f);
                 foreach (var e in s.Enemies)
                 {
                     if (e.Dead) continue;
@@ -35,10 +38,10 @@ public static class DefenseSystem
                     }
                     if (st.TrapDps > 0f) // direct damage still hits wraiths
                         CombatSystem.DamageEnemy(s, e, st.TrapDps * dpsMult * s.ZoneBonus(st.Pos) * dt, mitigable: false);
-                    if (st.SynTrapBurnDps > 0f && !e.StatusImmune) // Backdraft: the trap sets enemies ablaze
+                    if (burnDps > 0f && !e.StatusImmune)
                     {
                         e.BurnTimer = MathF.Max(e.BurnTimer, 1.6f);
-                        e.BurnDps = MathF.Max(e.BurnDps, st.SynTrapBurnDps);
+                        e.BurnDps = MathF.Max(e.BurnDps, burnDps);
                     }
                 }
             }

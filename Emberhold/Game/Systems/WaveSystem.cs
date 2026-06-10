@@ -148,6 +148,16 @@ public static class WaveSystem
                     if (st.Role == StructureRole.Wall && st.Health > 0f && st.Health < st.MaxHealth)
                         st.Health = MathF.Min(st.MaxHealth, st.Health + (st.MaxHealth - st.Health) * 0.4f);
 
+                // War Doctrine: each fallen chapter boss hardens the horde's resolve.
+                if (cleared % 10 == 0 && s.Doctrines.Count < Doctrines.All.Length)
+                {
+                    var doctrine = Doctrines.Roll(s.ArchetypeSalt, s.Doctrines.Count);
+                    s.Doctrines.Add(doctrine);
+                    s.BannerText = $"HORDE {Doctrines.Name(doctrine)}  -  {Doctrines.Blurb(doctrine)}";
+                    s.BannerTimer = 3.4f;
+                    Audio.Play(SfxId.BossHorn, 0.55f, 0.75f);
+                }
+
                 s.LastSummary = s.Live; // snapshot for the wave-end stat card
                 s.Wave += 1;
                 // Carry the previously-previewed wave forward so foresight stays exact.
@@ -223,7 +233,8 @@ public static class WaveSystem
         // Wave archetype reshapes the rank-and-file (special units keep their identity).
         bool special = elite || kind is EnemyKind.Boss or EnemyKind.General;
         var am = special ? WaveArchetypes.Mods(WaveArchetype.Normal) : WaveArchetypes.Mods(s.ArchetypeOf(s.Wave));
-        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult * threat * am.Health * s.AscEnemyHpMult;
+        float hp = stats.Health * profile.Health * Balance.EnemyHealthMult * hpBuff * mod.EnemyHealthMult * threat * am.Health * s.AscEnemyHpMult
+                 * Doctrines.HpMult(s.Doctrines);
 
         var enemy = new Enemy
         {
@@ -232,8 +243,10 @@ public static class WaveSystem
             Radius = profile.Radius * am.Radius,
             Health = hp,
             MaxHealth = hp,
-            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff * mod.EnemySpeedMult * am.Speed * s.AscEnemySpeedMult,
-            Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult * dmgThreat * am.Damage),
+            Speed = stats.Speed * profile.Speed * Balance.EnemySpeedMult * spdBuff * mod.EnemySpeedMult * am.Speed * s.AscEnemySpeedMult
+                  * Doctrines.SpeedMult(s.Doctrines),
+            Damage = (int)MathF.Ceiling(stats.Damage * profile.Damage * Balance.EnemyDamageMult * dmgThreat * am.Damage
+                  * Doctrines.DamageMult(s.Doctrines)),
             Reward = (int)MathF.Ceiling(stats.Reward * profile.Reward * Balance.GoldRewardMult * mod.GoldMult * am.Reward),
             Kind = kind,
             Elite = elite,

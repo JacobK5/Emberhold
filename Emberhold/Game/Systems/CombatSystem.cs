@@ -41,6 +41,8 @@ public static class CombatSystem
         // Elementalist: bolts chill (slow) on hit; Shatter rewards hitting already-slowed foes.
         bool frost = hero.Kind == HeroKind.Elementalist;
         float shatterMult = hero.Has(HeroSkills.EShatter) && target.SlowTimer > 0f ? 1.35f : 1f;
+        // Universal combo: every hero shatters slowed targets a little (control pays off).
+        if (target.SlowTimer > 0f) shatterMult *= 1.15f;
         FireProjectile(s, hero.Pos, aim, damage: hero.Damage * profile.Damage * Balance.HeroDamageMult * s.StreakDamageMult * s.Modifier.HeroDamageMult * markMult * shatterMult,
             speed: HeroProjSpeed, color: color, source: ProjectileSource.Hero,
             splash: heroSplash, chains: heroChains, chainRange: heroChains > 0 ? 150f : 0f, pierce: heroPierce,
@@ -228,6 +230,8 @@ public static class CombatSystem
         enemy.Dead = true;
         s.Kills += 1;
         s.Live.Kills += 1;
+        // Combo: kills during Overdrive stoke it a little longer (capped).
+        if (s.Hero.Overdrive > 0f) s.Hero.Overdrive = MathF.Min(12f, s.Hero.Overdrive + 0.25f);
         Audio.Play(SfxId.Kill,
             enemy.Boss ? 0.9f : enemy.Champion || enemy.General ? 0.75f : enemy.Elite ? 0.6f : 0.4f,
             enemy.Boss ? 0.55f : enemy.Champion || enemy.General ? 0.7f : enemy.Elite ? 0.8f : 1f);
@@ -594,9 +598,11 @@ public static class CombatSystem
     {
         var hero = s.Hero;
         if (hero.DashCooldown > 0f || s.Over) return;
+        var from = hero.Pos;
         hero.Pos = Geometry.MoveWithCollisions(hero.Pos, hero.Radius, hero.Facing * 96f, s.SolidRects());
         float roam = s.RoamLimit;
         hero.Pos = new Vector2(MathUtils.Clamp(hero.Pos.X, -roam, roam), MathUtils.Clamp(hero.Pos.Y, -roam, roam));
+        IgniteCrossedTraps(s, from, hero.Pos); // combo: dashing across a slow-trap sets it alight
         // Shadowstep (Executioner): faster dash with longer i-frames.
         bool swift = hero.Has(HeroSkills.XSwift);
         hero.DashCooldown = swift ? 1.45f : 2.4f;
@@ -623,6 +629,35 @@ public static class CombatSystem
         s.AddParticles(hero.Pos, Palette.Hex("d5ebc5"), 14, 88f);
         s.KickShake(3f);
         Audio.Play(SfxId.Dash, 0.4f);
+    }
+
+    /// <summary>Hero combo: any slow-trap the dash path crosses ignites for a few
+    /// seconds, burning enemies inside it (the friction of a heroic exit).</summary>
+    private static void IgniteCrossedTraps(GameState s, Vector2 from, Vector2 to)
+    {
+        foreach (var st in s.Structures)
+        {
+            if (st.Role != StructureRole.GroundTrap || st.TrapSlowFactor >= 1f) continue;
+            if (SegmentDistance(from, to, st.Pos) > st.Radius) continue;
+            bool fresh = st.ComboBurnTimer <= 0f;
+            st.ComboBurnTimer = 3f;
+            if (fresh)
+            {
+                s.AddParticles(st.Pos, Palette.Fire, 14, 70f);
+                s.AddFloater(st.Pos + new Vector2(0, -st.Radius - 8), "IGNITED!", Palette.Fire);
+                Audio.Play(SfxId.Nova, 0.4f, 1.5f);
+            }
+        }
+    }
+
+    /// <summary>Distance from point p to segment ab.</summary>
+    private static float SegmentDistance(Vector2 a, Vector2 b, Vector2 p)
+    {
+        var ab = b - a;
+        float len2 = ab.LengthSquared();
+        if (len2 < 1e-6f) return Vector2.Distance(a, p);
+        float t = MathUtils.Clamp(Vector2.Dot(p - a, ab) / len2, 0f, 1f);
+        return Vector2.Distance(a + ab * t, p);
     }
 
     // ---- helpers --------------------------------------------------------

@@ -314,6 +314,9 @@ public static class Renderer
             lines.Add(($"EXOTICS:  {string.Join(", ", s.Exotics.Select(ShopState.ExoticName))}", Palette.Hex("ffd66b")));
         if (s.HordeTier > 0)
             lines.Add(($"HORDE TIER:  {s.HordeTier}  (+{s.HordeTier * 8}% enemy HP)", Palette.Hex("e0795a")));
+        if (s.Doctrines.Count > 0)
+            lines.Add(($"DOCTRINES:  {string.Join(",  ", s.Doctrines.Select(d => $"{Doctrines.Short(d)} ({Doctrines.Blurb(d)})"))}", Palette.Hex("d98f6b")));
+        lines.Add(("COMBOS:  dash across a slow-trap to ignite it  ·  slowed foes +15% hero dmg  ·  kills extend Overdrive", Palette.Hex("9aa6a0")));
         if (s.ActiveSynergies.Count > 0)
         {
             var names = SynergyEngine.Catalog.Where(d => s.ActiveSynergies.Contains(d.Id)).Select(d => d.Name);
@@ -427,6 +430,19 @@ public static class Renderer
             };
             Raylib.DrawCircleV(st.Pos, st.Radius, fill);
             Raylib.DrawCircleLinesV(st.Pos, st.Radius, new Color(20, 20, 20, 120));
+            // Dash-ignited (combo): the surface burns with flickering embers.
+            if (st.ComboBurnTimer > 0f)
+            {
+                float ft = (float)Raylib.GetTime() * 9f;
+                byte fa = (byte)(70 + 40 * MathF.Sin(ft + st.Pos.X));
+                Raylib.DrawCircleV(st.Pos, st.Radius * 0.85f, new Color((byte)0xed, (byte)0x74, (byte)0x43, fa));
+                for (int i = 0; i < 4; i++)
+                {
+                    float a = i / 4f * MathUtils.Tau + ft * 0.35f;
+                    Raylib.DrawCircleV(st.Pos + new Vector2(MathF.Cos(a), MathF.Sin(a)) * st.Radius * 0.5f,
+                        2.4f, Palette.Fire);
+                }
+            }
             if (st.Kind == StructureKind.SpikeTrap || st.Kind == StructureKind.Caltrops)
                 for (int i = 0; i < 6; i++)
                 {
@@ -975,6 +991,9 @@ public static class Renderer
             $"{s.Hero.Profile.Initial} LV{s.Hero.Level}");
         DrawHeroLoadout(s);
 
+        if (s.Doctrines.Count > 0)
+            Raylib.DrawText($"HORDE  {string.Join(" · ", s.Doctrines.Select(Doctrines.Short))}",
+                16, Raylib.GetScreenHeight() - 84, 15, Palette.Hex("d98f6b"));
         if (s.Ascension > 0)
             Raylib.DrawText($"ASCENSION {s.Ascension}", 16, Raylib.GetScreenHeight() - 66, 16, Palette.Hex("e0795a"));
         if (s.Modifier.Id != "none")

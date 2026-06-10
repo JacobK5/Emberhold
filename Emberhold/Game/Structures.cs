@@ -86,6 +86,7 @@ public sealed class Structure
     // Ground trap
     public float TrapDps;
     public float TrapSlowFactor = 1f;
+    public float ComboBurnTimer; // hero combo: dashing across a slow-trap sets it alight
 
     // Synergy-derived bonuses, recomputed each combat frame by SynergyEngine.
     public float SynDamageMult = 1f;

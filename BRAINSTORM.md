@@ -8,6 +8,19 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.37.0 — "War Doctrines"
+- **War Doctrines (the fortnight clock)** — every chapter boss felled, the horde adopts a
+  permanent doctrine for the rest of the run, announced by banner + horn and shown on the
+  HUD/pause panel: **Swift** (+10% speed), **Phalanx** (+12% HP), **Berserkers** (+15%
+  damage), **Frost Ward** (slows 30% weaker), **Siegecraft** (+25% damage to structures).
+  The ladder is a deterministic per-run shuffle (salted, persisted in saves), so every run
+  climbs a different escalation and each doctrine asks for a different counter.
+- **Hero combo system (first three)** — contextual interplay with your own fort:
+  dashing across a slow-trap (Tar Pit / Moat) **ignites it** for 3s, burning enemies
+  inside (flame surface + "IGNITED!"); every hero's shots deal **+15% to slowed foes**
+  (stacks under the Elementalist's Shatter node); kills during **Overdrive extend it**
+  by 0.25s each (capped 12s). Listed on the pause panel.
+
 ### v0.36.0 — "Resonance" (procedural audio)
 - **The game has sound** — a full SFX set synthesized at startup from pure math
   (`Core/SfxSynth.cs`: tone/sweep/noise oscillators with envelopes, mixed and
