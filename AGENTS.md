@@ -80,8 +80,14 @@ git push origin master
 The push to `master` triggers `.github/workflows/build.yml`, which:
 
 1. Builds `Emberhold-win-v{VERSION}-{sha}.exe` (Windows, self-contained)
-2. Builds `Emberhold-mac-v{VERSION}-{sha}.zip` (macOS x64 + arm64)
-3. Publishes a GitHub Release tagged `v{VERSION}-{sha}` with both files attached
+2. Builds `Emberhold-mac-x64-v{VERSION}-{sha}.zip` and
+   `Emberhold-mac-arm64-v{VERSION}-{sha}.zip` — each contains an ad-hoc-signed
+   `Emberhold.app` bundle + `README-FIRST.txt`. The bundle wrapping matters:
+   Gatekeeper assesses a signed .app as ONE unit, so a single right-click → Open
+   unlocks it. Loose executable+dylib zips get blocked dylib-by-dylib
+   (`libhostfxr.dylib` etc.) with no practical way to approve them all.
+   Templates live in `packaging/mac/`.
+3. Publishes a GitHub Release tagged `v{VERSION}-{sha}` with all files attached
 
 The release appears at `https://github.com/JacobK5/Emberhold/releases`.
 

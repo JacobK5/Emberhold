@@ -45,7 +45,11 @@ jobs:
           name: windows-build
           path: Emberhold-win-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.exe
 
-  # ─── macOS (x64 + arm64 zipped together) ────────────────────────────────────
+  # ─── macOS (ad-hoc-signed .app bundle per arch) ─────────────────────────────
+  # A bare executable + loose dylibs gets Gatekeeper-assessed file by file:
+  # approving the app still leaves libhostfxr.dylib (etc.) blocked. Wrapping the
+  # publish output in a signed .app bundle makes the approval cover the whole
+  # bundle, so one right-click → Open is enough.
   build-mac:
     runs-on: macos-latest
 
@@ -78,15 +82,42 @@ jobs:
             --self-contained true \
             -o publish/mac-arm64
 
-      - name: Create zip
+      - name: Assemble, sign, and zip .app bundles
         run: |
-          chmod +x publish/mac-x64/Emberhold publish/mac-arm64/Emberhold
-          (cd publish && zip -r "../Emberhold-mac-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.zip" mac-x64/ mac-arm64/)
+          ver='${{ steps.id.outputs.ver }}'
+          short='${{ steps.id.outputs.short }}'
+
+          make_app () {
+            local src="$1" arch="$2"
+            local stage="staging-$arch"
+            local app="$stage/Emberhold.app"
+
+            mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+            cp -a "$src/." "$app/Contents/MacOS/"
+            rm -f "$app/Contents/MacOS/"*.pdb
+            chmod +x "$app/Contents/MacOS/Emberhold"
+            sed "s/__VERSION__/$ver/g" packaging/mac/Info.plist.in > "$app/Contents/Info.plist"
+
+            # Ad-hoc sign every dylib, then the apphost, then seal the bundle.
+            # Inner-to-outer order matters; no hardened runtime (the .NET JIT
+            # needs entitlements under it, and ad-hoc can't notarize anyway).
+            find "$app/Contents/MacOS" -name '*.dylib' -print0 | xargs -0 -n1 codesign --force --sign -
+            codesign --force --sign - "$app/Contents/MacOS/Emberhold"
+            codesign --force --sign - "$app"
+
+            cp packaging/mac/README-FIRST.txt "$stage/"
+            # ditto preserves bundle structure + extended attributes the way
+            # Finder expects (plain zip can mangle .app bundles).
+            ditto -c -k "$stage" "Emberhold-mac-$arch-v$ver-$short.zip"
+          }
+
+          make_app publish/mac-x64 x64
+          make_app publish/mac-arm64 arm64
 
       - uses: actions/upload-artifact@v4
         with:
           name: mac-build
-          path: Emberhold-mac-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.zip
+          path: Emberhold-mac-*.zip
 
   # ─── Publish GitHub Release ──────────────────────────────────────────────────
   release:
@@ -116,6 +147,10 @@ jobs:
         with:
           tag_name: v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}
           name: v${{ steps.id.outputs.ver }} (${{ steps.id.outputs.short }})
+          body: |
+            **Windows:** download the `.exe` and run it.
+
+            **macOS:** download the zip for your Mac — `arm64` for Apple Silicon (M1–M4), `x64` for Intel — unzip, then **right-click `Emberhold.app` → Open → Open** (one-time; the app is ad-hoc signed, not notarized). If macOS still refuses: System Settings → Privacy & Security → "Open Anyway", or run `xattr -cr Emberhold.app` in Terminal. Details in the bundled `README-FIRST.txt`.
           files: |
             Emberhold-win-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.exe
-            Emberhold-mac-v${{ steps.id.outputs.ver }}-${{ steps.id.outputs.short }}.zip
+            Emberhold-mac-*.zip

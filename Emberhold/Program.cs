@@ -11,7 +11,7 @@ public static class Program
     /// <summary>Current build version, shown on the title screen. MUST mirror the
     /// repo-root <c>VERSION</c> file, which is what the release pipeline reads for the
     /// release tag/name — bump both together (see AGENTS.md).</summary>
-    public const string Version = "0.35.0";
+    public const string Version = "0.35.1";
 
     public static int Main(string[] args)
     {
