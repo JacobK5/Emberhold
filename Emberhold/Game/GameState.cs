@@ -310,6 +310,7 @@ public sealed class GameState
         }
         AddFloater(Hero.Pos + new Vector2(0, -42), "RALLY!", chill);
         KickShake(6f);
+        Render.Audio.Play(Render.SfxId.Rally, 0.6f);
         return true;
     }
 
@@ -321,6 +322,7 @@ public sealed class GameState
             if (SynergyPopups.Count == 0) return;
             ActivePopup = SynergyPopups.Dequeue();
             PopupTimer = PopupDuration;
+            Render.Audio.Play(Render.SfxId.Synergy, 0.6f);
         }
         PopupTimer -= dt;
         if (PopupTimer <= 0f) ActivePopup = null;

@@ -48,6 +48,7 @@ public static class CombatSystem
 
         hero.Facing = MathUtils.Normalize(target.Pos - hero.Pos);
         hero.ShotTimer = (hero.FireRate / Balance.HeroFireSpeedMult) * profile.Rate * (hero.Overdrive > 0f ? 0.58f : 1f);
+        Audio.Play(SfxId.Shot, 0.25f);
     }
 
     public static void UpdateProjectiles(GameState s, float dt)
@@ -143,10 +144,12 @@ public static class CombatSystem
                 hero.Overdrive = 10f;
                 s.AddParticles(d.Pos, Palette.Hex("ff8b52"), 16, 75f);
                 s.AddFloater(d.Pos + new Vector2(0, -8), "OVERDRIVE", Palette.Hex("ffb064"));
+                Audio.Play(SfxId.LevelUp, 0.5f, 1.3f);
             }
             else if (d.Kind == DropKind.Relic)
             {
                 CollectRelic(s, d.Pos);
+                Audio.Play(SfxId.Synergy, 0.6f, 0.85f);
             }
             else if (d.Kind == DropKind.Cache)
             {
@@ -155,6 +158,7 @@ public static class CombatSystem
                 s.AddParticles(d.Pos, Palette.Gold, 18, 78f);
                 s.AddFloater(d.Pos + new Vector2(0, -10), $"+{d.Value} CACHE", Palette.Hex("ffd66b"));
                 s.KickShake(4f);
+                Audio.Play(SfxId.Coin, 0.7f, 0.7f);
             }
             else
             {
@@ -162,6 +166,7 @@ public static class CombatSystem
                 s.Live.GoldEarned += d.Value;
                 s.AddParticles(d.Pos, Palette.Gold, 5, 43f);
                 s.AddFloater(d.Pos + new Vector2(0, -8), $"+{d.Value}", Palette.Hex("ffd66b"));
+                Audio.Play(SfxId.Coin, 0.35f);
             }
         }
     }
@@ -223,6 +228,9 @@ public static class CombatSystem
         enemy.Dead = true;
         s.Kills += 1;
         s.Live.Kills += 1;
+        Audio.Play(SfxId.Kill,
+            enemy.Boss ? 0.9f : enemy.Champion || enemy.General ? 0.75f : enemy.Elite ? 0.6f : 0.4f,
+            enemy.Boss ? 0.55f : enemy.Champion || enemy.General ? 0.7f : enemy.Elite ? 0.8f : 1f);
         // Charge the Fury ultimate — tougher foes feed it faster.
         s.GainFury(enemy.Boss ? 0.25f : enemy.General ? 0.18f : enemy.Elite ? 0.09f
                  : enemy.Kind == EnemyKind.Brute ? 0.06f : 0.045f);
@@ -308,6 +316,7 @@ public static class CombatSystem
     {
         var hero = s.Hero;
         hero.Xp += amount;
+        bool leveled = hero.Xp >= hero.NextXp;
         while (hero.Xp >= hero.NextXp)
         {
             hero.Xp -= hero.NextXp;
@@ -322,6 +331,7 @@ public static class CombatSystem
             s.AddFloater(hero.Pos + new Vector2(0, -34), "+1 SKILL POINT  (K)", Palette.Hex("b9e0ff"));
             s.AddParticles(hero.Pos, Palette.Hex("bfe0ff"), 12, 66f);
         }
+        if (leveled) Audio.Play(SfxId.LevelUp, 0.55f);
     }
 
     /// <summary>Side-effects when a hero attack lands: Bloodthirst lifesteal + Rend slow.</summary>
@@ -389,6 +399,7 @@ public static class CombatSystem
         s.AddParticles(hero.Pos, Palette.Hex("ffd66b"), 30, 150f);
         s.AddFloater(hero.Pos + new Vector2(0, -34), "CATACLYSM!", Palette.Hex("ffb04a"));
         s.KickShake(16f);
+        Audio.Play(SfxId.Ultimate, 0.9f);
         return true;
     }
 
@@ -403,6 +414,7 @@ public static class CombatSystem
         s.AddParticles(hero.Pos, Palette.Hex("d8c79a"), 22, 110f);
         s.AddFloater(hero.Pos + new Vector2(0, -26), "RALLY!", Palette.Hex("e6d6a8"));
         s.KickShake(5f);
+        Audio.Play(SfxId.Rally, 0.5f, 1.25f);
     }
 
     /// <summary>Elementalist signature: a radial burst that damages and deeply chills
@@ -435,6 +447,7 @@ public static class CombatSystem
         s.AddParticles(hero.Pos, Palette.Hex("9fe0ee"), 28, 150f);
         s.AddFloater(hero.Pos + new Vector2(0, -24), "FROST NOVA", Palette.Hex("bfeefa"));
         s.KickShake(5f);
+        Audio.Play(SfxId.Nova, 0.5f, 1.35f);
     }
 
     /// <summary>Executioner signature: blink to the weakest enemy in reach and strike;
@@ -466,6 +479,7 @@ public static class CombatSystem
         hero.Facing = dir;
         hero.Invulnerable = MathF.Max(hero.Invulnerable, 0.3f);
         s.AddParticles(target.Pos, Palette.Hex("b03a4a"), 18, 96f);
+        Audio.Play(SfxId.Dash, 0.45f, 0.8f);
 
         float threshold = hero.Has(HeroSkills.XHeadsman) ? 0.35f : 0.22f;
         bool canExecute = !target.Boss && target.Health <= target.MaxHealth * threshold;
@@ -501,6 +515,7 @@ public static class CombatSystem
         s.AddParticles(hero.Pos, Palette.Hex("aeb98c"), 24, 96f);
         s.AddFloater(hero.Pos + new Vector2(0, -26), "BRACE!", Palette.Hex("d8e0b4"));
         s.KickShake(6f);
+        Audio.Play(SfxId.Rally, 0.5f, 0.7f);
     }
 
     public static void ShootVolley(GameState s)
@@ -526,6 +541,7 @@ public static class CombatSystem
         }
         s.AddParticles(hero.Pos, Palette.Hex("ffd46f"), 16, 62f);
         s.KickShake(4f);
+        Audio.Play(SfxId.Shot, 0.5f, 0.75f);
     }
 
     /// <summary>Warden signature: a radial shockwave that damages, knocks back and slows.</summary>
@@ -556,6 +572,7 @@ public static class CombatSystem
         s.AddParticles(hero.Pos, Palette.Hex("c8a37a"), 26, 150f);
         s.AddFloater(hero.Pos + new Vector2(0, -24), "SLAM", Palette.Hex("e7c79a"));
         s.KickShake(8f);
+        Audio.Play(SfxId.Nova, 0.55f, 0.8f);
     }
 
     /// <summary>Artificer signature: a fort-wide tower frenzy for several seconds.</summary>
@@ -570,6 +587,7 @@ public static class CombatSystem
         s.BannerText = "TOWERS OVERCHARGED";
         s.BannerTimer = 1.6f;
         s.KickShake(5f);
+        Audio.Play(SfxId.LevelUp, 0.55f, 0.8f);
     }
 
     public static void Dash(GameState s)
@@ -604,6 +622,7 @@ public static class CombatSystem
 
         s.AddParticles(hero.Pos, Palette.Hex("d5ebc5"), 14, 88f);
         s.KickShake(3f);
+        Audio.Play(SfxId.Dash, 0.4f);
     }
 
     // ---- helpers --------------------------------------------------------

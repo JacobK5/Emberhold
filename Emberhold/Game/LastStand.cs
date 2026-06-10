@@ -83,5 +83,6 @@ public static class LastStand
         s.UltFxTimer = 0.5f;
         s.KickShake(9f);
         s.AddFloater(Map.KeepPos + new Vector2(0, -32), "KEEP NOVA", Palette.Hex("ffb04a"));
+        Audio.Play(SfxId.Nova, 0.65f);
     }
 }

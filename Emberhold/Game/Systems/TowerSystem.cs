@@ -86,6 +86,8 @@ public static class TowerSystem
             // Muzzle flash + spark at the barrel tip.
             t.MuzzleFlash = 0.08f;
             s.AddParticles(t.Pos + t.Facing * (t.Radius + 6f), ColorFor(t.ProjSource), 4, 64f);
+            if (t.ProjSource == ProjectileSource.Cannon) Audio.Play(SfxId.CannonShot, 0.4f);
+            else Audio.Play(SfxId.TowerShot, 0.16f);
 
             // Floor the fire interval: Forge + Artificer + Overcharge + Volatile Pact +
             // Overdrive Core can stack rate multipliers down to ~0.3x.

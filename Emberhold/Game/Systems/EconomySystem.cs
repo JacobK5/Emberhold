@@ -57,6 +57,7 @@ public static class EconomySystem
                 s.AddParticles(pad.Pos, Palette.Hex("f2c766"), 22, 92f);
                 s.KickShake(6f);
                 s.Pads.RemoveAt(i);
+                Audio.Play(SfxId.Build, 0.6f);
             }
         }
     }
@@ -101,6 +102,7 @@ public static class EconomySystem
                 s.AddParticles(st.Pos, Palette.Hex("bfe0ff"), 20, 80f);
                 s.AddFloater(st.Pos + new Vector2(0, -24), $"LV {st.Level}", Palette.Hex("bfe0ff"));
                 s.KickShake(5f);
+                Audio.Play(SfxId.Upgrade, 0.6f);
             }
         }
     }

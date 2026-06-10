@@ -115,6 +115,7 @@ public static class MapEventSystem
         s.KickShake(7f);
         s.AddParticles(m.Target, Fire, 22, 130f);
         s.AddParticles(m.Target, new Color(96, 84, 72, 255), 10, 80f);
+        Emberhold.Render.Audio.Play(Emberhold.Render.SfxId.CannonShot, 0.5f, 0.8f);
 
         // Cosmic damage ignores per-hit shields (a soft counter to Shielded packs).
         foreach (var e in s.Enemies)
