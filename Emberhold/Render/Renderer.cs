@@ -72,14 +72,17 @@ public static class Renderer
         OverlayUI.DrawStructureTooltip(s);
     }
 
-    /// <summary>Pulsing red edge vignette while the keep is in its Last Stand (&lt; 30% HP).</summary>
+    /// <summary>Red edge vignette while the keep is in its Last Stand (&lt; 30% HP).
+    /// Pulses only while a wave is actually live; a faint steady edge during lulls.</summary>
     private static void DrawLastStandVignette(GameState s)
     {
         if (s.Over || s.Phase != Phase.Combat || !LastStand.Active(s)) return;
         int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
         float frac = s.KeepHealth / s.KeepMaxHealth;
         float intensity = MathUtils.Clamp((LastStand.Threshold - frac) / LastStand.Threshold, 0f, 1f);
-        float pulse = 0.6f + 0.4f * MathF.Sin((float)Raylib.GetTime() * 5f);
+        float pulse = LastStand.WaveLive(s)
+            ? 0.6f + 0.4f * MathF.Sin((float)Raylib.GetTime() * 5f)
+            : 0.35f; // steady, calm reminder between waves — no flashing
         byte a = (byte)(120 * intensity * pulse);
         var red = new Color((byte)0xc0, (byte)0x2a, (byte)0x2a, a);
         var clear = new Color((byte)0xc0, (byte)0x2a, (byte)0x2a, (byte)0);

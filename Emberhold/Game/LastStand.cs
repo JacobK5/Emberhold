@@ -17,12 +17,25 @@ public static class LastStand
 
     public static bool Active(GameState s) => s.KeepHealth > 0f && s.KeepHealth / s.KeepMaxHealth < Threshold;
 
+    /// <summary>A raid is actually underway (spawning or live enemies on the field).</summary>
+    public static bool WaveLive(GameState s) => s.Spawning is not null || s.Enemies.Exists(e => !e.Dead);
+
     public static void Update(GameState s, float dt)
     {
         if (!Active(s))
         {
-            s.LastStandAnnounced = false;
+            // Hysteresis: only stand down once the keep is comfortably above the
+            // threshold, so regen hovering at 30% doesn't re-announce every crossing.
+            if (s.KeepHealth <= 0f || s.KeepHealth / s.KeepMaxHealth >= Threshold + 0.05f)
+                s.LastStandAnnounced = false;
             s.KeepPulseTimer = 0f;
+            return;
+        }
+
+        // Stay quiet between waves — no shake/ring/floater spam on an empty field.
+        if (!WaveLive(s))
+        {
+            s.KeepPulseTimer = MathF.Min(s.KeepPulseTimer, 0.8f);
             return;
         }
 
@@ -36,6 +49,10 @@ public static class LastStand
 
         s.KeepPulseTimer -= dt;
         if (s.KeepPulseTimer > 0f) return;
+        // Hold the charged pulse until a raider is actually in the blast radius,
+        // then fire the moment one presses in.
+        if (!s.Enemies.Exists(e => !e.Dead && Vector2.Distance(e.Pos, Map.KeepPos) <= Radius + e.Radius))
+            return;
         s.KeepPulseTimer = PulsePeriod;
         Nova(s);
     }
