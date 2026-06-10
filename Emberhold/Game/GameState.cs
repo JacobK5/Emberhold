@@ -67,6 +67,7 @@ public sealed class GameState
     public int BestWave = 1;
     public Profile? Profile;  // lifetime stats, set on game-over for the recap
     public readonly HashSet<string> SeenSynergies = new(); // discovered this run, for the summary
+    public readonly List<string> NewTrophies = new();      // trophies earned by this run (game-over callout)
 
     // Per-wave stats: Live accumulates during the wave; LastSummary holds the most
     // recently cleared wave for the between-wave stat card.

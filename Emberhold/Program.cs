@@ -11,7 +11,7 @@ public static class Program
     /// <summary>Current build version, shown on the title screen. MUST mirror the
     /// repo-root <c>VERSION</c> file, which is what the release pipeline reads for the
     /// release tag/name — bump both together (see AGENTS.md).</summary>
-    public const string Version = "0.38.0";
+    public const string Version = "0.39.0";
 
     public static int Main(string[] args)
     {
@@ -65,7 +65,8 @@ public static class Program
             ascendDemo: Array.IndexOf(args, "--ascend") >= 0,
             furyDemo: Array.IndexOf(args, "--fury") >= 0,
             champDemo: Array.IndexOf(args, "--champion") >= 0,
-            lastStand: Array.IndexOf(args, "--laststand") >= 0);
+            lastStand: Array.IndexOf(args, "--laststand") >= 0,
+            trophyHall: Array.IndexOf(args, "--trophies") >= 0);
 
         int frame = 0;
         while (!Raylib.WindowShouldClose())
