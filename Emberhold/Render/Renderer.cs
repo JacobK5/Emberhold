@@ -48,20 +48,25 @@ public static class Renderer
         DrawEdgeIndicators(s);
         DrawLastStandVignette(s);
         DrawHud(s);
-        DrawAbilityBar(s);
-        DrawWaveStatus(s);
-        DrawStreak(s);
-        DrawWaveSummary(s);
-        DrawSynergyPopup(s);
-        if (showIntro && s.Phase == Phase.Combat) DrawIntro(s);
-        if (s.BossBannerTimer > 0f)
+        if (!s.Over)
         {
-            string txt = s.BossIncoming ? "!!  CHAPTER BOSS INCOMING  !!" : "ELITE RAID INCOMING";
-            DrawCentered(txt, s.BossIncoming ? 44 : 40, Raylib.GetScreenHeight() / 2 - 130,
-                s.BossIncoming ? Palette.Hex("e0584a") : Palette.Hex("e0994f"));
+            // Everything here sits above the game-over dim, and banner/popup timers
+            // freeze on death — so none of it may draw over the death recap.
+            DrawAbilityBar(s);
+            DrawWaveStatus(s);
+            DrawStreak(s);
+            DrawWaveSummary(s);
+            DrawSynergyPopup(s);
+            if (showIntro && s.Phase == Phase.Combat) DrawIntro(s);
+            if (s.BossBannerTimer > 0f)
+            {
+                string txt = s.BossIncoming ? "!!  CHAPTER BOSS INCOMING  !!" : "ELITE RAID INCOMING";
+                DrawCentered(txt, s.BossIncoming ? 44 : 40, Raylib.GetScreenHeight() / 2 - 130,
+                    s.BossIncoming ? Palette.Hex("e0584a") : Palette.Hex("e0994f"));
+            }
+            if (s.BannerTimer > 0f)
+                DrawCentered(s.BannerText, 30, Raylib.GetScreenHeight() / 2 - 64, Palette.Hex("e07a4a"));
         }
-        if (s.BannerTimer > 0f)
-            DrawCentered(s.BannerText, 30, Raylib.GetScreenHeight() / 2 - 64, Palette.Hex("e07a4a"));
         if (s.Paused && !s.Over) DrawPausePanel(s);
 
         if (s.Phase == Phase.Draft) OverlayUI.DrawDraft(s, draft.Offer);

@@ -60,6 +60,7 @@ public sealed class DraftController
         {
             s.DraftDoublePick = false;
             StartDraft(s);
+            s.DraftReadyTimer = MathF.Max(s.DraftReadyTimer, 0.4f); // double-click guard
             return;
         }
         BeginPlacement(s);
