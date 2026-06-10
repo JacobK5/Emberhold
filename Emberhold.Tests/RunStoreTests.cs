@@ -83,4 +83,22 @@ public class RunStoreTests
         Assert.Equal(Phase.Combat, t.Phase);
         Assert.Empty(t.Enemies);
     }
+
+    [Fact]
+    public void Apply_RestoresShopPriceMult_FromModifierAndAscension()
+    {
+        var s = new GameState(seedDebug: false);
+        s.Modifier = RunModifier.Catalog.First(m => m.Id == "gold_rush"); // shop prices +25%
+        s.Ascension = 2;                                                  // +6%/level shop prices
+        var save = RunStore.Capture(s);
+
+        // Simulate the resume path: NewRun rolled some other trial and wrote its
+        // price multiplier into the shop before Apply runs.
+        var t = new GameState(seedDebug: false);
+        t.Shop.PriceMult = 0.77f; // stale value that must be overwritten
+        RunStore.Apply(t, save);
+
+        float expected = 1.25f * Ascensions.PriceMult(2);
+        Assert.Equal(expected, t.Shop.PriceMult, 3);
+    }
 }

@@ -173,7 +173,14 @@ public static class StructureFactory
                 st.Role = StructureRole.Aura; st.AuraKind = AuraKind.Economy; st.AuraRange = 150; st.AuraMagnitude = 1.5f; break;
             case StructureKind.EmberShrine:
                 st.Role = StructureRole.HeroBuff;
-                s.Hero.VolleyCooldown = 5.8f; s.Hero.VolleyDamage = 1.55f; break;
+                // Run-wide hero buff (all kinds, like relics) that can only improve the
+                // volley — shop upgrades may already have earned a faster cooldown.
+                s.Hero.ApplyToAll(p =>
+                {
+                    p.VolleyCooldown = MathF.Min(p.VolleyCooldown, 5.8f);
+                    p.VolleyDamage = MathF.Max(p.VolleyDamage, 1.55f);
+                });
+                break;
         }
 
         // Generic structure health so Siege engines can demolish non-wall builds too.

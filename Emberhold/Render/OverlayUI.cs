@@ -273,15 +273,29 @@ public static class OverlayUI
     private const int ShopItemW = 220, ShopItemH = 80, ShopItemGap = 8;
     private const int ShopPadX = 40, ShopPadY = 90;
 
+    /// <summary>
+    /// Shared shop-panel geometry. Columns grow with the item count (deep runs can
+    /// offer ~20 items) so the panel always fits on screen; vertically centred.
+    /// </summary>
+    private static (int Cols, int PanelW, int PanelH, int Px, int Py) ShopLayout(int itemCount)
+    {
+        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
+        int cols = Math.Clamp((itemCount + 5) / 6, 2, 4); // target <= 6 rows
+        int rows = Math.Max(1, (itemCount + cols - 1) / cols);
+        int panelW = cols * ShopItemW + (cols - 1) * ShopItemGap + ShopPadX * 2;
+        int panelH = rows * (ShopItemH + ShopItemGap) + ShopPadY + 60;
+        int px = w / 2 - panelW / 2;
+        int py = Math.Max(8, h / 2 - panelH / 2);
+        return (cols, panelW, panelH, px, py);
+    }
+
     /// <summary>Returns bounding rects for each shop item in screen space.</summary>
     public static Rectangle[] ShopItemRects(GameState s)
     {
-        int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
         var items = s.Shop.Items;
-        int cols = 2;
-        int panelW = cols * ShopItemW + (cols - 1) * ShopItemGap + ShopPadX * 2;
-        int x0 = w / 2 - panelW / 2 + ShopPadX;
-        int y0 = h / 2 - 200 + ShopPadY;
+        var (cols, _, _, px, py) = ShopLayout(items.Count);
+        int x0 = px + ShopPadX;
+        int y0 = py + ShopPadY;
         var rects = new Rectangle[items.Count];
         for (int i = 0; i < items.Count; i++)
         {
@@ -303,13 +317,8 @@ public static class OverlayUI
         // Dim background.
         Raylib.DrawRectangle(0, 0, w, h, new Color(8, 14, 16, 210));
 
-        // Panel background.
-        int cols = 2;
-        int rows = (shop.Items.Count + cols - 1) / cols;
-        int panelW = cols * ShopItemW + (cols - 1) * ShopItemGap + ShopPadX * 2;
-        int panelH = rows * (ShopItemH + ShopItemGap) + ShopPadY + 60;
-        int px = w / 2 - panelW / 2;
-        int py = h / 2 - 200;
+        // Panel background (shared layout with ShopItemRects).
+        var (_, panelW, panelH, px, py) = ShopLayout(shop.Items.Count);
         Raylib.DrawRectangle(px, py, panelW, panelH, new Color(18, 26, 24, 240));
         Raylib.DrawRectangleLinesEx(new Rectangle(px, py, panelW, panelH), 2f, Palette.Hex("c49a62"));
 
@@ -433,7 +442,7 @@ public static class OverlayUI
         StructureKind.WarBanner => new[] { "+Damage to towers", "in range." },
         StructureKind.Forge => new[] { "+Fire rate to towers", "in range." },
         StructureKind.Watchtower => new[] { "+Range to towers", "in range." },
-        StructureKind.Workshop => new[] { "Cheaper builds &", "repairs nearby." },
+        StructureKind.Workshop => new[] { "Speeds nearby builds;", "repairs structures." },
         StructureKind.TradingPost => new[] { "A fast-producing", "gold mine." },
         StructureKind.EmberShrine => new[] { "Empowers the hero's", "volley ability." },
         _ => new[] { "" },
@@ -448,7 +457,7 @@ public static class OverlayUI
 
     public static void DrawStructureTooltip(GameState s)
     {
-        if (s.Over || s.ViewingBase) return;
+        if (s.Over || s.ViewingBase || s.Shop.Open) return;
         if (s.Phase == Phase.Draft) return;
 
         var mouse = Raylib.GetMousePosition();
@@ -479,7 +488,7 @@ public static class OverlayUI
                     AuraKind.Damage  => $"+{(hit.AuraMagnitude - 1f) * 100f:0}% damage  r={hit.AuraRange:0}",
                     AuraKind.Rate    => $"-{(1f - hit.AuraMagnitude) * 100f:0}% cd  r={hit.AuraRange:0}",
                     AuraKind.Range   => $"+{hit.AuraMagnitude:0} range  r={hit.AuraRange:0}",
-                    _                => $"Economy aura  r={hit.AuraRange:0}",
+                    _                => $"Builds +{(hit.AuraMagnitude - 1f) * 100f:0}% faster  r={hit.AuraRange:0}",
                 };
                 lines.Add((auraLine, Palette.Hex("d6b46c")));
                 break;

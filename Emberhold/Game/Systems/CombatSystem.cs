@@ -198,10 +198,18 @@ public static class CombatSystem
         if (enemy.Dead) return;
         if (mitigable && enemy.ShieldPerHit > 0f)
             damage = MathF.Max(1f, damage - enemy.ShieldPerHit); // Shielded resists per-hit
-        s.Live.DamageDealt += (int)MathF.Round(MathF.Min(damage, MathF.Max(0f, enemy.Health)));
+        // Tally with a fractional carry so per-frame DoT ticks (< 1 dmg) still count.
+        s.DamageCarry += MathF.Min(damage, MathF.Max(0f, enemy.Health));
+        int whole = (int)s.DamageCarry;
+        if (whole > 0) { s.Live.DamageDealt += whole; s.DamageCarry -= whole; }
         enemy.Health -= damage;
-        enemy.HitTimer = 0.12f;
-        s.AddParticles(enemy.Pos, enemy.Elite ? Palette.Elite : Palette.Hex("cf6b52"), 3, 34f);
+        // Hit feedback only for real hits: per-frame DoT ticks would otherwise flood
+        // particles (3/frame/enemy) and lock burning enemies in the hit-flash colour.
+        if (damage >= 1f)
+        {
+            enemy.HitTimer = 0.12f;
+            s.AddParticles(enemy.Pos, enemy.Elite ? Palette.Elite : Palette.Hex("cf6b52"), 3, 34f);
+        }
 
         if (splash > 0f)
         {

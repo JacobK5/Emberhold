@@ -42,6 +42,38 @@ public class LastStandTests
     }
 
     [Fact]
+    public void Update_StaysQuietBetweenWaves()
+    {
+        // Critically wounded keep, but the field is empty (between waves):
+        // no banner, no nova FX — the screen must not flash during the lull.
+        var s = new GameState(seedDebug: false) { KeepMaxHealth = 100f, KeepHealth = 18f };
+        for (int i = 0; i < 400; i++) LastStand.Update(s, 0.05f); // 20 simulated seconds
+        Assert.False(s.LastStandAnnounced);
+        Assert.Equal(0f, s.UltFxTimer);
+        Assert.Equal(0f, s.Shake);
+        Assert.Empty(s.Floaters);
+    }
+
+    [Fact]
+    public void Update_HoldsNovaUntilARaiderIsInRange()
+    {
+        var s = new GameState(seedDebug: false) { KeepMaxHealth = 100f, KeepHealth = 18f };
+        var far = Foe(s, new Vector2(600, 0));
+        s.Enemies.Add(far);
+
+        // Wave is live but nothing is near the keep: the pulse charges and holds.
+        for (int i = 0; i < 200; i++) LastStand.Update(s, 0.05f);
+        Assert.Equal(400f, far.Health);
+        Assert.Equal(0f, s.UltFxTimer);
+
+        // The moment a raider presses into range, the held nova fires.
+        var near = Foe(s, new Vector2(40, 0));
+        s.Enemies.Add(near);
+        LastStand.Update(s, 0.016f);
+        Assert.True(near.Health < 400f);
+    }
+
+    [Fact]
     public void Update_AnnouncesOnEntry_PulsesOverTime_ResetsOnRecovery()
     {
         var s = new GameState(seedDebug: false) { KeepMaxHealth = 100f, KeepHealth = 18f };

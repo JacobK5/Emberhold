@@ -14,6 +14,10 @@ public static class EnemySystem
     public static void Update(GameState s, float dt)
     {
         var hero = s.Hero;
+        // One snapshot for the whole frame: rebuilding the solid-rect list per enemy
+        // per step is pure allocation churn. (A wall felled mid-frame stays solid for
+        // the rest of this frame; DefenseSystem removes it before the next.)
+        var solids = s.SolidRects();
         List<Enemy>? summons = null; // bosses summon adds; appended after the loop to keep iteration safe
         foreach (var e in s.Enemies)
         {
@@ -90,7 +94,7 @@ public static class EnemySystem
 
             if (e.Siege)
             {
-                UpdateSiege(s, e, speedScale, dt);
+                UpdateSiege(s, e, speedScale, dt, solids);
             }
             else if (IsTaunted(s, e))
             {
@@ -101,7 +105,7 @@ public static class EnemySystem
                 {
                     var dir = MathUtils.Normalize(hero.Pos - e.Pos);
                     var delta = dir * e.Speed * speedScale * dt;
-                    e.Pos = Geometry.MoveWithCollisions(e.Pos, e.Radius, delta, s.SolidRects());
+                    e.Pos = Geometry.MoveWithCollisions(e.Pos, e.Radius, delta, solids);
                 }
                 else if (e.AttackTimer <= 0f)
                 {
@@ -145,7 +149,7 @@ public static class EnemySystem
                 {
                     var dir = MathUtils.Normalize(Map.KeepPos - e.Pos);
                     var delta = dir * e.Speed * speedScale * dt;
-                    e.Pos = ignoresWalls ? e.Pos + delta : Geometry.MoveWithCollisions(e.Pos, e.Radius, delta, s.SolidRects());
+                    e.Pos = ignoresWalls ? e.Pos + delta : Geometry.MoveWithCollisions(e.Pos, e.Radius, delta, solids);
                 }
             }
 
@@ -223,7 +227,7 @@ public static class EnemySystem
     /// structure (tower / mine / aura / wall) and demolish it, smashing through any
     /// wall in the way. Once nothing's left to wreck they fall on the keep.
     /// </summary>
-    private static void UpdateSiege(GameState s, Enemy e, float speedScale, float dt)
+    private static void UpdateSiege(GameState s, Enemy e, float speedScale, float dt, IReadOnlyList<Raylib_cs.Rectangle> solids)
     {
         // Smash any wall it's pressed against first (clears its own path).
         var wall = NearestBlockingWall(s, e);
@@ -235,14 +239,14 @@ public static class EnemySystem
             if (Vector2.Distance(e.Pos, target.Pos) <= e.Radius + target.Radius + 4f)
             { SiegeAttack(s, e, target); return; }
             var dir = MathUtils.Normalize(target.Pos - e.Pos);
-            e.Pos = Geometry.MoveWithCollisions(e.Pos, e.Radius, dir * e.Speed * speedScale * dt, s.SolidRects());
+            e.Pos = Geometry.MoveWithCollisions(e.Pos, e.Radius, dir * e.Speed * speedScale * dt, solids);
             return;
         }
 
         // No structures remain — march on the keep.
         if (Vector2.Distance(e.Pos, Map.KeepPos) <= e.Radius + Map.KeepRadius) { AttackKeep(s, e); return; }
         var toKeep = MathUtils.Normalize(Map.KeepPos - e.Pos);
-        e.Pos = Geometry.MoveWithCollisions(e.Pos, e.Radius, toKeep * e.Speed * speedScale * dt, s.SolidRects());
+        e.Pos = Geometry.MoveWithCollisions(e.Pos, e.Radius, toKeep * e.Speed * speedScale * dt, solids);
     }
 
     private static void SiegeAttack(GameState s, Enemy e, Structure st)

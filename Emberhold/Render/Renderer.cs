@@ -48,20 +48,25 @@ public static class Renderer
         DrawEdgeIndicators(s);
         DrawLastStandVignette(s);
         DrawHud(s);
-        DrawAbilityBar(s);
-        DrawWaveStatus(s);
-        DrawStreak(s);
-        DrawWaveSummary(s);
-        DrawSynergyPopup(s);
-        if (showIntro && s.Phase == Phase.Combat) DrawIntro(s);
-        if (s.BossBannerTimer > 0f)
+        if (!s.Over)
         {
-            string txt = s.BossIncoming ? "!!  CHAPTER BOSS INCOMING  !!" : "ELITE RAID INCOMING";
-            DrawCentered(txt, s.BossIncoming ? 44 : 40, Raylib.GetScreenHeight() / 2 - 130,
-                s.BossIncoming ? Palette.Hex("e0584a") : Palette.Hex("e0994f"));
+            // Everything here sits above the game-over dim, and banner/popup timers
+            // freeze on death — so none of it may draw over the death recap.
+            DrawAbilityBar(s);
+            DrawWaveStatus(s);
+            DrawStreak(s);
+            DrawWaveSummary(s);
+            DrawSynergyPopup(s);
+            if (showIntro && s.Phase == Phase.Combat) DrawIntro(s);
+            if (s.BossBannerTimer > 0f)
+            {
+                string txt = s.BossIncoming ? "!!  CHAPTER BOSS INCOMING  !!" : "ELITE RAID INCOMING";
+                DrawCentered(txt, s.BossIncoming ? 44 : 40, Raylib.GetScreenHeight() / 2 - 130,
+                    s.BossIncoming ? Palette.Hex("e0584a") : Palette.Hex("e0994f"));
+            }
+            if (s.BannerTimer > 0f)
+                DrawCentered(s.BannerText, 30, Raylib.GetScreenHeight() / 2 - 64, Palette.Hex("e07a4a"));
         }
-        if (s.BannerTimer > 0f)
-            DrawCentered(s.BannerText, 30, Raylib.GetScreenHeight() / 2 - 64, Palette.Hex("e07a4a"));
         if (s.Paused && !s.Over) DrawPausePanel(s);
 
         if (s.Phase == Phase.Draft) OverlayUI.DrawDraft(s, draft.Offer);
@@ -72,14 +77,17 @@ public static class Renderer
         OverlayUI.DrawStructureTooltip(s);
     }
 
-    /// <summary>Pulsing red edge vignette while the keep is in its Last Stand (&lt; 30% HP).</summary>
+    /// <summary>Red edge vignette while the keep is in its Last Stand (&lt; 30% HP).
+    /// Pulses only while a wave is actually live; a faint steady edge during lulls.</summary>
     private static void DrawLastStandVignette(GameState s)
     {
         if (s.Over || s.Phase != Phase.Combat || !LastStand.Active(s)) return;
         int w = Raylib.GetScreenWidth(), h = Raylib.GetScreenHeight();
         float frac = s.KeepHealth / s.KeepMaxHealth;
         float intensity = MathUtils.Clamp((LastStand.Threshold - frac) / LastStand.Threshold, 0f, 1f);
-        float pulse = 0.6f + 0.4f * MathF.Sin((float)Raylib.GetTime() * 5f);
+        float pulse = LastStand.WaveLive(s)
+            ? 0.6f + 0.4f * MathF.Sin((float)Raylib.GetTime() * 5f)
+            : 0.35f; // steady, calm reminder between waves — no flashing
         byte a = (byte)(120 * intensity * pulse);
         var red = new Color((byte)0xc0, (byte)0x2a, (byte)0x2a, a);
         var clear = new Color((byte)0xc0, (byte)0x2a, (byte)0x2a, (byte)0);
@@ -710,6 +718,16 @@ public static class Renderer
 
             if (e.SlowTimer > 0f)
                 Raylib.DrawCircleLinesV(e.Pos, e.Radius + 3f, new Color(150, 200, 235, 150));
+
+            // Burning: a flickering ember licking up from the body.
+            if (e.BurnTimer > 0f)
+            {
+                float ft = (float)Raylib.GetTime() * 13f + e.Id;
+                float lick = 2f + MathF.Sin(ft) * 1.5f;
+                var fp = e.Pos + new Vector2(MathF.Sin(ft * 0.7f) * 2f, -e.Radius - 3f);
+                Raylib.DrawCircleV(fp, 3f + lick * 0.4f, new Color((byte)0xed, (byte)0x74, (byte)0x43, (byte)200));
+                Raylib.DrawCircleV(fp + new Vector2(0, -2.5f), 1.8f, new Color((byte)0xff, (byte)0xd6, (byte)0x6b, (byte)220));
+            }
 
             if (e.Elite || e.Health < e.MaxHealth)
             {

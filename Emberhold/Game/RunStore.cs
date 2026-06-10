@@ -281,6 +281,9 @@ public static class RunStore
         s.Paused = false;
         s.Phase = Phase.Combat;
         s.BetweenWaves = MathF.Max(4f, save.BetweenWaves);
+        // Recompute shop pricing from the RESTORED modifier + ascension (NewRun rolled
+        // a random trial before this Apply ran; its price multiplier must not leak in).
+        s.Shop.PriceMult = s.Modifier.ShopPriceMult * Ascensions.PriceMult(s.Ascension);
         s.Shop.Refresh(s.Wave, s.ZoneFortified, s.OwnedKinds(), s.Exotics);
         s.Shop.CanOpen = true;
         s.Shop.Open = false;

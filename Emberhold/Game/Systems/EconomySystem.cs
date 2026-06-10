@@ -14,6 +14,22 @@ public static class EconomySystem
     private const float DwellGrace = 0.5f;
     private const float BuildReach = 30f;
 
+    /// <summary>
+    /// Deposit-rate multiplier from any Workshop whose aura covers the position
+    /// (fort-wide under the Network amplifier). 1.0 when no workshop applies.
+    /// </summary>
+    public static float BuildRateMult(GameState s, Vector2 pos)
+    {
+        float best = 1f;
+        foreach (var st in s.Structures)
+        {
+            if (st.Kind != Data.StructureKind.Workshop) continue;
+            float reach = s.AurasGlobal ? float.PositiveInfinity : st.AuraRange;
+            if (Vector2.Distance(st.Pos, pos) <= reach) best = MathF.Max(best, st.AuraMagnitude);
+        }
+        return best;
+    }
+
     public static void UpdateBuilding(GameState s, float dt)
     {
         var hero = s.Hero;
@@ -26,7 +42,8 @@ public static class EconomySystem
             pad.Dwell += dt;
             if (pad.Dwell < DwellGrace) continue;
 
-            float rate = MathUtils.DepositRate(pad.Def.Cost, Balance.DepositBaseRate, Balance.DepositSpeedMult);
+            float rate = MathUtils.DepositRate(pad.Def.Cost, Balance.DepositBaseRate, Balance.DepositSpeedMult)
+                       * BuildRateMult(s, pad.Pos);
             pad.DepositCarry += rate * dt;
             int amount = MathUtils.DepositAmount(s.Gold, pad.Remaining, pad.DepositCarry);
             pad.DepositCarry -= amount;
@@ -65,7 +82,8 @@ public static class EconomySystem
             if (st.Dwell < DwellGrace) continue;
 
             int cost = st.UpgradeCost;
-            float rate = MathUtils.DepositRate(cost, Balance.DepositBaseRate, Balance.DepositSpeedMult);
+            float rate = MathUtils.DepositRate(cost, Balance.DepositBaseRate, Balance.DepositSpeedMult)
+                       * BuildRateMult(s, st.Pos);
             st.UpgradeCarry += rate * dt;
             int amount = MathUtils.DepositAmount(s.Gold, cost - st.UpgradeInvested, st.UpgradeCarry);
             st.UpgradeCarry -= amount;
@@ -119,6 +137,7 @@ public static class EconomySystem
                     AuraKind.Damage => st.AuraMagnitude + 0.18f,  // stronger damage buff
                     AuraKind.Rate => MathF.Max(0.6f, st.AuraMagnitude - 0.06f), // faster (lower is better)
                     AuraKind.Range => st.AuraMagnitude + 25f,
+                    AuraKind.Economy => st.AuraMagnitude + 0.2f,  // faster deposits (Workshop)
                     _ => st.AuraMagnitude,
                 };
                 break;
