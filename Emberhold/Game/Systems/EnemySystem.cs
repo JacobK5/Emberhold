@@ -140,6 +140,7 @@ public static class EnemySystem
                         float wallDamage = e.Damage * (s.Fortified ? 0.65f : 1f); // Fortified amplifier
                         blockingWall.Health -= wallDamage;
                         s.KickShake(4f);
+                        Audio.Play(SfxId.KeepHit, 0.22f, 1.5f);
                         s.AddParticles(blockingWall.Pos, Palette.Hex("b98a59"), 5, 38f);
                         s.AddFloater(blockingWall.Pos + new Vector2(0, -18), $"-{(int)wallDamage}", Palette.Hex("efb36c"));
                         if (blockingWall.Retaliate) CombatSystem.DamageEnemy(s, e, 12f);
@@ -158,6 +159,7 @@ public static class EnemySystem
                 hero.Health -= MathF.Max(4f, e.Damage * 0.65f) * hero.DamageTakenMult;
                 hero.Invulnerable = 0.75f;
                 s.AddParticles(hero.Pos, Palette.Hex("d9795c"), 8, 58f);
+                Audio.Play(SfxId.HeroHurt, 0.55f);
             }
         }
 
@@ -210,6 +212,7 @@ public static class EnemySystem
         s.BannerTimer = 2.6f;
         s.AddParticles(Map.KeepPos, Palette.Hex("d37455"), 20, 80f);
         s.KickShake(12f);
+        Audio.Play(SfxId.KeepHit, 0.9f, 0.7f);
     }
 
     private static void AttackKeep(GameState s, Enemy e)
@@ -220,6 +223,7 @@ public static class EnemySystem
         s.KickShake(7f);
         s.AddParticles(Map.KeepPos, Palette.Hex("d37455"), 8, 54f);
         s.AddFloater(Map.KeepPos + new Vector2(0, -30), $"-{e.Damage}", Palette.Hex("ef896c"));
+        Audio.Play(SfxId.KeepHit, 0.6f);
     }
 
     /// <summary>

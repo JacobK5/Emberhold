@@ -11,7 +11,7 @@ public static class Program
     /// <summary>Current build version, shown on the title screen. MUST mirror the
     /// repo-root <c>VERSION</c> file, which is what the release pipeline reads for the
     /// release tag/name — bump both together (see AGENTS.md).</summary>
-    public const string Version = "0.35.1";
+    public const string Version = "0.36.0";
 
     public static int Main(string[] args)
     {
@@ -25,6 +25,11 @@ public static class Program
         Raylib.SetTargetFPS(60);
         Raylib.SetExitKey(KeyboardKey.Null);
         Game.BalanceConfig.Load(); // apply any persisted balance tuning
+        // Smoke runs stay silent (they're for CI/screenshots, often on dev boxes);
+        // --sound forces audio on anyway (for testing the device path), --mute forces it off.
+        bool mute = Array.IndexOf(args, "--mute") >= 0
+            || (smokeFrames is not null && Array.IndexOf(args, "--sound") < 0);
+        Render.Audio.Init(mute);
 
         int startWave = 0;
         if (ParseStringArg(args, "--wave") is string ws && int.TryParse(ws, out int wv)) startWave = wv;
@@ -84,6 +89,7 @@ public static class Program
         if (smokeFrames is not null)
             Console.WriteLine($"REPORT {game.Report()}");
 
+        Render.Audio.Shutdown();
         Raylib.CloseWindow();
         return 0;
     }

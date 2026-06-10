@@ -25,8 +25,9 @@ public static class WaveSystem
             Interval = stats.Interval,
             Kinds = new Queue<EnemyKind>(kinds),
         };
-        if (kinds.Contains(EnemyKind.Boss)) { s.BossBannerTimer = 2.4f; s.BossIncoming = true; }
-        else if (kinds.Contains(EnemyKind.Elite)) { s.BossBannerTimer = 1.8f; s.BossIncoming = false; }
+        if (kinds.Contains(EnemyKind.Boss)) { s.BossBannerTimer = 2.4f; s.BossIncoming = true; Audio.Play(SfxId.BossHorn, 0.8f); }
+        else if (kinds.Contains(EnemyKind.Elite)) { s.BossBannerTimer = 1.8f; s.BossIncoming = false; Audio.Play(SfxId.BossHorn, 0.45f, 1.3f); }
+        else Audio.Play(SfxId.WaveStart, 0.55f);
 
         // A champion mini-boss may be promoted from the roster on deep non-boss waves.
         s.ChampionSpawned = false;
@@ -250,7 +251,7 @@ public static class WaveSystem
             General = kind == EnemyKind.General,
         };
         s.Enemies.Add(enemy);
-        if (kind == EnemyKind.General) { s.BossBannerTimer = 2.2f; s.BossIncoming = false; }
+        if (kind == EnemyKind.General) { s.BossBannerTimer = 2.2f; s.BossIncoming = false; Audio.Play(SfxId.BossHorn, 0.7f, 0.9f); }
 
         // Promote one rank-and-file raider into a champion mini-boss this wave.
         if (s.ChampionPending && !s.ChampionSpawned && !special

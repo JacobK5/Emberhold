@@ -8,6 +8,17 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.36.0 — "Resonance" (procedural audio)
+- **The game has sound** — a full SFX set synthesized at startup from pure math
+  (`Core/SfxSynth.cs`: tone/sweep/noise oscillators with envelopes, mixed and
+  serialized as in-memory WAVs; `Render/Audio.cs` plays them via raylib with per-id
+  rate limits, alias polyphony, and pitch jitter). Zero asset files, in keeping with
+  the all-code workflow. ~25 hooks: hero/tower/cannon shots, kills (pitched down for
+  elites/champions/bosses), coin & cache pickups, builds/upgrades, wave drums, boss/
+  general/champion horns, keep & wall hits, hero hurt, dash/signatures/ultimate/rally,
+  keep nova, synergy discovery sparkle, level-ups, UI clicks, purchases, game over.
+  `--mute` flag; smoke runs auto-mute (`--sound` forces audio on for device testing).
+
 ### v0.35.0 — "Counterweight" (balance pass)
 - **Attack-tower nerf** — tower upgrades now scale ×1.45 damage / ×0.88 rate per level
   (was ×1.6 / ×0.85 ≈ ×1.88 DPS per level): maxing a couple of attack towers alone no

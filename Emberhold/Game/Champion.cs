@@ -62,6 +62,7 @@ public static class Champions
         s.BannerText = $"CHAMPION: {Name(e.Trait).ToUpper()}";
         s.BannerTimer = 2.4f;
         s.AddFloater(e.Pos + new Vector2(0, -30), Name(e.Trait), Palette.Hex("ffd66b"));
+        Audio.Play(SfxId.BossHorn, 0.5f, 1.25f);
     }
 
     /// <summary>Warbringer enrage: a speed multiplier that climbs as the champion loses HP.</summary>

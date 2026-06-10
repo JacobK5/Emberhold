@@ -253,6 +253,7 @@ public sealed class GameApp
         for (int i = 0; i < items.Count; i++)
         {
             if (!Raylib.CheckCollisionPointRec(m, rects[i])) continue;
+            Audio.Play(SfxId.Click, 0.5f);
             DoMenuAction(items[i].Action);
             break;
         }
@@ -327,6 +328,7 @@ public sealed class GameApp
             NewRun();
             _introTimer = 8f;
             _screen = Screen.Playing;
+            Audio.Play(SfxId.Build, 0.5f);
             break;
         }
     }
@@ -358,7 +360,12 @@ public sealed class GameApp
                 if (Raylib.CheckCollisionPointRec(m, rects[i])) { picked = i; break; }
         }
 
-        if (picked >= 0) { _draft.Pick(_state, picked); _state.ViewingBase = false; }
+        if (picked >= 0)
+        {
+            _draft.Pick(_state, picked);
+            _state.ViewingBase = false;
+            Audio.Play(SfxId.Click, 0.55f);
+        }
     }
 
     private void UpdatePlacement()
@@ -368,7 +375,7 @@ public sealed class GameApp
         if (Raylib.IsMouseButtonPressed(MouseButton.Left))
         {
             var world = Raylib.GetScreenToWorld2D(Raylib.GetMousePosition(), _state.Cam);
-            _draft.TryPlace(_state, world);
+            if (_draft.TryPlace(_state, world)) Audio.Play(SfxId.Click, 0.55f, 1.2f);
         }
     }
 
@@ -457,6 +464,7 @@ public sealed class GameApp
         if (_state.KeepHealth <= 0f || _state.Hero.Health <= 0f)
         {
             _state.Over = true;
+            Audio.Play(SfxId.GameOver, 0.75f);
             RunStore.Delete(); // the run is finished; don't resume a dead keep
             _profile = Persistence.Record(_profile, _state.Wave, _state.Kills, _state.BossKills, _state.SeenSynergies);
             _state.BestWave = _profile.BestWave;
@@ -474,6 +482,7 @@ public sealed class GameApp
             Persistence.Save(_profile);
             _state.BannerText = $"ASCENSION {_profile.MaxAscension} UNLOCKED";
             _state.BannerTimer = 3.2f;
+            Audio.Play(SfxId.Synergy, 0.7f, 0.8f);
         }
 
         // Checkpoint once the post-wave lull is stable (after any draft/placement resolves).
@@ -522,6 +531,7 @@ public sealed class GameApp
             _state.BannerText = "THE PHOENIX RISES";
             _state.BannerTimer = 2.6f;
             _state.KickShake(12f);
+            Audio.Play(SfxId.Synergy, 0.8f, 0.7f);
         }
     }
 
@@ -571,6 +581,8 @@ public sealed class GameApp
             var item = _state.Shop.Items[i];
             if (item.Purchased) break;
             TryBuyShopItem(item);
+            if (item.Purchased) Audio.Play(SfxId.Coin, 0.65f, 0.75f);
+            else Audio.Play(SfxId.Click, 0.3f, 0.6f); // couldn't afford it
             break;
         }
     }
@@ -716,6 +728,7 @@ public sealed class GameApp
         hero.Invulnerable = MathF.Max(hero.Invulnerable, 0.3f);
         _state.AddParticles(hero.Pos, Palette.Hex("f3c878"), 16, 72f);
         _state.AddFloater(hero.Pos + new Vector2(0, -34), hero.Profile.Name, Palette.Hex("efd18a"));
+        Audio.Play(SfxId.Click, 0.5f, 0.9f);
     }
 
     /// <summary>Spend a skill point on a clicked node in the skill-tree overlay.</summary>
@@ -729,6 +742,7 @@ public sealed class GameApp
             {
                 _state.AddFloater(_state.Hero.Pos + new Vector2(0, -30), node.Name, Palette.Hex("efd18a"));
                 _state.AddParticles(_state.Hero.Pos, Palette.Hex("bfe0ff"), 14, 70f);
+                Audio.Play(SfxId.LevelUp, 0.6f, 1.1f);
             }
             break;
         }
