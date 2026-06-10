@@ -187,6 +187,9 @@ public sealed class GameApp
 
     public void Update(float dt)
     {
+        // Adaptive war drums: layered by live threat, silent everywhere else.
+        Audio.UpdateMusic(dt, MusicIntensity());
+
         if (_balanceOpen) { UpdateBalance(); return; }
         if (_screen == Screen.Title) { UpdateTitle(); return; }
         if (_screen == Screen.HeroSelect) { UpdateHeroSelect(); return; }
@@ -214,6 +217,20 @@ public sealed class GameApp
             case Phase.Placement: _state.Shake = 0f; UpdatePlacement(); EaseCameraHome(dt); break;
             case Phase.Combat: UpdateCombat(dt); break;
         }
+    }
+
+    /// <summary>0 = drums silent; otherwise scales with the live threat on the field.</summary>
+    private float MusicIntensity()
+    {
+        if (_screen != Screen.Playing || _state is null || _balanceOpen) return 0f;
+        if (_state.Over || _state.Paused || _state.Phase != Phase.Combat) return 0f;
+        if (_skillsOpen || _heroSwapOpen || _showCodex || _state.Shop.Open) return 0f;
+        int alive = _state.Enemies.Count;
+        int incoming = _state.Spawning?.Remaining ?? 0;
+        if (alive + incoming == 0) return 0f;
+        float x = MathUtils.Clamp((alive + incoming * 0.4f) / 16f, 0.2f, 1f);
+        if (_state.Enemies.Exists(e => e.Boss || e.General || e.Champion)) x = MathF.Min(1f, x + 0.3f);
+        return x;
     }
 
     public bool ShowIntro => _introTimer > 0f;

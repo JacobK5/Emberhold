@@ -8,6 +8,14 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.38.0 — "Drums of War" (adaptive music)
+- **Adaptive battle drums** — an 8-step percussion sequencer (kick/tom/hat synthesized
+  like everything else; zero assets) that plays only while a wave is live: a sparse
+  heartbeat kick when a few raiders trickle in, hats and toms layering in as the field
+  fills, an extra urgent kick + faster tempo (~88→115 BPM) at boss-tier threat, and
+  silence in lulls, menus, pause, and overlays. Driven per-frame from live enemy counts
+  (bosses/generals/champions push intensity up). Pure pattern logic is unit-tested.
+
 ### v0.37.0 — "War Doctrines"
 - **War Doctrines (the fortnight clock)** — every chapter boss felled, the horde adopts a
   permanent doctrine for the rest of the run, announced by banner + horn and shown on the

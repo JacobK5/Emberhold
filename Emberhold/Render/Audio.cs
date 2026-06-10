@@ -8,6 +8,8 @@ public enum SfxId
 {
     Shot, TowerShot, CannonShot, Kill, Coin, Build, Upgrade, WaveStart, BossHorn,
     KeepHit, HeroHurt, Ultimate, Click, Synergy, GameOver, Nova, Dash, Rally, LevelUp,
+    // War-drum kit (driven by the adaptive music sequencer, not gameplay events).
+    Kick, Tom, Hat,
 }
 
 /// <summary>
@@ -182,5 +184,44 @@ public static class Audio
         yield return (SfxId.LevelUp, SfxSynth.Concat(
             SfxSynth.Tone(880f, 0.06f, WaveShape.Sine, 0.5f),
             SfxSynth.Tone(1175f, 0.1f, WaveShape.Sine, 0.55f)), 2);
+
+        // ---- war-drum kit (adaptive music) ----
+        yield return (SfxId.Kick, SfxSynth.Sweep(160f, 45f, 0.14f, WaveShape.Sine, 1f, decayPow: 2.5f), 2);
+        yield return (SfxId.Tom, SfxSynth.Sweep(240f, 130f, 0.1f, WaveShape.Sine, 0.8f), 2);
+        yield return (SfxId.Hat, SfxSynth.Noise(0.03f, 8000f, 0.5f), 2);
+    }
+
+    // ---- adaptive war drums ------------------------------------------------
+
+    private static double _stepTimer;
+    private static int _step;
+
+    /// <summary>
+    /// Advance the battle-drum sequencer. Intensity 0 = silence (lulls, menus,
+    /// pause); above 0 an 8-step pattern plays, adding layers and pace as the
+    /// threat rises. Call once per frame.
+    /// </summary>
+    public static void UpdateMusic(float dt, float intensity)
+    {
+        if (!Ready) return;
+        if (intensity <= 0f) { _stepTimer = 0; _step = 0; return; }
+        float stepDur = 0.34f - 0.08f * Math.Clamp(intensity, 0f, 1f); // ~88 -> ~115 bpm
+        _stepTimer += dt;
+        while (_stepTimer >= stepDur)
+        {
+            _stepTimer -= stepDur;
+            foreach (var (id, vol, pitch) in PatternHits(_step, intensity))
+                Play(id, vol, pitch);
+            _step = (_step + 1) % 8;
+        }
+    }
+
+    /// <summary>The drum hits for one sequencer step at a given intensity (pure: testable).</summary>
+    public static IEnumerable<(SfxId Id, float Vol, float Pitch)> PatternHits(int step, float intensity)
+    {
+        if (step is 0 or 4) yield return (SfxId.Kick, 0.30f + 0.25f * intensity, 1f);
+        if (intensity > 0.3f && step % 2 == 1) yield return (SfxId.Hat, 0.09f + 0.07f * intensity, 1f);
+        if (intensity > 0.45f && step is 3 or 6) yield return (SfxId.Tom, 0.22f, step == 6 ? 0.85f : 1f);
+        if (intensity > 0.8f && step == 2) yield return (SfxId.Kick, 0.22f, 1.2f); // urgent extra kick
     }
 }
