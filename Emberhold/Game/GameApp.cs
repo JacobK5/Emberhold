@@ -170,6 +170,7 @@ public sealed class GameApp
         // Quartermaster's Favor trophy perk: veterans muster with a fatter purse.
         _state.Gold = Trophies.StartingGold(_profile);
         _state.GoldAccrued = _state.Gold;
+        _state.Hero.CapeOverride = Capes.Override(_profile); // cosmetic cape regalia
         _draft = new DraftController();
         _pointerTarget = null;
         _skillsOpen = false;
@@ -251,7 +252,7 @@ public sealed class GameApp
         {
             Raylib.ClearBackground(Palette.Grass);
             MenuUI.DrawHeroSelect("CHOOSE YOUR HERO", "click a hero to begin   ·   ESC back to menu",
-                ascension: _ascensionChoice, maxAscension: _profile.MaxAscension);
+                ascension: _ascensionChoice, maxAscension: _profile.MaxAscension, capeProfile: _profile);
         }
         else
         {
@@ -348,6 +349,21 @@ public sealed class GameApp
             var (minus, plus) = MenuUI.AscensionButtonRects();
             if (Raylib.CheckCollisionPointRec(m, minus)) { _ascensionChoice = Math.Max(0, _ascensionChoice - 1); return; }
             if (Raylib.CheckCollisionPointRec(m, plus)) { _ascensionChoice = Math.Min(_profile.MaxAscension, _ascensionChoice + 1); return; }
+        }
+
+        // Cape regalia picker: choose any unlocked colour (persists immediately).
+        var capes = MenuUI.CapeSwatchRects();
+        for (int i = 0; i < capes.Length; i++)
+        {
+            if (!Raylib.CheckCollisionPointRec(m, capes[i])) continue;
+            if (Capes.Unlocked(_profile, i))
+            {
+                _profile = _profile with { CapeChoice = i };
+                Persistence.Save(_profile);
+                Audio.Play(SfxId.Click, 0.5f, 1.1f);
+            }
+            else Audio.Play(SfxId.Click, 0.3f, 0.6f); // still locked
+            return;
         }
 
         var rects = MenuUI.HeroCardRects();

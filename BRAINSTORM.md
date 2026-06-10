@@ -8,6 +8,13 @@ Running list of expansion ideas. Rough groupings; nothing here is committed to t
 
 Ideas that have made it into a release (newest first).
 
+### v0.40.0 — "Regalia" (trophy cosmetics)
+- **Cape regalia** — five cosmetic cloak colours (Emberweave, Gilded, Frostmantle,
+  Nightshade, Wardens' Moss) unlocked at 2/4/6/8/10 lifetime trophies. Picked via a
+  swatch row on the hero-select screen (locked swatches show their trophy price),
+  persisted on the profile, and worn by every hero in-game via a cape recolour.
+  Closes the trophy loop: achievements now pay out something you can see.
+
 ### v0.39.0 — "Trophies"
 - **Trophy hall** — 12 lifetime achievements persisted on the profile, from "Hold the
   Line" (reach wave 6) through "Deep Frontier" (wave 25), single-run feats (all four

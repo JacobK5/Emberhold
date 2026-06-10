@@ -63,6 +63,9 @@ public sealed class Hero
     public HeroKind Kind = HeroKind.Ranger;
     public HeroProfile Profile => HeroProfile.Get(Kind);
 
+    /// <summary>Cosmetic cloak colour from the profile's cape regalia (null = hero default).</summary>
+    public Raylib_cs.Color? CapeOverride;
+
     /// <summary>One progression slot per hero kind.</summary>
     public readonly Dictionary<HeroKind, HeroProgress> Progress = new();
 
