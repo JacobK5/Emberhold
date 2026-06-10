@@ -87,7 +87,9 @@ public static class TowerSystem
             t.MuzzleFlash = 0.08f;
             s.AddParticles(t.Pos + t.Facing * (t.Radius + 6f), ColorFor(t.ProjSource), 4, 64f);
 
-            t.Cooldown = t.Rate * rateMult / Balance.TowerFireSpeedMult;
+            // Floor the fire interval: Forge + Artificer + Overcharge + Volatile Pact +
+            // Overdrive Core can stack rate multipliers down to ~0.3x.
+            t.Cooldown = MathF.Max(0.15f, t.Rate * rateMult / Balance.TowerFireSpeedMult);
         }
     }
 

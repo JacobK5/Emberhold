@@ -141,6 +141,12 @@ public static class WaveSystem
                 }
                 s.Live.Interest = interest;
 
+                // Standing walls mend 40% of their missing HP between waves, so a
+                // defend-heavy fort recovers rather than bleeding out run-long.
+                foreach (var st in s.Structures)
+                    if (st.Role == StructureRole.Wall && st.Health > 0f && st.Health < st.MaxHealth)
+                        st.Health = MathF.Min(st.MaxHealth, st.Health + (st.MaxHealth - st.Health) * 0.4f);
+
                 s.LastSummary = s.Live; // snapshot for the wave-end stat card
                 s.Wave += 1;
                 // Carry the previously-previewed wave forward so foresight stays exact.

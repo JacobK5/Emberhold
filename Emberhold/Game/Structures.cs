@@ -150,13 +150,13 @@ public static class StructureFactory
             case StructureKind.Redoubt:
                 st.Role = StructureRole.Wall; st.Health = st.MaxHealth = 200; st.Retaliate = true; st.Radius = 22; break;
             case StructureKind.SpikeTrap:
-                st.Role = StructureRole.GroundTrap; st.TrapDps = 20; st.Radius = 26; break;
+                st.Role = StructureRole.GroundTrap; st.TrapDps = 24; st.Radius = 26; break;
             case StructureKind.TarPit:
                 st.Role = StructureRole.GroundTrap; st.TrapSlowFactor = 0.5f; st.Radius = 30; break;
             case StructureKind.MoatLine:
-                st.Role = StructureRole.GroundTrap; st.TrapDps = 11; st.TrapSlowFactor = 0.7f; st.Radius = 34; break;
+                st.Role = StructureRole.GroundTrap; st.TrapDps = 13; st.TrapSlowFactor = 0.7f; st.Radius = 34; break;
             case StructureKind.Caltrops:
-                st.Role = StructureRole.GroundTrap; st.TrapDps = 14; st.Radius = 32; break;
+                st.Role = StructureRole.GroundTrap; st.TrapDps = 17; st.Radius = 32; break;
 
             // ---- Support ----
             case StructureKind.GoldMine:
